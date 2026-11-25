@@ -2084,6 +2084,29 @@ body {
   color: var(--gold-300);
 }
 
+.security-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(158, 209, 152, 0.08);
+  border: 1px solid rgba(158, 209, 152, 0.32);
+  color: #cde8ca;
+  font-size: 0.74rem;
+}
+
+.museum-mat img,
+.gallery-slide img,
+.lightbox-frame img {
+  user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+}
+
 /* ==================== LIGHTBOX ==================== */
 .lightbox {
   position: fixed;

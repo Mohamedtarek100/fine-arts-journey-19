@@ -8,7 +8,11 @@
  * =========================================================================
  */
 
-import * as THREE from 'three';
+import * as THREE from './vendor/three.module.min.js';
+
+function isSafeLocalTexturePath(path) {
+  return typeof path === 'string' && /^\.\/assets\/[a-zA-Z0-9._/-]+$/.test(path) && !path.includes('..');
+}
 
 export class Atelier3DScene {
   constructor(canvas, config) {
@@ -174,7 +178,8 @@ export class Atelier3DScene {
   }
 
   loadArtTexture(path) {
-    const tex = this.textureLoader.load(path);
+    const safePath = isSafeLocalTexturePath(path) ? path : './assets/art/chapter4-fine-arts.jpg';
+    const tex = this.textureLoader.load(safePath);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
     return tex;

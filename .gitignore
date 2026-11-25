@@ -1,0 +1,19 @@
+# Prevent accidental leakage of secrets, credentials, backups, or local drafts
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*secret*
+*credential*
+*.bak
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local marketing/teaser drafts kept outside public repository
+coming-soon-*.jpg
+launch-poster-*.jpg

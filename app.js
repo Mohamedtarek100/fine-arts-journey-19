@@ -1,14 +1,68 @@
 /**
  * =========================================================================
- *  Main Application Logic — Cinema-Grade 3D Fine Arts Birthday Journey
- *  Includes: Dynamic Config Binding, Visitor Guide Modal, One-Step Horizon
- *  Motion-Graphics Tracker, Sparkle Cursor Trail, 3D Gallery, Sketch Canvas,
- *  Ambient Web Audio Harp & 19 Candles Celebration
+ *  Main Application Logic — Hardened Cinema-Grade 3D Fine Arts Journey
+ *  Security Architecture:
+ *  - ZERO innerHTML sinks (100% safe DOM node creation + textContent)
+ *  - Deep-frozen SITE_CONFIG against runtime tampering
+ *  - Strict local asset path allowlist (prevents protocol/path injection)
+ *  - Anti-Clickjacking frame guard (blocks unauthorized cross-origin framing)
+ *  - Zero tracking, zero cookies, zero external JS dependencies
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=3';
-import { Atelier3DScene } from './scene3d.js?v=2';
+import { SITE_CONFIG } from './config.js?v=4';
+import { Atelier3DScene } from './scene3d.js?v=4';
+
+/* ==================== RUNTIME SECURITY GUARDS ==================== */
+(function enforceFrameProtection() {
+  try {
+    if (window.top !== window.self) {
+      // Block unauthorized cross-origin iframe embedding (Clickjacking defense)
+      document.documentElement.style.display = 'none';
+      window.top.location.replace(window.self.location.href);
+    }
+  } catch {
+    // Cross-origin frame blocked top navigation: keep page hidden safely
+    document.documentElement.style.display = 'none';
+  }
+})();
+
+function deepFreeze(obj) {
+  if (!obj || typeof obj !== 'object') return obj;
+  Object.freeze(obj);
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val && typeof val === 'object' && !Object.isFrozen(val)) {
+      deepFreeze(val);
+    }
+  }
+  return obj;
+}
+
+const FROZEN_CONFIG = deepFreeze(SITE_CONFIG);
+
+function safeAssetUrl(path, fallback = './assets/art/chapter4-fine-arts.jpg') {
+  if (typeof path !== 'string') return fallback;
+  const trimmed = path.trim();
+  if (trimmed.includes('..')) return fallback;
+  if (/^\.\/assets\/[a-zA-Z0-9._/-]+$/.test(trimmed)) return trimmed;
+  return fallback;
+}
+
+function el(tag, className, text) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  if (text !== undefined && text !== null) node.textContent = String(text);
+  return node;
+}
+
+function svgEl(tag, attrs = {}) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    node.setAttribute(k, String(v));
+  }
+  return node;
+}
 
 /* ==================== MOTION-GRAPHICS GOLDEN SPARKLE CURSOR TRAIL ==================== */
 function initSparkleCursorTrail() {
@@ -178,103 +232,177 @@ class AtelierAudio {
   }
 }
 
-/* ==================== SVG ICONS FOR VISITOR GUIDE ==================== */
-function getGuideIconSvg(type) {
-  switch (type) {
-    case 'scroll':
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><rect x="7" y="3" width="10" height="18" rx="5"/><line x1="12" y1="7" x2="12" y2="11"/></svg>`;
-    case 'orbit':
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(-28 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(28 12 12)"/></svg>`;
-    case 'touch':
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M5.6 5.6l2.1 2.1M18.4 5.6l-2.1 2.1"/><path d="M9 12a3 3 0 0 1 6 0v5a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4v-2.5"/></svg>`;
-    default:
-      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>`;
+/* ==================== SAFE SVG ICON BUILDER (ZERO innerHTML) ==================== */
+function createGuideIconSvg(type) {
+  const svg = svgEl('svg', {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '1.6',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  });
+
+  if (type === 'scroll') {
+    svg.append(
+      svgEl('rect', { x: 7, y: 3, width: 10, height: 18, rx: 5 }),
+      svgEl('line', { x1: 12, y1: 7, x2: 12, y2: 11 })
+    );
+  } else if (type === 'orbit') {
+    svg.append(
+      svgEl('circle', { cx: 12, cy: 12, r: 3 }),
+      svgEl('ellipse', { cx: 12, cy: 12, rx: 9, ry: 4, transform: 'rotate(-28 12 12)' }),
+      svgEl('ellipse', { cx: 12, cy: 12, rx: 9, ry: 4, transform: 'rotate(28 12 12)' })
+    );
+  } else if (type === 'touch') {
+    svg.append(
+      svgEl('path', { d: 'M12 3v3M5.6 5.6l2.1 2.1M18.4 5.6l-2.1 2.1' }),
+      svgEl('path', { d: 'M9 12a3 3 0 0 1 6 0v5a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4v-2.5' })
+    );
+  } else {
+    svg.append(
+      svgEl('path', { d: 'M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z' }),
+      svgEl('path', { d: 'M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z' })
+    );
   }
+  return svg;
 }
 
-/* ==================== BUILD CHAPTER SECTION ELEMENT ==================== */
+function createGuideCard(step) {
+  const card = el('article', 'guide-card');
+  const num = el('span', 'guide-card-num', step.num);
+  num.setAttribute('aria-hidden', 'true');
+
+  const iconBox = el('div', 'guide-icon-box');
+  iconBox.setAttribute('aria-hidden', 'true');
+  iconBox.appendChild(createGuideIconSvg(step.icon));
+
+  card.append(
+    num,
+    iconBox,
+    el('h3', '', step.titleAr),
+    el('span', 'guide-en', step.titleEn),
+    el('p', '', step.descAr)
+  );
+  return card;
+}
+
+/* ==================== SAFE CHAPTER SECTION BUILDER (ZERO innerHTML) ==================== */
 function createChapterSection(ch, idx, cfg) {
   const isReverse = idx % 2 === 1;
-  const section = document.createElement('section');
+  const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
   section.id = ch.id;
-  section.className = `section chapter-section${isReverse ? ' reverse' : ''}`;
-  section.dataset.stage = `${ch.eraAr}`;
+  section.dataset.stage = ch.eraAr;
 
-  const encouragementHtml =
-    ch.id === 'thanaweya' && ch.encouragementBodyAr
-      ? `
-      <div class="envelope-box" id="encouragement-envelope">
-        <button class="envelope-trigger" type="button" aria-expanded="false" id="envelope-btn">
-          <span>✦ ${ch.encouragementTitleAr} (اضغطي لفتح الرسالة)</span>
-          <span class="wax-seal-mini">XIX</span>
-        </button>
-        <div class="envelope-letter">
-          <p>${ch.encouragementBodyAr}</p>
-        </div>
-      </div>`
-      : '';
+  const grid = el('div', 'chapter-grid');
 
-  const dreamPassHtml =
-    ch.id === 'fine-arts'
-      ? `
-      <div class="dream-pass-wrap">
-        <div class="dream-pass" id="fine-arts-pass">
-          <div class="pass-top">
-            <div class="pass-crest" aria-hidden="true">✦</div>
-            <div class="pass-inst">
-              <span class="pass-inst-en">${cfg.dreamPass.institutionEn}</span>
-              <strong class="pass-inst-ar">${cfg.dreamPass.institutionAr}</strong>
-            </div>
-          </div>
-          <div class="pass-body">
-            <div>
-              <span class="pass-field-label">${cfg.dreamPass.subtitleAr}</span>
-              <div class="pass-name">${cfg.artistName}</div>
-              <span class="pass-status">● ${cfg.dreamPass.statusAr}</span>
-            </div>
-            <div class="pass-serial">
-              <div>${cfg.dreamPass.batchAr}</div>
-              <div>${cfg.dreamPass.serialNo}</div>
-            </div>
-          </div>
-        </div>
-      </div>`
-      : '';
+  // Text Card
+  const card = el('article', 'chapter-card reveal');
+  const numBg = el('span', 'chapter-number-bg', ch.number);
+  numBg.setAttribute('aria-hidden', 'true');
 
-  section.innerHTML = `
-    <div class="chapter-grid">
-      <article class="chapter-card reveal">
-        <span class="chapter-number-bg" aria-hidden="true">${ch.number}</span>
-        <p class="chapter-era">✦ ${ch.eraAr}</p>
-        <h2 class="chapter-title-ar">${ch.titleAr}</h2>
-        <p class="chapter-title-en">${ch.titleEn}</p>
-        <p class="chapter-story">${ch.storyAr}</p>
-        <blockquote class="chapter-quote">${ch.quoteAr}</blockquote>
-        ${encouragementHtml}
-      </article>
+  card.append(
+    numBg,
+    el('p', 'chapter-era', `✦ ${ch.eraAr}`),
+    el('h2', 'chapter-title-ar', ch.titleAr),
+    el('p', 'chapter-title-en', ch.titleEn),
+    el('p', 'chapter-story', ch.storyAr),
+    el('blockquote', 'chapter-quote', ch.quoteAr)
+  );
 
-      <div class="art-column reveal">
-        <figure class="museum-frame js-tilt-frame" data-lightbox-img="${ch.image}" data-lightbox-title="${ch.titleAr}" data-lightbox-meta="${ch.captionEn}" data-lightbox-desc="${ch.captionAr}">
-          <span class="frame-year-pill">${ch.yearTag}</span>
-          <div class="museum-mat">
-            <img src="${ch.image}" alt="${ch.captionAr}" loading="lazy" />
-          </div>
-          <figcaption class="frame-plaque">
-            <span class="plaque-en">${ch.captionEn}</span>
-            <span class="plaque-ar">${ch.captionAr}</span>
-          </figcaption>
-        </figure>
-        ${dreamPassHtml}
-      </div>
-    </div>
-  `;
+  // Chapter 3 Encouragement Envelope
+  if (ch.id === 'thanaweya' && ch.encouragementBodyAr) {
+    const envBox = el('div', 'envelope-box');
+    envBox.id = 'encouragement-envelope';
 
+    const envBtn = el('button', 'envelope-trigger');
+    envBtn.type = 'button';
+    envBtn.id = 'envelope-btn';
+    envBtn.setAttribute('aria-expanded', 'false');
+    envBtn.append(
+      el('span', '', `✦ ${ch.encouragementTitleAr} (اضغطي لفتح الرسالة)`),
+      el('span', 'wax-seal-mini', 'XIX')
+    );
+
+    const envLetter = el('div', 'envelope-letter');
+    envLetter.appendChild(el('p', '', ch.encouragementBodyAr));
+
+    envBox.append(envBtn, envLetter);
+    card.appendChild(envBox);
+  }
+
+  // Art Column
+  const artCol = el('div', 'art-column reveal');
+  const safeImg = safeAssetUrl(ch.image);
+
+  const figure = el('figure', 'museum-frame js-tilt-frame');
+  figure.dataset.lightboxImg = safeImg;
+  figure.dataset.lightboxTitle = ch.titleAr;
+  figure.dataset.lightboxMeta = ch.captionEn;
+  figure.dataset.lightboxDesc = ch.captionAr;
+
+  const mat = el('div', 'museum-mat');
+  const img = document.createElement('img');
+  img.src = safeImg;
+  img.alt = ch.captionAr;
+  img.loading = 'lazy';
+  img.draggable = false;
+  img.referrerPolicy = 'no-referrer';
+  mat.appendChild(img);
+
+  const plaque = el('figcaption', 'frame-plaque');
+  plaque.append(
+    el('span', 'plaque-en', ch.captionEn),
+    el('span', 'plaque-ar', ch.captionAr)
+  );
+
+  figure.append(el('span', 'frame-year-pill', ch.yearTag), mat, plaque);
+  artCol.appendChild(figure);
+
+  // Chapter 4 Holographic Fine Arts Dream Pass
+  if (ch.id === 'fine-arts') {
+    const passWrap = el('div', 'dream-pass-wrap');
+    const pass = el('div', 'dream-pass');
+    pass.id = 'fine-arts-pass';
+
+    const passTop = el('div', 'pass-top');
+    const crest = el('div', 'pass-crest', '✦');
+    crest.setAttribute('aria-hidden', 'true');
+    const inst = el('div', 'pass-inst');
+    inst.append(
+      el('span', 'pass-inst-en', cfg.dreamPass.institutionEn),
+      el('strong', 'pass-inst-ar', cfg.dreamPass.institutionAr)
+    );
+    passTop.append(crest, inst);
+
+    const passBody = el('div', 'pass-body');
+    const leftCol = el('div');
+    leftCol.append(
+      el('span', 'pass-field-label', cfg.dreamPass.subtitleAr),
+      el('div', 'pass-name', cfg.artistName),
+      el('span', 'pass-status', `● ${cfg.dreamPass.statusAr}`)
+    );
+
+    const serialCol = el('div', 'pass-serial');
+    serialCol.append(
+      el('div', '', cfg.dreamPass.batchAr),
+      el('div', '', cfg.dreamPass.serialNo)
+    );
+
+    passBody.append(leftCol, serialCol);
+    pass.append(passTop, passBody);
+    passWrap.appendChild(pass);
+    artCol.appendChild(passWrap);
+  }
+
+  grid.append(card, artCol);
+  section.appendChild(grid);
   return section;
 }
 
-/* ==================== POPULATE PAGE FROM CONFIG.JS ==================== */
+/* ==================== POPULATE PAGE FROM FROZEN CONFIG ==================== */
 function renderContent() {
-  const cfg = SITE_CONFIG;
+  const cfg = FROZEN_CONFIG;
 
   document.title = `رحلة ${cfg.artistName} | ${cfg.birthdayDateAr} — العام ${cfg.age}`;
   document.getElementById('nav-date-en').textContent = cfg.birthdayDateEn;
@@ -295,27 +423,16 @@ function renderContent() {
   document.getElementById('guide-title-ar').textContent = cfg.guide.titleAr;
   document.getElementById('guide-subtitle-ar').textContent = cfg.guide.subtitleAr;
 
-  const guideHtml = cfg.guide.steps
-    .map(
-      (s) => `
-      <article class="guide-card">
-        <span class="guide-card-num" aria-hidden="true">${s.num}</span>
-        <div class="guide-icon-box" aria-hidden="true">${getGuideIconSvg(s.icon)}</div>
-        <h3>${s.titleAr}</h3>
-        <span class="guide-en">${s.titleEn}</span>
-        <p>${s.descAr}</p>
-      </article>`
-    )
-    .join('');
+  const stripGrid = document.getElementById('guide-cards-grid');
+  const modalGrid = document.getElementById('guide-modal-grid');
+  stripGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
+  modalGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
 
-  document.getElementById('guide-cards-grid').innerHTML = guideHtml;
-  document.getElementById('guide-modal-grid').innerHTML = guideHtml;
-
-  // Chapters 1..3 go before the Horizon Goal Section; Chapter 4 (Fine Arts) goes right after it!
+  // Chapters 1..3 before Horizon Goal; Chapter 4 right after it
   const firstRoot = document.getElementById('chapters-first-container');
   const secondRoot = document.getElementById('chapters-second-container');
-  firstRoot.innerHTML = '';
-  secondRoot.innerHTML = '';
+  firstRoot.replaceChildren();
+  secondRoot.replaceChildren();
 
   cfg.chapters.forEach((ch, idx) => {
     const sec = createChapterSection(ch, idx, cfg);
@@ -323,7 +440,7 @@ function renderContent() {
     else secondRoot.appendChild(sec);
   });
 
-  // Horizon Goal Section (Current Stage -> One Step -> Fine Arts)
+  // Horizon Goal Section
   const hg = cfg.horizonGoal;
   document.getElementById('horizon-eyebrow-en').textContent = hg.eyebrowEn;
   document.getElementById('horizon-title-ar').textContent = hg.titleAr;
@@ -331,36 +448,39 @@ function renderContent() {
   document.getElementById('horizon-steps-label').textContent = hg.stepsRemainingLabel;
   document.getElementById('horizon-counter').dataset.target = String(hg.progressPercent);
 
-  document.getElementById('horizon-nodes').innerHTML = hg.timelineNodes
-    .map((n) => {
+  const nodesWrap = document.getElementById('horizon-nodes');
+  nodesWrap.replaceChildren(
+    ...hg.timelineNodes.map((n) => {
       const icon = n.state === 'done' ? '✓' : n.state === 'current' ? '●' : '✦';
-      return `<div class="hp-node ${n.state}"><span>${icon}</span><span>${n.label}</span></div>`;
+      const node = el('div', `hp-node ${n.state}`);
+      node.append(el('span', '', icon), el('span', '', n.label));
+      return node;
     })
-    .join('');
+  );
 
   document.getElementById('now-badge-ar').textContent = hg.currentStage.badgeAr;
   document.getElementById('now-badge-en').textContent = hg.currentStage.badgeEn;
   document.getElementById('now-title-ar').textContent = hg.currentStage.titleAr;
   document.getElementById('now-age-tag').textContent = hg.currentStage.ageTagAr;
   document.getElementById('now-desc-ar').textContent = hg.currentStage.descAr;
-  document.getElementById('now-highlights').innerHTML = hg.currentStage.highlightsAr
-    .map((item) => `<li>${item}</li>`)
-    .join('');
+
+  const nowHighlights = document.getElementById('now-highlights');
+  nowHighlights.replaceChildren(...hg.currentStage.highlightsAr.map((item) => el('li', '', item)));
 
   document.getElementById('goal-badge-ar').textContent = hg.goalStage.badgeAr;
   document.getElementById('goal-badge-en').textContent = hg.goalStage.badgeEn;
   document.getElementById('goal-title-ar').textContent = hg.goalStage.titleAr;
   document.getElementById('goal-title-en').textContent = hg.goalStage.titleEn;
   document.getElementById('goal-desc-ar').textContent = hg.goalStage.descAr;
-  document.getElementById('goal-milestones').innerHTML = hg.goalStage.milestonesAr
-    .map(
-      (m) => `
-      <div class="goal-step-pill">
-        <span class="goal-step-code">${m.code}</span>
-        <span>${m.label}</span>
-      </div>`
-    )
-    .join('');
+
+  const milestonesWrap = document.getElementById('goal-milestones');
+  milestonesWrap.replaceChildren(
+    ...hg.goalStage.milestonesAr.map((m) => {
+      const pill = el('div', 'goal-step-pill');
+      pill.append(el('span', 'goal-step-code', m.code), el('span', '', m.label));
+      return pill;
+    })
+  );
 
   // Finale & Copyright Footer
   document.getElementById('finale-eyebrow-en').textContent = cfg.finale.eyebrowEn;
@@ -460,21 +580,21 @@ function initHorizonMotionGraphics() {
 /* ==================== 3D TILT INTERACTIONS (DESKTOP MOUSE ONLY) ==================== */
 function initTiltEffects() {
   const frames = document.querySelectorAll('.js-tilt-frame, #fine-arts-pass');
-  frames.forEach((el) => {
-    el.addEventListener('pointermove', (e) => {
+  frames.forEach((elNode) => {
+    elNode.addEventListener('pointermove', (e) => {
       if (e.pointerType !== 'mouse') return;
-      const rect = el.getBoundingClientRect();
+      const rect = elNode.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
       const rotX = (0.5 - y) * 8;
       const rotY = (x - 0.5) * 10;
-      el.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-      el.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
-      el.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+      elNode.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
+      elNode.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+      elNode.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
     });
 
-    el.addEventListener('pointerleave', () => {
-      el.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+    elNode.addEventListener('pointerleave', () => {
+      elNode.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
     });
   });
 }
@@ -490,9 +610,9 @@ function initEnvelope() {
   });
 }
 
-/* ==================== INTERACTIVE 3D GALLERY & LIGHTBOX ==================== */
+/* ==================== INTERACTIVE 3D GALLERY & LIGHTBOX (ZERO innerHTML) ==================== */
 function initGalleryAndLightbox() {
-  const items = SITE_CONFIG.gallery;
+  const items = FROZEN_CONFIG.gallery;
   const viewport = document.getElementById('gallery-viewport');
   const dotsWrap = document.getElementById('gallery-dots');
   const plaqueMeta = document.getElementById('plaque-meta');
@@ -507,7 +627,7 @@ function initGalleryAndLightbox() {
   const lbClose = document.getElementById('lightbox-close');
 
   const openLightbox = (src, meta, title, desc) => {
-    lbImg.src = src;
+    lbImg.src = safeAssetUrl(src);
     lbImg.alt = title;
     lbMeta.textContent = meta;
     lbTitle.textContent = title;
@@ -529,6 +649,13 @@ function initGalleryAndLightbox() {
     if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
   });
 
+  // Gentle artwork context-menu protection on displayed photos/frames
+  document.addEventListener('contextmenu', (e) => {
+    if (e.target instanceof HTMLImageElement) {
+      e.preventDefault();
+    }
+  });
+
   document.querySelectorAll('.museum-frame').forEach((frame) => {
     frame.addEventListener('click', () => {
       openLightbox(
@@ -543,22 +670,27 @@ function initGalleryAndLightbox() {
   if (!items.length) return;
   let current = 0;
 
-  viewport.innerHTML = '';
-  dotsWrap.innerHTML = '';
+  viewport.replaceChildren();
+  dotsWrap.replaceChildren();
 
   const slideEls = items.map((item, i) => {
-    const el = document.createElement('div');
-    el.className = 'gallery-slide';
-    el.innerHTML = `
-      <div class="gallery-slide-inner">
-        <img src="${item.image}" alt="${item.titleAr}" loading="lazy" />
-        <span class="gallery-zoom-hint">✦ اضغطي لتكبير اللوحة</span>
-      </div>
-    `;
-    el.addEventListener('click', () => {
+    const safeImg = safeAssetUrl(item.image);
+    const slide = el('div', 'gallery-slide');
+    const inner = el('div', 'gallery-slide-inner');
+    const img = document.createElement('img');
+    img.src = safeImg;
+    img.alt = item.titleAr;
+    img.loading = 'lazy';
+    img.draggable = false;
+    img.referrerPolicy = 'no-referrer';
+
+    inner.append(img, el('span', 'gallery-zoom-hint', '✦ اضغطي لتكبير اللوحة'));
+    slide.appendChild(inner);
+
+    slide.addEventListener('click', () => {
       if (i === current) {
         openLightbox(
-          item.image,
+          safeImg,
           `${item.titleEn} • ${item.year}`,
           item.titleAr,
           `${item.mediumAr} — ${item.descriptionAr}`
@@ -568,10 +700,9 @@ function initGalleryAndLightbox() {
         updateSlides();
       }
     });
-    viewport.appendChild(el);
+    viewport.appendChild(slide);
 
-    const dot = document.createElement('button');
-    dot.className = 'gallery-dot';
+    const dot = el('button', 'gallery-dot');
     dot.type = 'button';
     dot.setAttribute('aria-label', item.titleAr);
     dot.addEventListener('click', () => {
@@ -580,7 +711,7 @@ function initGalleryAndLightbox() {
     });
     dotsWrap.appendChild(dot);
 
-    return el;
+    return slide;
   });
 
   const dotEls = Array.from(dotsWrap.children);
@@ -590,12 +721,12 @@ function initGalleryAndLightbox() {
     const prevIdx = (current - 1 + total) % total;
     const nextIdx = (current + 1) % total;
 
-    slideEls.forEach((el, idx) => {
-      el.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
-      if (idx === current) el.classList.add('is-active');
-      else if (idx === prevIdx) el.classList.add('is-prev');
-      else if (idx === nextIdx) el.classList.add('is-next');
-      else el.classList.add('is-hidden');
+    slideEls.forEach((slideNode, idx) => {
+      slideNode.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
+      if (idx === current) slideNode.classList.add('is-active');
+      else if (idx === prevIdx) slideNode.classList.add('is-prev');
+      else if (idx === nextIdx) slideNode.classList.add('is-next');
+      else slideNode.classList.add('is-hidden');
     });
 
     dotEls.forEach((d, idx) => d.classList.toggle('active', idx === current));
@@ -716,12 +847,15 @@ function initAtelierSketchCanvas() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
       btn.classList.add('active');
-      activeColor = btn.dataset.color;
+      if (/^#[0-9a-fA-F]{6}$/.test(btn.dataset.color || '')) {
+        activeColor = btn.dataset.color;
+      }
     });
   });
 
   document.getElementById('brush-size').addEventListener('input', (e) => {
-    brushSize = Number(e.target.value);
+    const val = Number(e.target.value);
+    if (Number.isFinite(val) && val >= 2 && val <= 20) brushSize = val;
   });
 
   document.getElementById('canvas-gold-dust').addEventListener('click', () => {
@@ -789,26 +923,22 @@ function initScrollAndNavigation(scene3d, audio) {
     }
   };
 
-  // Bulletproof reveal check (guarantees NOTHING stays hidden on tall mobile screens!)
   const checkRevealsAndActiveSection = () => {
     const vh = window.innerHeight || 800;
-    for (const el of reveals) {
-      if (!el.classList.contains('visible')) {
-        const rect = el.getBoundingClientRect();
+    for (const node of reveals) {
+      if (!node.classList.contains('visible')) {
+        const rect = node.getBoundingClientRect();
         if (rect.top <= vh + 120 && rect.bottom >= -120) {
-          el.classList.add('visible');
+          node.classList.add('visible');
         }
       }
     }
 
-    // Determine active section by viewport focal line (works reliably on ANY height!)
     const focalY = vh * 0.4;
     let currentId = sections[0]?.id || 'hero';
     for (const sec of sections) {
       const rect = sec.getBoundingClientRect();
-      if (rect.top <= focalY) {
-        currentId = sec.id;
-      }
+      if (rect.top <= focalY) currentId = sec.id;
     }
     setActiveStage(currentId);
   };
@@ -825,7 +955,6 @@ function initScrollAndNavigation(scene3d, audio) {
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', checkRevealsAndActiveSection, { passive: true });
 
-  // IntersectionObserver with threshold: 0 for instant mobile & desktop triggering
   const revealObs = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
@@ -834,7 +963,7 @@ function initScrollAndNavigation(scene3d, audio) {
     },
     { threshold: 0, rootMargin: '120px 0px 120px 0px' }
   );
-  reveals.forEach((el) => revealObs.observe(el));
+  reveals.forEach((node) => revealObs.observe(node));
 
   onScroll();
 
@@ -846,7 +975,7 @@ function initScrollAndNavigation(scene3d, audio) {
   railDots.forEach((dot) => dot.addEventListener('click', () => scrollToTarget(dot.dataset.target)));
   dockChips.forEach((chip) => chip.addEventListener('click', () => scrollToTarget(chip.dataset.target)));
 
-  // Full-Screen 3D Inspect Mode Toggle (awesome on mobile & PC!)
+  // Full-Screen 3D Inspect Mode Toggle
   const inspectBtn = document.getElementById('inspect-3d-btn');
   const exitInspectBtn = document.getElementById('exit-inspect-btn');
   const inspectBanner = document.getElementById('inspect-banner');
@@ -884,6 +1013,11 @@ function initScrollAndNavigation(scene3d, audio) {
   const candlesStatus = document.getElementById('candles-status');
   let candlesBlown = false;
 
+  const setCandlesStatusText = (msg, isBlown) => {
+    candlesStatus.classList.toggle('blown', isBlown);
+    candlesStatus.replaceChildren(el('span', 'flame-dot'), el('span', '', msg));
+  };
+
   wishBtn.addEventListener('click', () => {
     candlesBlown = !candlesBlown;
     if (scene3d) scene3d.triggerWishCelebration(candlesBlown);
@@ -892,15 +1026,11 @@ function initScrollAndNavigation(scene3d, audio) {
       audio.playWishChime();
       wishLetter.classList.add('revealed');
       wishLetter.setAttribute('aria-hidden', 'false');
-      wishBtnAr.textContent = SITE_CONFIG.finale.buttonAfterAr;
-      candlesStatus.classList.add('blown');
-      candlesStatus.innerHTML =
-        '<span class="flame-dot"></span><span>تحققت الأمنية بإذن الله — أُطلقت شرارات العام التاسع عشر ✦</span>';
+      wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAfterAr;
+      setCandlesStatusText('تحققت الأمنية بإذن الله — أُطلقت شرارات العام التاسع عشر ✦', true);
     } else {
-      wishBtnAr.textContent = SITE_CONFIG.finale.buttonAr;
-      candlesStatus.classList.remove('blown');
-      candlesStatus.innerHTML =
-        '<span class="flame-dot"></span><span>19 شمعة ذهبية مضيئة في الخلفية ثلاثية الأبعاد</span>';
+      wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAr;
+      setCandlesStatusText('19 شمعة ذهبية مضيئة في الخلفية ثلاثية الأبعاد', false);
     }
   });
 }
@@ -912,7 +1042,7 @@ function bootstrap() {
   let scene3d = null;
   try {
     const canvas = document.getElementById('atelier-canvas');
-    scene3d = new Atelier3DScene(canvas, SITE_CONFIG);
+    scene3d = new Atelier3DScene(canvas, FROZEN_CONFIG);
   } catch (err) {
     console.warn('WebGL 3D scene fallback:', err);
   }

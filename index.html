@@ -7,6 +7,15 @@
   <meta name="description" content="معرض فني ثلاثي الأبعاد وموشن جرافيك يحتفي برحلة 19 عاماً من الموهبة والطموح — تالتة ثانوي وعلى بُعد خطوة واحدة من كلية الفنون الجميلة (5 ديسمبر)." />
   <meta name="theme-color" content="#110c09" />
 
+  <!-- Cybersecurity & Privacy Hardening Headers -->
+  <meta
+    http-equiv="Content-Security-Policy"
+    content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
+  />
+  <meta name="referrer" content="no-referrer" />
+  <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+
   <!-- Artistic Arabic & Classical Museum Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,16 +24,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=2" />
-
-  <!-- Three.js Import Map (Zero-Build GitHub Pages Ready) -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="./styles.css?v=4" />
 </head>
 <body>
   <!-- Top Cinema Scroll Progress Bar -->
@@ -459,6 +459,10 @@
           <div class="footer-copyright">
             <p class="copy-ar" id="footer-rights-ar"></p>
             <p class="copy-en" id="footer-rights-en"></p>
+            <p class="security-badge" aria-label="معايير الأمان والخصوصية">
+              <span>🔒</span>
+              <span>محمي بتشفير HTTPS • سياسة أمان صارمة CSP • صفر تتبّع أو كوكيز • محظور من أرشفة محركات البحث</span>
+            </p>
           </div>
         </div>
       </footer>
@@ -487,7 +491,7 @@
   <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="عرض اللوحة بالكامل">
     <button class="lightbox-close" id="lightbox-close" type="button" aria-label="إغلاق">✕</button>
     <div class="lightbox-frame">
-      <img id="lightbox-img" src="" alt="" />
+      <img id="lightbox-img" src="" alt="" draggable="false" referrerpolicy="no-referrer" />
       <div class="lightbox-caption">
         <span class="plaque-meta" id="lightbox-meta"></span>
         <h3 id="lightbox-title"></h3>
@@ -496,7 +500,7 @@
     </div>
   </div>
 
-  <!-- Main Scripts -->
-  <script type="module" src="./app.js?v=3"></script>
+  <!-- Main Scripts (100% Self-Hosted, Strict CSP script-src 'self') -->
+  <script type="module" src="./app.js?v=4"></script>
 </body>
 </html>
