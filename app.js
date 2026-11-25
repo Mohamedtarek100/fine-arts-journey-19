@@ -9,8 +9,9 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=6';
-import { Atelier3DScene } from './scene3d.js?v=6';
+import { SITE_CONFIG } from './config.js?v=8';
+import { Atelier3DScene } from './scene3d.js?v=8';
+import { FamilyCloudVault } from './firebase-sync.js?v=8';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -675,8 +676,8 @@ function initBirthdayCountdown() {
   window.setInterval(renderTick, 1000);
 }
 
-/* ==================== YOMNA'S PRIVATE VAULT + FAMILY SENDER STUDIO ==================== */
-function initFamilyVaultExperience(vaultStore, audio) {
+/* ==================== YOMNA'S PRIVATE VAULT + REAL-TIME CLOUD SYNC ==================== */
+function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
   const familyRoles = FROZEN_CONFIG.reception.roles.filter((r) => !r.isHonoree);
   const inboxPanel = document.getElementById('yomna-inbox-panel');
   const senderPanel = document.getElementById('family-sender-panel');
@@ -694,10 +695,12 @@ function initFamilyVaultExperience(vaultStore, audio) {
   const sendBtn = document.getElementById('vault-send-btn');
   const downloadBtn = document.getElementById('support-download-btn');
   const deliveryDrawer = document.getElementById('vault-delivery-drawer');
+  const deliveryMsg = document.getElementById('delivery-success-msg');
   const waBtn = document.getElementById('vault-whatsapp-btn');
   const copyBtn = document.getElementById('vault-copy-link-btn');
   const copyFeedback = document.getElementById('copy-feedback');
   const trackerWrap = document.getElementById('family-vault-tracker');
+  const cloudStatusEl = document.getElementById('cloud-sync-status');
 
   // Envelope Reader Modal elements
   const readerModal = document.getElementById('envelope-reader-modal');
@@ -827,15 +830,35 @@ function initFamilyVaultExperience(vaultStore, audio) {
     renderSenderPreview();
   });
 
-  sendBtn.addEventListener('click', () => {
+  sendBtn.addEventListener('click', async () => {
     if (activeRole.isHonoree) return;
     const msg = sanitizeText(textarea.value, 220);
-    if (!msg) return;
+    if (msg.length < 3) return;
 
+    sendBtn.disabled = true;
     vaultStore.save(activeRole.id, msg);
-    audio.playWishChime();
     renderYomnaEnvelopes();
     renderFamilyTracker();
+
+    const cloudRes = cloudVault
+      ? await cloudVault.publishWish(activeRole.id, msg)
+      : { ok: false, reason: 'offline' };
+
+    sendBtn.disabled = false;
+    audio.playWishChime();
+
+    if (deliveryMsg) {
+      if (cloudRes.ok) {
+        deliveryMsg.textContent =
+          '✅ وصلت رسالتك سحابياً في نفس اللحظة إلى صندوق يمنى الخاص على موبايلها! (محمية بختم الشمع ضد التلاعب)';
+      } else if (cloudRes.reason === 'sealed_by_owner_device') {
+        deliveryMsg.textContent =
+          '🔒 تم ختم رسالة هذا الفرد مسبقاً من جهازه لحمايتها من التلاعب — يمكنك إرسال رسالتك الجديدة ليمنى عبر رابط الواتساب بالأسفل!';
+      } else {
+        deliveryMsg.textContent =
+          '✅ تم ختم رسالتك وحفظها بنجاح! أرسل الظرف ليمنى على واتساب لتصلها فوراً:';
+      }
+    }
 
     const token = encodeGiftToken(activeRole.id, msg);
     const baseUrl = `${window.location.origin}${window.location.pathname}`;
@@ -848,6 +871,31 @@ function initFamilyVaultExperience(vaultStore, audio) {
     deliveryDrawer.setAttribute('aria-hidden', 'false');
     copyFeedback.textContent = '';
   });
+
+  // Subscribe to Real-Time Cloud Firestore updates across all phones!
+  if (cloudVault) {
+    cloudVault.subscribeAll(
+      ({ senderId, message }) => {
+        const prev = vaultStore.messages[senderId]?.message;
+        vaultStore.save(senderId, message);
+        renderYomnaEnvelopes();
+        renderFamilyTracker();
+        if (activeRole.id === senderId && !activeRole.isHonoree && !textarea.matches(':focus')) {
+          textarea.value = message;
+          renderSenderPreview();
+        }
+        if (prev && prev !== message && activeRole.isHonoree) {
+          audio.playEnvelopeChime();
+        }
+      },
+      (connected) => {
+        if (!cloudStatusEl) return;
+        cloudStatusEl.textContent = connected
+          ? '🟢 متصل سحابياً الآن (Firebase Cloud Firestore) — أي رسالة تُرسل تظهر تلقائياً وفوراً في صندوق يمنى على موبايلها!'
+          : '🔒 وضع الحفظ المحلي + رابط الظرف المشفّر لواتساب جاهز تماماً.';
+      }
+    );
+  }
 
   copyBtn.addEventListener('click', async () => {
     if (!latestGiftUrl) return;
@@ -1861,7 +1909,8 @@ function bootstrap() {
   }
 
   const audio = new AtelierAudio();
-  const vaultExperience = initFamilyVaultExperience(vaultStore, audio);
+  const cloudVault = new FamilyCloudVault();
+  const vaultExperience = initFamilyVaultExperience(vaultStore, cloudVault, audio);
 
   initBirthdayCountdown();
   initReceptionPortal(scene3d, audio, vaultExperience, incomingGift);

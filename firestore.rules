@@ -1,0 +1,181 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Project: yomna-journey-19-dec5 (Private 8-Person Family Birthday Exhibition)
+//
+// Collection: familyWishes
+// Document ID: Strictly allowlisted to the 7 family senders:
+//   'essam' | 'heba' | 'youssef' | 'islam' | 'salwa' | 'nada' | 'mohamed'
+//   (Note: 'yomna' is the honoree/reader and is NOT a valid document ID.)
+//
+// Fields (strict schema — zero additional fields permitted):
+//   - senderId:  string    (required, immutable, 4..7 chars)
+//                Must match the document ID path parameter and be in the 7-ID allowlist.
+//   - message:   string    (required, 3..220 chars, non-whitespace-only)
+//                Birthday & Thanaweya Amma encouragement wish for Yomna's Vault.
+//   - updatedAt: timestamp (required, must equal request.time / serverTimestamp())
+//                Server-enforced timestamp preventing client backdating or spoofing.
+//   - senderUid: string    (required, immutable, 1..128 chars)
+//                Opaque Firebase Anonymous Auth UID bound to request.auth.uid on create.
+//                Locks updates exclusively to the original sender session (wax-seal protection).
+//   - version:   int       (required, 1..25)
+//                Must be 1 on create; must increment by exactly +1 on update, capped at 25.
+//
+// Access Patterns & Assumptions:
+//   - Firebase Anonymous Authentication MUST be enabled on the project.
+//   - Reads use `allow get` ONLY on the 7 allowlisted document IDs (no collection `list`).
+//     Client must read/listen via 7 explicit `doc(db, 'familyWishes', id)` references.
+//   - No PII (email, phone, address, private credentials) is stored in this collection.
+//   - Deletes are strictly denied for all clients.
+//   - All other collections and subcollections are denied by default.
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the caller has a valid Firebase Authentication session (e.g., Anonymous Auth)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated caller matches a given UID
+    function isOwner(userId) {
+      return isAuthenticated() &&
+        userId is string &&
+        request.auth.uid == userId;
+    }
+
+    // Check if the authenticated caller is the original creator of the existing document
+    function isDocOwner() {
+      return 'senderUid' in resource.data &&
+        isOwner(resource.data.senderUid);
+    }
+
+    // Verify senderUid matches the authenticated caller on create
+    function uidUnchanged() {
+      return 'senderUid' in request.resource.data &&
+        isOwner(request.resource.data.senderUid);
+    }
+
+    // Ensure senderUid is never modified on update
+    function uidNotModified() {
+      return 'senderUid' in request.resource.data &&
+        'senderUid' in resource.data &&
+        request.resource.data.senderUid == resource.data.senderUid;
+    }
+
+    // Validate that all required fields exist in the incoming document
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that the incoming document contains ONLY allowed fields (prevents schema pollution)
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate string type and length bounds (prevents 1MB DoS payloads)
+    function validStringLength(value, minLen, maxLen) {
+      return value is string &&
+        value.size() >= minLen &&
+        value.size() <= maxLen;
+    }
+
+    // Validate that immutable fields are not modified on update
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ===============================================================
+    // Domain Helpers & Validators
+    // ===============================================================
+
+    // Strict allowlist of the 7 family sender IDs
+    function isAllowedSenderId(senderId) {
+      return senderId is string &&
+        senderId in ['essam', 'heba', 'youssef', 'islam', 'salwa', 'nada', 'mohamed'];
+    }
+
+    // Validate wish message: string, 3..220 chars, non-whitespace-only (trimmed >= 3 chars)
+    function isValidMessage(msg) {
+      return validStringLength(msg, 3, 220) &&
+        msg.trim().size() >= 3 &&
+        !msg.matches('^\\s*$');
+    }
+
+    // Domain Validator (called on BOTH create and update to eliminate Update Bypass)
+    function isValidFamilyWish(data, senderId) {
+      let allowedFields = ['senderId', 'message', 'updatedAt', 'senderUid', 'version'];
+      return hasOnlyAllowedFields(allowedFields) &&
+        hasRequiredFields(allowedFields) &&
+        isAllowedSenderId(senderId) &&
+        validStringLength(data.senderId, 4, 7) &&
+        data.senderId == senderId &&
+        isValidMessage(data.message) &&
+        data.updatedAt is timestamp &&
+        data.updatedAt == request.time &&
+        validStringLength(data.senderUid, 1, 128) &&
+        data.senderUid == request.auth.uid &&
+        data.version is int &&
+        data.version >= 1 &&
+        data.version <= 25;
+    }
+
+    // Strict state-transition and immutability validator for updates
+    function isValidWishUpdate() {
+      return areImmutableFieldsUnchanged(['senderId', 'senderUid']) &&
+        uidNotModified() &&
+        request.resource.data.senderId == resource.data.senderId &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['message', 'updatedAt', 'version']) &&
+        'version' in resource.data &&
+        resource.data.version is int &&
+        resource.data.version >= 1 &&
+        resource.data.version < 25 &&
+        request.resource.data.version == resource.data.version + 1;
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    match /familyWishes/{senderId} {
+      // Least-privilege read: allow direct `get` ONLY on the 7 allowlisted IDs for authenticated sessions.
+      // Deny collection-wide `list` queries so the collection cannot be enumerated.
+      allow get: if isAuthenticated() && isAllowedSenderId(senderId);
+      allow list: if false;
+
+      // Create: authenticated session, allowlisted ID, full schema validation, version must start at 1.
+      allow create: if isAuthenticated() &&
+        isAllowedSenderId(senderId) &&
+        uidUnchanged() &&
+        isValidFamilyWish(request.resource.data, senderId) &&
+        request.resource.data.version == 1;
+
+      // Update: ONLY the original creator UID can edit their sealed envelope,
+      // with full re-validation, immutable identity fields, and strict +1 version cap (<= 25).
+      allow update: if isDocOwner() &&
+        isAllowedSenderId(senderId) &&
+        isValidFamilyWish(request.resource.data, senderId) &&
+        isValidWishUpdate();
+
+      // Delete: strictly prohibited for all clients.
+      allow delete: if false;
+    }
+
+    // ===============================================================
+    // Default Deny Catch-All
+    // ===============================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

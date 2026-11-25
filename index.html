@@ -7,10 +7,10 @@
   <meta name="description" content="معرض فني ثلاثي الأبعاد وموشن جرافيك يحتفي برحلة 19 عاماً من الموهبة والطموح — تالتة ثانوي وعلى بُعد خطوة واحدة من كلية الفنون الجميلة (5 ديسمبر)." />
   <meta name="theme-color" content="#110c09" />
 
-  <!-- Cybersecurity & Privacy Hardening Headers -->
+  <!-- Cybersecurity & Privacy Hardening Headers (Strict CSP + Official Firebase Origins Only) -->
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
+    content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
   />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
@@ -561,7 +561,7 @@
             <canvas id="support-card-canvas" width="900" height="560" aria-label="معاينة بطاقة التهنئة والتشجيع ليمنى"></canvas>
           </div>
           <div class="family-vault-tracker" id="family-vault-tracker"></div>
-          <p class="support-privacy-note">🔒 رسالتك مشفّرة داخل الرابط وتُحفظ محلياً في صندوق يمنى بدون أي سيرفر خارجي أو تسريب بيانات.</p>
+          <p class="support-privacy-note" id="cloud-sync-status">🔄 جاري الاتصال بالسحابة المؤمّنة (Cloud Firestore) للمزامنة اللحظية مع موبايل يمنى...</p>
         </div>
       </div>
     </section>
@@ -699,7 +699,7 @@
     </div>
   </div>
 
-  <!-- Main Scripts (100% Self-Hosted, Strict CSP script-src 'self') -->
-  <script type="module" src="./app.js?v=6"></script>
+  <!-- Main Scripts (Strict CSP: Self-Hosted + Official Firebase Modular SDK) -->
+  <script type="module" src="./app.js?v=8"></script>
 </body>
 </html>
