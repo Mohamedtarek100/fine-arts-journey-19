@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>رحلة فنانة | 5 ديسمبر — العام التاسع عشر</title>
+  <meta name="description" content="معرض فني ثلاثي الأبعاد وموشن جرافيك يحتفي برحلة 19 عاماً من الموهبة والطموح — تالتة ثانوي وعلى بُعد خطوة واحدة من كلية الفنون الجميلة (5 ديسمبر)." />
+  <meta name="theme-color" content="#110c09" />
+
+  <!-- Artistic Arabic & Classical Museum Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- Three.js Import Map (Zero-Build GitHub Pages Ready) -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Top Cinema Scroll Progress Bar -->
+  <div class="scroll-progress-track" aria-hidden="true">
+    <div class="scroll-progress-fill" id="scroll-progress-fill"></div>
+  </div>
+
+  <!-- Subtle Warm Canvas Grain Overlay -->
+  <div class="canvas-grain" aria-hidden="true"></div>
+
+  <!-- Preloader Curtain -->
+  <div id="preloader" class="preloader" aria-live="polite">
+    <div class="preloader-inner">
+      <div class="preloader-seal">
+        <span class="seal-roman">XIX</span>
+        <span class="seal-ring"></span>
+        <span class="seal-ring-outer"></span>
+      </div>
+      <p class="preloader-en">OPENING THE 3D ATELIER • 5 DECEMBER</p>
+      <p class="preloader-ar">جاري تجهيز المعرض الفني ثلاثي الأبعاد والموشن جرافيك...</p>
+    </div>
+  </div>
+
+  <!-- Persistent Full-Screen 3D WebGL Atelier -->
+  <canvas id="atelier-canvas" aria-label="معرض فني ثلاثي الأبعاد تفاعلي"></canvas>
+
+  <!-- Subtle Motion-Graphics Golden Cursor Trail Overlay -->
+  <canvas id="sparkle-canvas" aria-hidden="true"></canvas>
+
+  <!-- Floating Museum Top Bar -->
+  <header class="topbar" id="topbar">
+    <a href="#hero" class="brand-mark" aria-label="العودة للبداية">
+      <span class="brand-monogram">XIX</span>
+      <span class="brand-sep"></span>
+      <span class="brand-text">
+        <span class="brand-en" id="nav-date-en">5 DECEMBER</span>
+        <span class="brand-ar" id="nav-title-ar">رحلة الفنانة</span>
+      </span>
+    </a>
+
+    <!-- Live Stage HUD Indicator (Desktop) -->
+    <div class="live-stage-hud" id="live-stage-hud" aria-live="polite">
+      <span class="hud-dot"></span>
+      <span id="hud-stage-label">الافتتاحية • 5 ديسمبر</span>
+    </div>
+
+    <div class="topbar-actions">
+      <button
+        id="guide-open-btn"
+        class="icon-pill"
+        type="button"
+        title="تعليمات كيفية التعامل مع الموقع"
+      >
+        <span class="pill-icon" aria-hidden="true">◈</span>
+        <span class="pill-label">دليل الموقع</span>
+      </button>
+
+      <button
+        id="audio-toggle"
+        class="icon-pill"
+        type="button"
+        aria-pressed="false"
+        title="تشغيل أو إيقاف الموسيقى الهادئة"
+      >
+        <span class="sound-bars" aria-hidden="true">
+          <i></i><i></i><i></i>
+        </span>
+        <span class="pill-label">موسيقى الأتيليه</span>
+      </button>
+
+      <a href="#horizon-goal" class="icon-pill gold-outline">
+        <span class="pill-label">الهدف: فنون جميلة ✦</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Vertical Chapter Navigation Rail (Desktop & Tablet) -->
+  <nav class="chapter-rail" aria-label="فصول الرحلة">
+    <button class="rail-dot active" data-target="hero" data-label="البداية" aria-label="البداية"></button>
+    <button class="rail-dot" data-target="guide-strip" data-label="دليل التعامل" aria-label="تعليمات التعامل مع الموقع"></button>
+    <button class="rail-dot" data-target="childhood" data-label="الطفولة" aria-label="الفصل الأول: الطفولة"></button>
+    <button class="rail-dot" data-target="passion" data-label="شغف الفن" aria-label="الفصل الثاني: شغف الفن"></button>
+    <button class="rail-dot" data-target="thanaweya" data-label="تالتة ثانوي" aria-label="الفصل الثالث: تالتة ثانوي"></button>
+    <button class="rail-dot" data-target="horizon-goal" data-label="خطوة للهدف" aria-label="أين هي الآن والهدف: كلية الفنون الجميلة"></button>
+    <button class="rail-dot" data-target="fine-arts" data-label="فنون جميلة" aria-label="الفصل الرابع: كلية الفنون الجميلة"></button>
+    <button class="rail-dot" data-target="gallery" data-label="المعرض" aria-label="معرض اللوحات"></button>
+    <button class="rail-dot" data-target="canvas-studio" data-label="لوحتكِ" aria-label="ارسمي لوحة العام الـ 19"></button>
+    <button class="rail-dot" data-target="finale" data-label="19 عاماً" aria-label="الخاتمة: عيد الميلاد الـ 19"></button>
+  </nav>
+
+  <!-- Main Scroll Choreography Container -->
+  <main id="journey-root">
+
+    <!-- ==================== SECTION 0: HERO / PROLOGUE ==================== -->
+    <section id="hero" class="section hero-section" data-stage="الافتتاحية • 5 ديسمبر">
+      <div class="hero-content reveal">
+        <p class="eyebrow-en" id="hero-eyebrow-en">3D INTERACTIVE EXHIBITION XIX • 5 DECEMBER</p>
+
+        <div class="date-badge">
+          <span class="badge-star">✦</span>
+          <span id="hero-badge-ar">5 ديسمبر • إتمام العام التاسع عشر</span>
+          <span class="badge-star">✦</span>
+        </div>
+
+        <h1 class="hero-title kinetic-heading">
+          <span id="hero-title-prefix">رحلة</span>
+          <span class="gold-shimmer" id="hero-artist-name">الفنانة</span>
+        </h1>
+
+        <p class="hero-subtitle" id="hero-subtitle-ar"></p>
+
+        <!-- Kinetic Status Ribbon right inside Hero -->
+        <div class="hero-status-ribbon">
+          <div class="ribbon-chip current">
+            <span class="pulse-dot"></span>
+            <span>الآن: تالتة ثانوي (19 عاماً)</span>
+          </div>
+          <span class="ribbon-arrow" aria-hidden="true">← خطوة واحدة ←</span>
+          <div class="ribbon-chip goal">
+            <span>✦ الهدف: كلية الفنون الجميلة</span>
+          </div>
+        </div>
+
+        <div class="hero-cta-group">
+          <button id="enter-exhibition-btn" class="btn-gold-seal" type="button">
+            <span class="btn-ar" id="hero-cta-ar">ابدئي الرحلة ثلاثية الأبعاد</span>
+            <span class="btn-en" id="hero-cta-en">ENTER THE 3D ATELIER</span>
+          </button>
+
+          <button id="hero-guide-btn" class="btn-glass-secondary" type="button">
+            <span>◈</span>
+            <span id="hero-guide-btn-ar">كيفية التعامل مع الموقع</span>
+          </button>
+        </div>
+
+        <p class="hero-hint">
+          <span class="hint-icon">✦</span>
+          اسحبي الخلفية لتدوير المشهد الـ 3D بحرية، ثم مرّري للأسفل لبدء الرحلة
+        </p>
+      </div>
+
+      <div class="scroll-cue" aria-hidden="true">
+        <span class="scroll-cue-text">SCROLL TO EXPLORE 3D</span>
+        <span class="scroll-cue-line"></span>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 0.5: INTERACTIVE VISITOR GUIDE STRIP ==================== -->
+    <section id="guide-strip" class="section guide-strip-section" data-stage="دليل التعامل مع الموقع">
+      <div class="section-header centered reveal">
+        <p class="eyebrow-en" id="guide-eyebrow-en">EXHIBITION VISITOR GUIDE • HOW TO EXPLORE</p>
+        <h2 class="section-title" id="guide-title-ar">دليل التعامل مع المعرض ثلاثي الأبعاد</h2>
+        <p class="section-lead" id="guide-subtitle-ar"></p>
+      </div>
+
+      <div class="guide-grid reveal" id="guide-cards-grid">
+        <!-- Populated from config.js with animated SVG motion icons -->
+      </div>
+    </section>
+
+    <!-- ==================== CHAPTERS 1..3 (CHILDHOOD, PASSION, THANAWEYA) ==================== -->
+    <div id="chapters-first-container"></div>
+
+    <!-- ==================== DEDICATED MOTION-GRAPHICS + 3D SECTION: NOW -> ONE STEP -> FINE ARTS GOAL ==================== -->
+    <section id="horizon-goal" class="section horizon-section" data-stage="المحطة الحالية ← خطوة نحو الفنون الجميلة">
+      <!-- Subtle Architectural SVG Motion-Graphic Backdrop -->
+      <svg class="horizon-arch-svg reveal" viewBox="0 0 800 320" fill="none" aria-hidden="true">
+        <path class="draw-path" d="M 80 300 L 80 180 C 80 65, 220 20, 400 20 C 580 20, 720 65, 720 180 L 720 300" stroke="url(#archGoldGrad)" stroke-width="1.4" />
+        <path class="draw-path delay-1" d="M 135 300 L 135 190 C 135 100, 250 62, 400 62 C 550 62, 665 100, 665 190 L 665 300" stroke="url(#archGoldGrad)" stroke-width="0.9" stroke-dasharray="6 6" />
+        <circle class="draw-path delay-2" cx="400" cy="140" r="56" stroke="url(#archGoldGrad)" stroke-width="0.8" />
+        <defs>
+          <linearGradient id="archGoldGrad" x1="80" y1="20" x2="720" y2="300" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#f8e3a4" stop-opacity="0.1" />
+            <stop offset="0.5" stop-color="#e5be63" stop-opacity="0.7" />
+            <stop offset="1" stop-color="#f8e3a4" stop-opacity="0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      <div class="section-header centered reveal">
+        <p class="eyebrow-en" id="horizon-eyebrow-en">CURRENT MILESTONE → THE ONE-STEP HORIZON</p>
+        <h2 class="section-title">
+          <span id="horizon-title-ar">أين تقف الآن.. وإلى أين يتجه الحلم</span>
+        </h2>
+        <p class="section-lead" id="horizon-subtitle-ar"></p>
+      </div>
+
+      <!-- Kinetic Progress Track (4 Milestones + Animated 90% Golden Light Beam) -->
+      <div class="horizon-progress-shell reveal" id="horizon-progress-shell">
+        <div class="horizon-progress-top">
+          <span class="hp-label" id="horizon-steps-label">خطوة واحدة فقط تفصل الحلم عن الحقيقة</span>
+          <span class="hp-percent">
+            <strong id="horizon-counter" data-target="90">0</strong>%
+            <small>من طريق الحلم</small>
+          </span>
+        </div>
+
+        <div class="hp-track">
+          <div class="hp-beam" id="horizon-beam">
+            <span class="hp-comet"></span>
+          </div>
+        </div>
+
+        <div class="hp-nodes" id="horizon-nodes">
+          <!-- Populated from config.js -->
+        </div>
+      </div>
+
+      <!-- 3D Dual Monument Comparison: Current Stage (Thanaweya) <-> One Step Bridge <-> Goal (Fine Arts) -->
+      <div class="horizon-monuments reveal">
+        <!-- RIGHT CARD: NOW (THANAWEYA AMMA) -->
+        <article class="monument-card monument-now js-tilt-frame">
+          <div class="monument-head">
+            <span class="monument-badge live">
+              <span class="pulse-dot"></span>
+              <span id="now-badge-ar"></span>
+            </span>
+            <span class="monument-en" id="now-badge-en"></span>
+          </div>
+          <h3 class="monument-title" id="now-title-ar"></h3>
+          <p class="monument-subtag" id="now-age-tag"></p>
+          <p class="monument-desc" id="now-desc-ar"></p>
+          <ul class="monument-list" id="now-highlights"></ul>
+        </article>
+
+        <!-- CENTER MOTION-GRAPHIC CONNECTOR: ONE STEP AWAY -->
+        <div class="one-step-bridge" aria-label="خطوة واحدة نحو الهدف">
+          <div class="bridge-orbit">
+            <span class="bridge-ring ring-a"></span>
+            <span class="bridge-ring ring-b"></span>
+            <div class="bridge-core">
+              <span class="bridge-num">1</span>
+              <span class="bridge-text-ar">خطوة واحدة</span>
+              <span class="bridge-text-en">ONE STEP</span>
+            </div>
+          </div>
+          <div class="bridge-flow-arrow" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+
+        <!-- LEFT CARD: THE GOAL (FACULTY OF FINE ARTS) -->
+        <article class="monument-card monument-goal js-tilt-frame">
+          <div class="monument-head">
+            <span class="monument-badge gold">
+              ✦ <span id="goal-badge-ar"></span>
+            </span>
+            <span class="monument-en" id="goal-badge-en"></span>
+          </div>
+          <h3 class="monument-title gold-shimmer" id="goal-title-ar"></h3>
+          <p class="monument-subtag en-italic" id="goal-title-en"></p>
+          <p class="monument-desc" id="goal-desc-ar"></p>
+          <div class="goal-milestones" id="goal-milestones"></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ==================== CHAPTER 4 (FACULTY OF FINE ARTS + DREAM PASS) ==================== -->
+    <div id="chapters-second-container"></div>
+
+    <!-- ==================== SECTION 5: INTERACTIVE 3D EXHIBITION GALLERY ==================== -->
+    <section id="gallery" class="section gallery-section" data-stage="معرض اللوحات 3D">
+      <div class="section-header centered reveal">
+        <p class="eyebrow-en">CURATED 3D EXHIBITION • ARCHIVE XIX</p>
+        <h2 class="section-title">معرض <span class="gold-shimmer">اللوحات والذكريات</span></h2>
+        <p class="section-lead">
+          تجوّلي بين إطارات المعرض الذهبية ثلاثية الأبعاد، واضغطي على اللوحة الوسطى لتأمل تفاصيلها عن قُرب
+        </p>
+      </div>
+
+      <div class="gallery-stage reveal">
+        <div class="gallery-3d-viewport" id="gallery-viewport" tabindex="0" aria-label="معرض اللوحات التفاعلي"></div>
+
+        <div class="gallery-controls">
+          <button class="gallery-nav-btn" id="gallery-prev" type="button" aria-label="اللوحة السابقة">
+            <span>→</span>
+            <small>السابقة</small>
+          </button>
+
+          <div class="gallery-plaque" id="gallery-plaque">
+            <span class="plaque-meta" id="plaque-meta"></span>
+            <h3 class="plaque-title" id="plaque-title"></h3>
+            <p class="plaque-desc" id="plaque-desc"></p>
+          </div>
+
+          <button class="gallery-nav-btn" id="gallery-next" type="button" aria-label="اللوحة التالية">
+            <span>←</span>
+            <small>التالية</small>
+          </button>
+        </div>
+
+        <div class="gallery-dots" id="gallery-dots" role="tablist" aria-label="اختيار اللوحة"></div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 6: INTERACTIVE MINI ATELIER CANVAS ==================== -->
+    <section id="canvas-studio" class="section studio-section" data-stage="لوحة العام التاسع عشر">
+      <div class="section-header centered reveal">
+        <p class="eyebrow-en">THE 19TH YEAR CANVAS • INTERACTIVE ATELIER</p>
+        <h2 class="section-title">لوحة <span class="gold-shimmer">العام التاسع عشر</span></h2>
+        <p class="section-lead">
+          لكل فنانةٍ توقيعها الخاص.. ارسمي أول خطٍ أو نجمةٍ أو أمنية لعامكِ التاسع عشر واحفظيها كذكرى من هذا اليوم
+        </p>
+      </div>
+
+      <div class="atelier-easel-wrapper reveal">
+        <div class="atelier-toolbar">
+          <div class="palette-swatches" role="group" aria-label="ألوان الباليتة">
+            <button class="swatch active" data-color="#e5c16c" style="--sw:#e5c16c" title="ذهبي عتيق" aria-label="لون ذهبي عتيق"></button>
+            <button class="swatch" data-color="#faf3e3" style="--sw:#faf3e3" title="عاجي دافئ" aria-label="لون عاجي دافئ"></button>
+            <button class="swatch" data-color="#c96f4b" style="--sw:#c96f4b" title="تيراكوتا" aria-label="لون تيراكوتا"></button>
+            <button class="swatch" data-color="#5d8aa8" style="--sw:#5d8aa8" title="أزرق كلاسيكي" aria-label="لون أزرق كلاسيكي"></button>
+            <button class="swatch" data-color="#7c9a76" style="--sw:#7c9a76" title="زيتوني هادئ" aria-label="لون زيتوني هادئ"></button>
+            <button class="swatch" data-color="#b84a5b" style="--sw:#b84a5b" title="عنابي فني" aria-label="لون عنابي فني"></button>
+          </div>
+
+          <div class="brush-controls">
+            <label class="brush-size-label" for="brush-size">
+              <span>الفرشاة</span>
+              <input id="brush-size" type="range" min="2" max="20" value="5" />
+            </label>
+
+            <button class="tool-btn" id="canvas-gold-dust" type="button" title="إضافة لمسة ذهب">
+              ✦ لمعة ذهب
+            </button>
+            <button class="tool-btn" id="canvas-undo" type="button">تراجع</button>
+            <button class="tool-btn" id="canvas-clear" type="button">مسح</button>
+            <button class="tool-btn gold-fill" id="canvas-save" type="button">حفظ اللوحة ↓</button>
+          </div>
+        </div>
+
+        <div class="ornate-canvas-frame">
+          <canvas id="sketch-canvas" width="900" height="520" aria-label="لوحة رسم تفاعلية"></canvas>
+          <div class="canvas-placeholder-hint" id="canvas-hint">
+            <span>✦</span> ارسمي هنا بالماوس أو بإصبعكِ <span>✦</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SECTION 7: FINALE — HAPPY 19TH BIRTHDAY ==================== -->
+    <section id="finale" class="section finale-section" data-stage="5 ديسمبر • العام التاسع عشر">
+      <div class="finale-card reveal">
+        <div class="finale-ornament" aria-hidden="true">
+          <span></span><i>✦</i><span></span>
+        </div>
+
+        <p class="eyebrow-en" id="finale-eyebrow-en">5 DECEMBER • HAPPY 19TH BIRTHDAY</p>
+
+        <div class="age-medallion" aria-label="19 عاماً">
+          <span class="age-num" id="finale-age">19</span>
+          <span class="age-unit">عاماً من الإبداع</span>
+        </div>
+
+        <h2 class="finale-title" id="finale-title-ar">كل عامٍ وأنتِ بخير وتألق</h2>
+        <p class="finale-subtitle" id="finale-subtitle-ar"></p>
+
+        <div class="candles-status" id="candles-status">
+          <span class="flame-dot"></span>
+          <span>19 شمعة ذهبية مضيئة في الخلفية ثلاثية الأبعاد</span>
+        </div>
+
+        <button id="wish-btn" class="btn-gold-seal finale-btn" type="button">
+          <span class="btn-ar" id="finale-btn-ar">تمنّي أمنية وأطفئي الـ 19 شمعة ✨</span>
+          <span class="btn-en">MAKE A WISH • BLOW OUT THE 19 CANDLES</span>
+        </button>
+
+        <div class="wish-letter" id="wish-letter" aria-hidden="true">
+          <div class="wish-letter-inner">
+            <h3 id="wish-heading-ar"></h3>
+            <p id="wish-message-ar"></p>
+            <div class="wish-signature">
+              <span class="sig-line"></span>
+              <p class="sig-ar" id="finale-sig-ar"></p>
+              <p class="sig-en" id="finale-sig-en"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== PRESTIGIOUS COPYRIGHT & COLOPHON FOOTER ==================== -->
+      <footer class="site-footer reveal" aria-label="حقوق النشر ومعلومات المعرض">
+        <div class="footer-inner">
+          <div class="footer-brand">
+            <span class="footer-monogram">XIX</span>
+            <div>
+              <strong id="footer-owner-ar">معرض رحلة العام التاسع عشر — 5 ديسمبر</strong>
+              <span class="footer-credit" id="footer-credit-ar">تصميم وتطوير بـ Three.js WebGL &amp; Motion Graphics</span>
+            </div>
+          </div>
+
+          <nav class="footer-links" aria-label="روابط سريعة">
+            <a href="#hero">البداية</a>
+            <button type="button" class="footer-link-btn" id="footer-guide-btn">دليل التعامل مع الموقع</button>
+            <a href="#horizon-goal">المحطة والهدف</a>
+            <a href="#gallery">المعرض</a>
+            <a href="#canvas-studio">لوحتكِ</a>
+            <a href="#finale">19 عاماً</a>
+          </nav>
+
+          <div class="footer-copyright">
+            <p class="copy-ar" id="footer-rights-ar"></p>
+            <p class="copy-en" id="footer-rights-en"></p>
+          </div>
+        </div>
+      </footer>
+    </section>
+  </main>
+
+  <!-- ==================== INTERACTIVE GUIDE MODAL ==================== -->
+  <div id="guide-modal" class="guide-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="guide-modal-title">
+    <div class="guide-modal-card">
+      <button class="modal-close-btn" id="guide-modal-close" type="button" aria-label="إغلاق الدليل">✕</button>
+      <div class="guide-modal-header">
+        <p class="eyebrow-en">INTERACTIVE 3D EXHIBITION • VISITOR INSTRUCTIONS</p>
+        <h2 id="guide-modal-title">تعليمات كيفية التعامل مع الموقع</h2>
+        <p class="modal-sub">كل ما تحتاجين معرفته للاستمتاع بالمشاهد ثلاثية الأبعاد والموشن جرافيك</p>
+      </div>
+      <div class="guide-modal-grid" id="guide-modal-grid"></div>
+      <div class="guide-modal-footer">
+        <button class="btn-gold-seal compact" id="guide-modal-start" type="button">
+          <span class="btn-ar">فهمت — ابدئي الاستكشاف ✦</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Museum Lightbox Modal -->
+  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="عرض اللوحة بالكامل">
+    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="إغلاق">✕</button>
+    <div class="lightbox-frame">
+      <img id="lightbox-img" src="" alt="" />
+      <div class="lightbox-caption">
+        <span class="plaque-meta" id="lightbox-meta"></span>
+        <h3 id="lightbox-title"></h3>
+        <p id="lightbox-desc"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Scripts -->
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
