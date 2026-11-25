@@ -3182,3 +3182,417 @@ body.portal-open .mobile-journey-dock {
     align-items: stretch;
   }
 }
+
+
+/* =========================================================================
+   VIP 8-MEMBER FAMILY CIRCLE, YOMNA'S WAX-SEALED VAULT, BRIDGES & CERTIFICATE
+   ========================================================================= */
+
+.incoming-gift-banner {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px 16px;
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.22), rgba(158, 209, 152, 0.14));
+  border: 1px solid rgba(238, 210, 138, 0.65);
+  color: var(--gold-100);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  animation: portalFadeIn 0.5s var(--ease-museum);
+}
+
+.incoming-gift-banner.visible {
+  display: flex;
+}
+
+/* 8-Member Exclusive Family Grid: Yomna Honoree full-width top + 7 Family Cards */
+.portal-roles-grid.family-grid-8 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.role-card.is-honoree {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 22px;
+  border-color: rgba(238, 210, 138, 0.52);
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.16), rgba(24, 17, 12, 0.88));
+}
+
+.role-card.is-honoree .role-card-text {
+  text-align: right;
+}
+
+.role-name-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+
+.role-card.is-honoree .role-name-line {
+  justify-content: flex-start;
+}
+
+.role-relation-paren {
+  font-family: var(--font-ar-body);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--role-accent, var(--gold-200));
+  opacity: 0.94;
+}
+
+/* Poetic Narrative Bridges connecting Chapters into ONE seamless story */
+.chapter-bridge {
+  width: 100%;
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 14px 20px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  pointer-events: auto;
+}
+
+.bridge-thread {
+  width: 1px;
+  height: 44px;
+  background: linear-gradient(180deg, rgba(214, 171, 82, 0.12), var(--gold-200), rgba(214, 171, 82, 0.12));
+}
+
+.bridge-caption {
+  padding: 9px 20px;
+  border-radius: 999px;
+  background: rgba(18, 13, 9, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(214, 171, 82, 0.28);
+  font-family: var(--font-ar-display);
+  font-size: clamp(0.96rem, 1.4vw, 1.14rem);
+  color: var(--gold-100);
+}
+
+/* ==================== YOMNA'S PRIVATE 7-ENVELOPE VAULT ==================== */
+.yomna-inbox-panel {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.vault-summary-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 22px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  background: var(--bg-glass-strong);
+  border: 1px solid var(--border-gold-strong);
+}
+
+.vault-count-pill {
+  font-family: var(--font-ar-display);
+  font-size: 1.18rem;
+  color: var(--gold-100);
+}
+
+.vault-hint-text {
+  font-size: 0.84rem;
+  color: var(--ivory-muted);
+}
+
+.yomna-envelopes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.wax-envelope-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 26px 20px 22px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(28, 20, 14, 0.86) 0%, rgba(15, 11, 8, 0.82) 100%);
+  backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in srgb, var(--env-accent, #e8c268) 45%, transparent);
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.56);
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 0.35s var(--ease-museum), box-shadow 0.35s ease, border-color 0.35s ease;
+}
+
+.wax-envelope-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 52px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--env-accent, #e8c268) 18%, transparent), transparent);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  pointer-events: none;
+}
+
+.wax-envelope-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--env-accent, var(--gold-200));
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.72), 0 0 32px color-mix(in srgb, var(--env-accent, #e8c268) 26%, transparent);
+}
+
+.wax-envelope-card.is-custom-delivered {
+  border-color: var(--env-accent, var(--gold-200));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.65), 0 0 28px color-mix(in srgb, var(--env-accent, #e8c268) 28%, transparent);
+}
+
+.env-wax-seal {
+  position: relative;
+  z-index: 2;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 30%, var(--env-accent, #e8c268), #6b4814);
+  color: #181008;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.55), inset 0 1px 2px rgba(255, 250, 230, 0.65);
+  transition: transform 0.35s var(--ease-museum);
+}
+
+.wax-envelope-card:hover .env-wax-seal {
+  transform: scale(1.08) rotate(8deg);
+}
+
+.env-wax-seal svg {
+  width: 24px;
+  height: 24px;
+}
+
+.env-sender-name {
+  font-family: var(--font-ar-display);
+  font-size: 1.45rem;
+  color: var(--ivory);
+  line-height: 1.25;
+}
+
+.env-sender-rel {
+  font-size: 0.8rem;
+  color: var(--env-accent, var(--gold-200));
+}
+
+.env-preview-snippet {
+  font-size: 0.84rem;
+  color: var(--ivory-muted);
+  line-height: 1.65;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.env-status-badge {
+  margin-top: 4px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background: rgba(214, 171, 82, 0.14);
+  border: 1px solid rgba(238, 210, 138, 0.38);
+  color: var(--gold-100);
+}
+
+.wax-envelope-card.is-custom-delivered .env-status-badge {
+  background: rgba(158, 209, 152, 0.18);
+  border-color: rgba(158, 209, 152, 0.55);
+  color: #daf5d7;
+}
+
+/* ==================== FAMILY SENDER DELIVERY DRAWER ==================== */
+.vault-send-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.vault-delivery-drawer {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.55s var(--ease-museum), opacity 0.45s ease, padding 0.4s ease;
+  border-radius: 16px;
+  background: rgba(158, 209, 152, 0.08);
+  border: 1px solid transparent;
+}
+
+.vault-delivery-drawer.open {
+  max-height: 360px;
+  opacity: 1;
+  padding: 16px;
+  border-color: rgba(158, 209, 152, 0.45);
+}
+
+.delivery-success-msg {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: #daf5d7;
+  margin-bottom: 6px;
+}
+
+.delivery-sub {
+  font-size: 0.8rem;
+  color: var(--ivory-muted);
+  margin-bottom: 12px;
+  line-height: 1.65;
+}
+
+.delivery-btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.delivery-wa-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #259b56, #1d7a44);
+  color: #ffffff;
+  font-family: var(--font-ar-body);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1px solid rgba(162, 240, 192, 0.45);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.delivery-wa-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(37, 155, 86, 0.35);
+}
+
+.copy-feedback {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--gold-200);
+  min-height: 18px;
+}
+
+.family-vault-tracker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.tracker-chip {
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 0.73rem;
+  background: rgba(255, 245, 224, 0.04);
+  border: 1px solid rgba(214, 171, 82, 0.24);
+  color: var(--ivory-muted);
+}
+
+.tracker-chip.sent {
+  background: rgba(158, 209, 152, 0.14);
+  border-color: rgba(158, 209, 152, 0.48);
+  color: #daf5d7;
+}
+
+/* Envelope Reader Modal & Finale Family Names + Certificate Button */
+.envelope-reader-card {
+  max-width: 640px;
+  text-align: center;
+}
+
+.letter-crest-wrap.small {
+  width: 68px;
+  height: 68px;
+  margin-bottom: 10px;
+}
+
+.letter-crest-wrap.small .letter-crest-icon {
+  width: 52px;
+  height: 52px;
+}
+
+.reader-head h2 {
+  font-family: var(--font-ar-display);
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  color: var(--gold-100);
+  margin-bottom: 4px;
+}
+
+.reader-body {
+  margin-top: 14px;
+}
+
+.reader-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.sig-family-names {
+  font-family: var(--font-ar-display);
+  font-size: 1.15rem;
+  color: var(--gold-100) !important;
+  letter-spacing: 0.02em;
+}
+
+.cert-btn {
+  margin-top: 14px;
+}
+
+.panel-hidden {
+  display: none !important;
+}
+
+/* Responsive overrides for 8-Member Grid & 7-Envelope Wall */
+@media (max-width: 980px) {
+  .yomna-envelopes-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .portal-roles-grid.family-grid-8 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .role-card.is-honoree {
+    padding: 13px 14px;
+    gap: 12px;
+  }
+
+  .yomna-envelopes-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .vault-send-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

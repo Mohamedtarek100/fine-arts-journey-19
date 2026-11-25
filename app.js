@@ -1,17 +1,16 @@
 /**
  * =========================================================================
- *  Main Application Logic — Hardened Cinema-Grade 3D Fine Arts Journey
- *  Includes:
- *  - 3D Personal Welcome Reception Portal (5 Personas + Custom Name Input)
- *  - Real-Time 3D Lighting Theme Morphing per Visitor Persona
- *  - Live 5 December Kinetic Countdown
- *  - Interactive Family Encouragement Card Studio (Local PNG Generator)
- *  - Strict OWASP Zero-innerHTML DOM Security & Anti-Clickjacking
+ *  Main Application Logic — VIP 8-Member Family 3D Fine Arts Exhibition
+ *  - Exclusive 8-Person Family Portal (Yomna, Essam, Heba, Youssef, Islam, Salwa, Nada, Mohamed)
+ *  - Real-Time 3D Atmosphere Morphing per Family Member
+ *  - Yomna's Private 7-Envelope Family Vault + Encrypted Gift Link Delivery (?gift=)
+ *  - Narrative Chapter Bridges + Official Family 19th-Year Certificate Generator
+ *  - 100% Zero-innerHTML OWASP Security Architecture
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=5';
-import { Atelier3DScene } from './scene3d.js?v=5';
+import { SITE_CONFIG } from './config.js?v=6';
+import { Atelier3DScene } from './scene3d.js?v=6';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -38,6 +37,10 @@ function deepFreeze(obj) {
 }
 
 const FROZEN_CONFIG = deepFreeze(SITE_CONFIG);
+const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
+const ALLOWED_SENDER_IDS = new Set(
+  FROZEN_CONFIG.reception.roles.filter((r) => !r.isHonoree).map((r) => r.id)
+);
 
 function safeAssetUrl(path, fallback = './assets/art/chapter4-fine-arts.jpg') {
   if (typeof path !== 'string') return fallback;
@@ -47,14 +50,13 @@ function safeAssetUrl(path, fallback = './assets/art/chapter4-fine-arts.jpg') {
   return fallback;
 }
 
-function sanitizeGuestName(raw) {
+function sanitizeText(raw, maxLen = 220) {
   if (typeof raw !== 'string') return '';
-  // Remove control chars, angle brackets, and collapse whitespace; limit to 32 chars
   return raw
-    .replace(/[\u0000-\u001F\u007F<>`"'\\]/g, '')
+    .replace(/[\u0000-\u001F\u007F<>`]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
-    .slice(0, 32);
+    .slice(0, maxLen);
 }
 
 function el(tag, className, text) {
@@ -70,6 +72,105 @@ function svgEl(tag, attrs = {}) {
     node.setAttribute(k, String(v));
   }
   return node;
+}
+
+/* ==================== ENCRYPTED-STYLE URL GIFT PAYLOAD ENCODER / DECODER ==================== */
+function encodeGiftToken(senderId, message) {
+  if (!ALLOWED_SENDER_IDS.has(senderId)) return '';
+  const cleanMsg = sanitizeText(message, 220);
+  if (!cleanMsg) return '';
+  const json = JSON.stringify({ f: senderId, m: cleanMsg, t: Date.now() });
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+
+function decodeGiftToken(token) {
+  try {
+    if (typeof token !== 'string' || token.length < 8 || token.length > 1400) return null;
+    if (!/^[A-Za-z0-9_-]+$/.test(token)) return null;
+    let b64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const parsed = JSON.parse(new TextDecoder().decode(bytes));
+    if (!parsed || typeof parsed !== 'object') return null;
+    if (!ALLOWED_SENDER_IDS.has(parsed.f)) return null;
+    const msg = sanitizeText(parsed.m, 220);
+    if (!msg) return null;
+    return { senderId: parsed.f, message: msg, timestamp: Number(parsed.t) || Date.now() };
+  } catch {
+    return null;
+  }
+}
+
+/* ==================== SAFE FAMILY VAULT STORE (LOCAL PERSISTENCE) ==================== */
+class FamilyVaultStore {
+  constructor() {
+    this.messages = this.load();
+  }
+
+  load() {
+    const clean = {};
+    try {
+      const raw = window.localStorage.getItem(VAULT_STORAGE_KEY);
+      if (!raw) return clean;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return clean;
+      for (const id of ALLOWED_SENDER_IDS) {
+        const entry = parsed[id];
+        if (entry && typeof entry.message === 'string') {
+          const msg = sanitizeText(entry.message, 220);
+          if (msg) {
+            clean[id] = {
+              message: msg,
+              timestamp: Number(entry.timestamp) || Date.now(),
+              custom: true,
+            };
+          }
+        }
+      }
+    } catch {
+      // Ignore storage access errors in private browsing
+    }
+    return clean;
+  }
+
+  save(senderId, message) {
+    if (!ALLOWED_SENDER_IDS.has(senderId)) return false;
+    const cleanMsg = sanitizeText(message, 220);
+    if (!cleanMsg) return false;
+    this.messages[senderId] = {
+      message: cleanMsg,
+      timestamp: Date.now(),
+      custom: true,
+    };
+    try {
+      window.localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(this.messages));
+    } catch {
+      // Fallback to in-memory vault
+    }
+    return true;
+  }
+
+  getEntry(role) {
+    if (this.messages[role.id]) {
+      return {
+        message: this.messages[role.id].message,
+        isCustom: true,
+      };
+    }
+    return {
+      message: role.defaultVaultMsg || '',
+      isCustom: false,
+    };
+  }
+
+  getCustomCount() {
+    return Object.keys(this.messages).length;
+  }
 }
 
 /* ==================== MOTION-GRAPHICS GOLDEN SPARKLE CURSOR TRAIL ==================== */
@@ -230,9 +331,19 @@ class AtelierAudio {
   playWishChime() {
     try {
       this.ensureContext();
-      const chord = [523.25, 659.25, 783.99, 987.77, 1174.66];
-      chord.forEach((f, idx) => {
-        setTimeout(() => this.playTone(f, 3.2, 0.32), idx * 110);
+      [523.25, 659.25, 783.99, 987.77, 1174.66].forEach((f, idx) => {
+        setTimeout(() => this.playTone(f, 3.0, 0.3), idx * 105);
+      });
+    } catch {
+      // Ignore if audio blocked
+    }
+  }
+
+  playEnvelopeChime() {
+    try {
+      this.ensureContext();
+      [392.0, 493.88, 587.33, 783.99].forEach((f, idx) => {
+        setTimeout(() => this.playTone(f, 2.1, 0.24), idx * 80);
       });
     } catch {
       // Ignore if audio blocked
@@ -240,7 +351,7 @@ class AtelierAudio {
   }
 }
 
-/* ==================== SAFE SVG CRESTS FOR VISITOR PERSONAS & GUIDE ==================== */
+/* ==================== SAFE SVG CRESTS FOR ALL 8 VIP FAMILY MEMBERS ==================== */
 function createRoleCrestSvg(type) {
   const svg = svgEl('svg', {
     viewBox: '0 0 24 24',
@@ -252,7 +363,6 @@ function createRoleCrestSvg(type) {
   });
 
   if (type === 'palette') {
-    // Yomna — Artist Palette Crest
     svg.append(
       svgEl('path', { d: 'M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 0 1 0-4h4.5A4.5 4.5 0 0 0 12 3Z' }),
       svgEl('circle', { cx: 7.5, cy: 10.5, r: 1 }),
@@ -260,28 +370,43 @@ function createRoleCrestSvg(type) {
       svgEl('circle', { cx: 15, cy: 8.5, r: 1 })
     );
   } else if (type === 'pillar') {
-    // Father — Classical Architectural Pillar & Crown Crest
     svg.append(
       svgEl('path', { d: 'M4 20h16M6 20V9M18 20V9M10 20V9M14 20V9' }),
       svgEl('path', { d: 'M3 9l9-5 9 5H3Z' })
     );
   } else if (type === 'blossom') {
-    // Mother — Botanical Jasmine Blossom & Warm Heart-Light Crest
     svg.append(
       svgEl('path', { d: 'M12 20c-4.5-3.2-7-6.3-7-9.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 7 3.4c0 3.3-2.5 6.4-7 9.6Z' }),
       svgEl('path', { d: 'M12 3v2M5 5l1.5 1.5M19 5l-1.5 1.5' })
     );
   } else if (type === 'shield') {
-    // Brother — Geometric Star Shield Crest
     svg.append(
       svgEl('path', { d: 'M12 3l7 3v5.5c0 4.6-3 8.1-7 9.5-4-1.4-7-4.9-7-9.5V6l7-3Z' }),
       svgEl('path', { d: 'M12 8.5l1.1 2.4 2.6.3-2 1.8.5 2.5-2.2-1.3-2.2 1.3.5-2.5-2-1.8 2.6-.3L12 8.5Z' })
     );
-  } else {
-    // Special Guest — Museum Wax-Seal Star Crest
+  } else if (type === 'compass') {
     svg.append(
       svgEl('circle', { cx: 12, cy: 12, r: 8.5 }),
-      svgEl('path', { d: 'M12 6.5l1.5 3.8 4 1.2-4 1.2L12 16.5l-1.5-3.8-4-1.2 4-1.2L12 6.5Z' })
+      svgEl('polygon', { points: '15.8 8.2 13.7 13.7 8.2 15.8 10.3 10.3 15.8 8.2' })
+    );
+  } else if (type === 'laurel') {
+    svg.append(
+      svgEl('path', { d: 'M7 19c-2.5-3-3-7.5-1-12 2.5 1 4.5 3.5 5 6.5' }),
+      svgEl('path', { d: 'M17 19c2.5-3 3-7.5 1-12-2.5 1-4.5 3.5-5 6.5' }),
+      svgEl('path', { d: 'M12 5v15' })
+    );
+  } else if (type === 'butterfly') {
+    svg.append(
+      svgEl('path', { d: 'M12 12c-2-4-6.5-6-7.5-3.2C3.7 11 6.5 13 9 13c-2.2.8-3.8 2.8-2.5 4.8 1.4 2 4.5.2 5.5-2.8Z' }),
+      svgEl('path', { d: 'M12 12c2-4 6.5-6 7.5-3.2.8 2.2-2 4.2-4.5 4.2 2.2.8 3.8 2.8 2.5 4.8-1.4 2-4.5.2-5.5-2.8Z' }),
+      svgEl('path', { d: 'M12 7v11' })
+    );
+  } else {
+    // nib (Architectural Drafting Pen & Star for Mohamed)
+    svg.append(
+      svgEl('path', { d: 'M12 3l6 8-6 10-6-10 6-8Z' }),
+      svgEl('circle', { cx: 12, cy: 11.5, r: 1.5 }),
+      svgEl('path', { d: 'M12 13v8' })
     );
   }
   return svg;
@@ -310,8 +435,8 @@ function createGuideIconSvg(type) {
     );
   } else if (type === 'touch') {
     svg.append(
-      svgEl('path', { d: 'M12 3v3M5.6 5.6l2.1 2.1M18.4 5.6l-2.1 2.1' }),
-      svgEl('path', { d: 'M9 12a3 3 0 0 1 6 0v5a4 4 0 0 1-4 4h-1a4 4 0 0 1-4-4v-2.5' })
+      svgEl('path', { d: 'M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5v-9Z' }),
+      svgEl('path', { d: 'M4.5 7.5 12 13l7.5-5.5' })
     );
   } else {
     svg.append(
@@ -341,6 +466,176 @@ function createGuideCard(step) {
   return card;
 }
 
+/* ==================== LUXURY KEEPSAKE CARD & FAMILY CERTIFICATE CANVAS RENDERERS ==================== */
+function wrapCanvasText(ctx, text, maxWidth, maxLines = 5) {
+  const words = text.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  for (const w of words) {
+    const candidate = line ? `${line} ${w}` : w;
+    if (ctx.measureText(candidate).width > maxWidth && line) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = candidate;
+    }
+  }
+  if (line) lines.push(line);
+  return lines.slice(0, maxLines);
+}
+
+function drawGoldenSupportCard(canvas, { senderDisplay, accentHex, message }) {
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width;
+  const H = canvas.height;
+  const accent = accentHex || '#e8c268';
+
+  const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 40, W * 0.5, H * 0.5, W * 0.68);
+  bg.addColorStop(0, '#271c13');
+  bg.addColorStop(0.65, '#150f0b');
+  bg.addColorStop(1, '#0d0907');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const beam = ctx.createLinearGradient(0, 0, W, H);
+  beam.addColorStop(0, 'rgba(232, 194, 104, 0.14)');
+  beam.addColorStop(0.5, 'rgba(232, 194, 104, 0.02)');
+  beam.addColorStop(1, 'rgba(232, 194, 104, 0.1)');
+  ctx.fillStyle = beam;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = accent;
+  ctx.lineWidth = 2.5;
+  ctx.strokeRect(24, 24, W - 48, H - 48);
+
+  ctx.strokeStyle = 'rgba(238, 210, 138, 0.32)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(36, 36, W - 72, H - 72);
+
+  for (let i = 0; i < 28; i++) {
+    const px = 55 + ((i * 173) % (W - 110));
+    const py = 55 + ((i * 97) % (H - 110));
+    ctx.fillStyle = i % 2 === 0 ? 'rgba(248, 224, 158, 0.45)' : 'rgba(255, 248, 232, 0.25)';
+    ctx.beginPath();
+    ctx.arc(px, py, (i % 3) + 1, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.textAlign = 'center';
+  ctx.direction = 'ltr';
+  ctx.fillStyle = accent;
+  ctx.font = '600 15px Cinzel, Georgia, serif';
+  ctx.fillText('5 DECEMBER  •  CHAPTER XIX  •  YOMNA PRIVATE FAMILY VAULT', W / 2, 78);
+
+  ctx.direction = 'rtl';
+  ctx.fillStyle = '#fbf0cf';
+  ctx.font = '700 34px Amiri, Georgia, serif';
+  ctx.fillText(`رسالة تهنئة وتشجيع إلى الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 134);
+
+  ctx.strokeStyle = 'rgba(232, 194, 104, 0.5)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.26, 158);
+  ctx.lineTo(W * 0.74, 158);
+  ctx.stroke();
+
+  const body = sanitizeText(message, 220) || 'كل سنة وأنتِ طيبة وبألف خير يا يمنى، وبالتوفيق نحو كلية الفنون الجميلة.';
+  ctx.fillStyle = '#f8f1e4';
+  ctx.font = '500 25px Cairo, sans-serif';
+  const lines = wrapCanvasText(ctx, body, W - 170, 5);
+  const startY = 222 + Math.max(0, (4 - lines.length) * 14);
+  lines.forEach((ln, i) => ctx.fillText(ln, W / 2, startY + i * 44));
+
+  ctx.fillStyle = 'rgba(214, 171, 82, 0.14)';
+  ctx.fillRect(W * 0.16, H - 144, W * 0.68, 42);
+  ctx.strokeStyle = 'rgba(232, 194, 104, 0.45)';
+  ctx.strokeRect(W * 0.16, H - 144, W * 0.68, 42);
+
+  ctx.fillStyle = '#eed28a';
+  ctx.font = '600 17px Cairo, sans-serif';
+  ctx.fillText('تالتة ثانوي (السنة الفاصلة)  ←  خطوة واحدة نحو كلية الفنون الجميلة ✦', W / 2, H - 117);
+
+  ctx.fillStyle = accent;
+  ctx.font = '700 24px Amiri, Georgia, serif';
+  ctx.fillText(`بكل فخر ودعاء — ${senderDisplay}`, W / 2, H - 62);
+}
+
+function downloadFamilyCertificatePng() {
+  const c = document.createElement('canvas');
+  c.width = 1200;
+  c.height = 820;
+  const ctx = c.getContext('2d');
+  const W = c.width;
+  const H = c.height;
+
+  const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 60, W * 0.5, H * 0.5, W * 0.65);
+  bg.addColorStop(0, '#2a1e14');
+  bg.addColorStop(0.65, '#150f0a');
+  bg.addColorStop(1, '#0b0806');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#e8c268';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
+  ctx.strokeStyle = 'rgba(238, 210, 138, 0.38)';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(48, 48, W - 96, H - 96);
+
+  ctx.textAlign = 'center';
+  ctx.direction = 'ltr';
+  ctx.fillStyle = '#d6ab52';
+  ctx.font = '600 18px Cinzel, Georgia, serif';
+  ctx.fillText('CERTIFICATE OF PRIDE & FUTURE ARTISTRY  •  5 DECEMBER  •  EDITION XIX', W / 2, 108);
+
+  ctx.direction = 'rtl';
+  ctx.fillStyle = '#fbf0cf';
+  ctx.font = '700 52px Amiri, Georgia, serif';
+  ctx.fillText('شهادة فخر ووسام العام التاسع عشر', W / 2, 192);
+
+  ctx.fillStyle = '#e8c268';
+  ctx.font = '700 62px Amiri, Georgia, serif';
+  ctx.fillText(`الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 290);
+
+  ctx.strokeStyle = 'rgba(232, 194, 104, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(W * 0.28, 326);
+  ctx.lineTo(W * 0.72, 326);
+  ctx.stroke();
+
+  ctx.fillStyle = '#f8f1e4';
+  ctx.font = '500 28px Cairo, sans-serif';
+  ctx.fillText('تقديراً لموهبتها الفنية الراقية وإصرارها في سنة تالتة ثانوي الفاصلة', W / 2, 396);
+  ctx.fillText('وبثقة كاملة في وصولها قريباً بإذن الله إلى بوابة كلية الفنون الجميلة', W / 2, 448);
+
+  ctx.fillStyle = 'rgba(214, 171, 82, 0.14)';
+  ctx.fillRect(W * 0.2, 505, W * 0.6, 56);
+  ctx.strokeStyle = 'rgba(238, 210, 138, 0.5)';
+  ctx.strokeRect(W * 0.2, 505, W * 0.6, 56);
+  ctx.fillStyle = '#fbf0cf';
+  ctx.font = '700 22px Cairo, sans-serif';
+  ctx.fillText('✦ تالتة ثانوي الآن ← خطوة واحدة فقط نحو كلية الفنون الجميلة ✦', W / 2, 541);
+
+  ctx.fillStyle = '#d6ab52';
+  ctx.font = '600 20px Cairo, sans-serif';
+  ctx.fillText('مُهداة وموقّعة بكل فخر ومحبة من عائلتكِ:', W / 2, 632);
+
+  ctx.fillStyle = '#fbf0cf';
+  ctx.font = '700 32px Amiri, Georgia, serif';
+  ctx.fillText(FROZEN_CONFIG.familySignOffAr, W / 2, 688);
+
+  ctx.direction = 'ltr';
+  ctx.fillStyle = 'rgba(238, 210, 138, 0.55)';
+  ctx.font = '500 14px Cinzel, Georgia, serif';
+  ctx.fillText('OFFICIAL FAMILY KEEPSAKE  •  5 DECEMBER 2026  •  CHAPTER XIX', W / 2, 748);
+
+  const link = document.createElement('a');
+  link.download = `Yomna-19th-Year-Family-Certificate.png`;
+  link.href = c.toDataURL('image/png');
+  link.click();
+}
+
 /* ==================== LIVE 5 DECEMBER COUNTDOWN ==================== */
 function initBirthdayCountdown() {
   const container = document.getElementById('portal-countdown-units');
@@ -348,8 +643,7 @@ function initBirthdayCountdown() {
   const targetMs = Date.parse(FROZEN_CONFIG.birthdayTargetISO);
 
   const renderTick = () => {
-    const now = Date.now();
-    const diff = targetMs - now;
+    const diff = targetMs - Date.now();
     if (diff <= 0) {
       container.replaceChildren(
         el('span', 'cd-live-celebration', '✦ اليوم 5 ديسمبر — كل عامٍ ويمنى بألف خير! ✦')
@@ -381,198 +675,289 @@ function initBirthdayCountdown() {
   window.setInterval(renderTick, 1000);
 }
 
-/* ==================== FAMILY ENCOURAGEMENT CARD STUDIO (LOCAL PNG GENERATOR) ==================== */
-function initSupportCardStudio() {
+/* ==================== YOMNA'S PRIVATE VAULT + FAMILY SENDER STUDIO ==================== */
+function initFamilyVaultExperience(vaultStore, audio) {
+  const familyRoles = FROZEN_CONFIG.reception.roles.filter((r) => !r.isHonoree);
+  const inboxPanel = document.getElementById('yomna-inbox-panel');
+  const senderPanel = document.getElementById('family-sender-panel');
+  const envelopesGrid = document.getElementById('yomna-envelopes-grid');
+  const countPill = document.getElementById('vault-count-pill');
+
+  const vaultEyebrow = document.getElementById('vault-eyebrow-en');
+  const vaultTitle = document.getElementById('vault-title-ar');
+  const vaultSubtitle = document.getElementById('vault-subtitle-ar');
+
   const canvas = document.getElementById('support-card-canvas');
   const presetsWrap = document.getElementById('support-presets');
   const textarea = document.getElementById('support-message-input');
   const senderLabel = document.getElementById('support-sender-label');
+  const sendBtn = document.getElementById('vault-send-btn');
   const downloadBtn = document.getElementById('support-download-btn');
-  if (!canvas || !presetsWrap || !textarea) return { updatePersona: () => {} };
+  const deliveryDrawer = document.getElementById('vault-delivery-drawer');
+  const waBtn = document.getElementById('vault-whatsapp-btn');
+  const copyBtn = document.getElementById('vault-copy-link-btn');
+  const copyFeedback = document.getElementById('copy-feedback');
+  const trackerWrap = document.getElementById('family-vault-tracker');
 
-  const ctx = canvas.getContext('2d');
-  let currentSender = 'يمنى';
-  let currentAccent = '#e8c268';
-  let currentMsg = FROZEN_CONFIG.reception.roles[0].cardPresets[0];
+  // Envelope Reader Modal elements
+  const readerModal = document.getElementById('envelope-reader-modal');
+  const readerClose = document.getElementById('reader-close-btn');
+  const readerCrest = document.getElementById('reader-crest-icon');
+  const readerStatus = document.getElementById('reader-status-pill');
+  const readerTitle = document.getElementById('reader-sender-title');
+  const readerTagEn = document.getElementById('reader-tag-en');
+  const readerBody = document.getElementById('reader-message-text');
+  const readerSaveBtn = document.getElementById('reader-save-png-btn');
 
-  function wrapArabicLines(text, maxWidth) {
-    const words = text.split(/\s+/).filter(Boolean);
-    const lines = [];
-    let line = '';
-    for (const w of words) {
-      const candidate = line ? `${line} ${w}` : w;
-      if (ctx.measureText(candidate).width > maxWidth && line) {
-        lines.push(line);
-        line = w;
-      } else {
-        line = candidate;
-      }
-    }
-    if (line) lines.push(line);
-    return lines.slice(0, 5);
-  }
+  let activeRole = FROZEN_CONFIG.reception.roles[0];
+  let activeReaderRole = familyRoles[0];
+  let latestGiftUrl = '';
 
-  function renderCard() {
-    const W = canvas.width;
-    const H = canvas.height;
+  const openEnvelopeReader = (role) => {
+    activeReaderRole = role;
+    const entry = vaultStore.getEntry(role);
+    audio.playEnvelopeChime();
 
-    // Deep Warm Obsidian-Gold Background
-    const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 40, W * 0.5, H * 0.5, W * 0.65);
-    bg.addColorStop(0, '#271c13');
-    bg.addColorStop(0.65, '#150f0b');
-    bg.addColorStop(1, '#0d0907');
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, W, H);
+    readerCrest.replaceChildren(createRoleCrestSvg(role.icon));
+    readerStatus.textContent = entry.isCustom
+      ? '✦ رسالة خاصة مرسلة حديثاً لصندوقكِ'
+      : '✦ ظرف مختوم بالشمع الذهبي من العائلة';
+    readerTitle.textContent = role.displayFullAr;
+    readerTagEn.textContent = role.tagEn;
+    readerBody.textContent = entry.message;
 
-    // Subtle Diagonal Sunbeam Glow
-    const beam = ctx.createLinearGradient(0, 0, W, H);
-    beam.addColorStop(0, 'rgba(232, 194, 104, 0.14)');
-    beam.addColorStop(0.5, 'rgba(232, 194, 104, 0.02)');
-    beam.addColorStop(1, 'rgba(232, 194, 104, 0.1)');
-    ctx.fillStyle = beam;
-    ctx.fillRect(0, 0, W, H);
-
-    // Outer & Inner Ornate Antique Gold Museum Borders
-    ctx.strokeStyle = currentAccent;
-    ctx.lineWidth = 2.5;
-    ctx.strokeRect(24, 24, W - 48, H - 48);
-
-    ctx.strokeStyle = 'rgba(238, 210, 138, 0.32)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(36, 36, W - 72, H - 72);
-
-    // Subtle Stardust Motes
-    for (let i = 0; i < 28; i++) {
-      const px = 55 + ((i * 173) % (W - 110));
-      const py = 55 + ((i * 97) % (H - 110));
-      ctx.fillStyle = i % 2 === 0 ? 'rgba(248, 224, 158, 0.45)' : 'rgba(255, 248, 232, 0.25)';
-      ctx.beginPath();
-      ctx.arc(px, py, (i % 3) + 1, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Header Museum Inscription
-    ctx.textAlign = 'center';
-    ctx.direction = 'ltr';
-    ctx.fillStyle = currentAccent;
-    ctx.font = '600 15px Cinzel, Georgia, serif';
-    ctx.fillText('5 DECEMBER  •  CHAPTER XIX  •  FACULTY OF FINE ARTS DREAM', W / 2, 78);
-
-    // Arabic Dedication Header
-    ctx.direction = 'rtl';
-    ctx.fillStyle = '#fbf0cf';
-    ctx.font = '700 34px Amiri, Georgia, serif';
-    ctx.fillText(`رسالة دعم وتشجيع إلى الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 136);
-
-    // Delicate Gold Divider
-    ctx.strokeStyle = 'rgba(232, 194, 104, 0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(W * 0.28, 160);
-    ctx.lineTo(W * 0.72, 160);
-    ctx.stroke();
-
-    // Main Encouragement Message
-    const displayText = (currentMsg || '').trim() || 'كل التوفيق والنجاح في تالتة ثانوي نحو كلية الفنون الجميلة بإذن الله.';
-    ctx.fillStyle = '#f8f1e4';
-    ctx.font = '500 26px Cairo, sans-serif';
-    const lines = wrapArabicLines(displayText, W - 180);
-    const lineHeight = 46;
-    const startY = 232 + Math.max(0, (4 - lines.length) * 16);
-    lines.forEach((ln, i) => {
-      ctx.fillText(ln, W / 2, startY + i * lineHeight);
-    });
-
-    // Bottom Mission Pill + Sender Signature
-    ctx.fillStyle = 'rgba(214, 171, 82, 0.14)';
-    ctx.fillRect(W * 0.18, H - 146, W * 0.64, 42);
-    ctx.strokeStyle = 'rgba(232, 194, 104, 0.45)';
-    ctx.strokeRect(W * 0.18, H - 146, W * 0.64, 42);
-
-    ctx.fillStyle = '#eed28a';
-    ctx.font = '600 17px Cairo, sans-serif';
-    ctx.fillText('تالتة ثانوي (السنة الفاصلة)  ←  خطوة واحدة نحو كلية الفنون الجميلة ✦', W / 2, H - 119);
-
-    ctx.fillStyle = currentAccent;
-    ctx.font = '700 23px Amiri, Georgia, serif';
-    ctx.fillText(`بكل فخر ودعم — ${currentSender}`, W / 2, H - 64);
-  }
-
-  textarea.addEventListener('input', () => {
-    currentMsg = sanitizeGuestName(textarea.value) ? textarea.value.slice(0, 180) : '';
-    document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
-    renderCard();
-  });
-
-  if (downloadBtn) {
-    downloadBtn.addEventListener('click', () => {
-      renderCard();
-      const link = document.createElement('a');
-      link.download = `Support-Card-For-Yomna-${Date.now()}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    });
-  }
-
-  const updatePersona = (role, customName) => {
-    currentSender = role.requiresName && customName ? customName : role.labelAr;
-    currentAccent = role.accentHex || '#e8c268';
-    if (senderLabel) senderLabel.textContent = currentSender;
-
-    const presets = role.cardPresets || [];
-    presetsWrap.replaceChildren(
-      ...presets.map((text, idx) => {
-        const btn = el('button', `preset-btn${idx === 0 ? ' active' : ''}`, text);
-        btn.type = 'button';
-        btn.addEventListener('click', () => {
-          presetsWrap.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
-          btn.classList.add('active');
-          textarea.value = text;
-          currentMsg = text;
-          renderCard();
-        });
-        return btn;
-      })
-    );
-
-    if (presets[0]) {
-      textarea.value = presets[0];
-      currentMsg = presets[0];
-    }
-    renderCard();
+    readerModal.classList.add('open');
+    readerModal.setAttribute('aria-hidden', 'false');
   };
 
-  renderCard();
-  return { updatePersona };
+  const closeEnvelopeReader = () => {
+    readerModal.classList.remove('open');
+    readerModal.setAttribute('aria-hidden', 'true');
+  };
+
+  readerClose.addEventListener('click', closeEnvelopeReader);
+  readerModal.addEventListener('click', (e) => {
+    if (e.target === readerModal) closeEnvelopeReader();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && readerModal.classList.contains('open')) closeEnvelopeReader();
+  });
+
+  readerSaveBtn.addEventListener('click', () => {
+    const entry = vaultStore.getEntry(activeReaderRole);
+    const tmp = document.createElement('canvas');
+    tmp.width = 900;
+    tmp.height = 560;
+    drawGoldenSupportCard(tmp, {
+      senderDisplay: activeReaderRole.displayFullAr,
+      accentHex: activeReaderRole.accentHex,
+      message: entry.message,
+    });
+    const link = document.createElement('a');
+    link.download = `Message-From-${activeReaderRole.id}-To-Yomna.png`;
+    link.href = tmp.toDataURL('image/png');
+    link.click();
+  });
+
+  const renderYomnaEnvelopes = () => {
+    const customCount = vaultStore.getCustomCount();
+    countPill.textContent =
+      customCount > 0
+        ? `✦ 7 أظرف عائلية في صندوقكِ (${customCount} مخصّصة وصلت حديثاً لكِ)`
+        : '✦ 7 أظرف ذهبية مختومة من عائلتكِ بانتظاركِ يا يمنى';
+
+    envelopesGrid.replaceChildren(
+      ...familyRoles.map((role) => {
+        const entry = vaultStore.getEntry(role);
+        const card = el(
+          'button',
+          `wax-envelope-card${entry.isCustom ? ' is-custom-delivered' : ''}`
+        );
+        card.type = 'button';
+        card.style.setProperty('--env-accent', role.accentHex);
+
+        const seal = el('div', 'env-wax-seal');
+        seal.setAttribute('aria-hidden', 'true');
+        seal.appendChild(createRoleCrestSvg(role.icon));
+
+        const badge = el(
+          'span',
+          'env-status-badge',
+          entry.isCustom ? '✦ رسالة خاصة وصلت لكِ — اضغطي للفتح' : '✦ ظرف مختوم — اضغطي لفتح الشمع'
+        );
+
+        card.append(
+          seal,
+          el('strong', 'env-sender-name', role.nameAr),
+          el('span', 'env-sender-rel', `(${role.relationAr})`),
+          el('p', 'env-preview-snippet', entry.message),
+          badge
+        );
+
+        card.addEventListener('click', () => openEnvelopeReader(role));
+        return card;
+      })
+    );
+  };
+
+  const renderFamilyTracker = () => {
+    trackerWrap.replaceChildren(
+      ...familyRoles.map((role) => {
+        const isSent = Boolean(vaultStore.messages[role.id]);
+        return el(
+          'span',
+          `tracker-chip${isSent ? ' sent' : ''}`,
+          isSent ? `✓ ${role.nameAr} (وصلت لصندوق يمنى)` : `✦ ${role.nameAr}`
+        );
+      })
+    );
+  };
+
+  const renderSenderPreview = () => {
+    if (!canvas || activeRole.isHonoree) return;
+    drawGoldenSupportCard(canvas, {
+      senderDisplay: activeRole.displayFullAr,
+      accentHex: activeRole.accentHex,
+      message: textarea.value,
+    });
+  };
+
+  textarea.addEventListener('input', () => {
+    presetsWrap.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+    renderSenderPreview();
+  });
+
+  sendBtn.addEventListener('click', () => {
+    if (activeRole.isHonoree) return;
+    const msg = sanitizeText(textarea.value, 220);
+    if (!msg) return;
+
+    vaultStore.save(activeRole.id, msg);
+    audio.playWishChime();
+    renderYomnaEnvelopes();
+    renderFamilyTracker();
+
+    const token = encodeGiftToken(activeRole.id, msg);
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    latestGiftUrl = `${baseUrl}?gift=${encodeURIComponent(token)}`;
+
+    const waText = `🎁 رسالة تهنئة وتشجيع خاصة إلى يمنى في عيد ميلادها الـ 19 من ${activeRole.displayFullAr}:\nافتحي الظرف المختوم مباشرة داخل صندوقكِ في المعرض الـ 3D:\n${latestGiftUrl}`;
+    waBtn.href = `https://wa.me/?text=${encodeURIComponent(waText)}`;
+
+    deliveryDrawer.classList.add('open');
+    deliveryDrawer.setAttribute('aria-hidden', 'false');
+    copyFeedback.textContent = '';
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    if (!latestGiftUrl) return;
+    try {
+      await navigator.clipboard.writeText(latestGiftUrl);
+      copyFeedback.textContent = '✓ تم نسخ رابط الظرف المشفّر! ابعته ليمنى وهيظهر فوراً جوه صندوقها.';
+    } catch {
+      copyFeedback.textContent = latestGiftUrl;
+    }
+  });
+
+  downloadBtn.addEventListener('click', () => {
+    if (activeRole.isHonoree) return;
+    renderSenderPreview();
+    const link = document.createElement('a');
+    link.download = `Support-Card-${activeRole.id}-For-Yomna.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  });
+
+  const updateForPersona = (role) => {
+    activeRole = role;
+    deliveryDrawer.classList.remove('open');
+    deliveryDrawer.setAttribute('aria-hidden', 'true');
+    copyFeedback.textContent = '';
+
+    if (role.isHonoree) {
+      inboxPanel.classList.remove('panel-hidden');
+      senderPanel.classList.add('panel-hidden');
+      vaultEyebrow.textContent = "YOMNA'S PRIVATE FAMILY VAULT • 7 WAX-SEALED WISHES";
+      vaultTitle.replaceChildren(
+        document.createTextNode('صندوق رسائل '),
+        el('span', 'gold-shimmer', 'عائلتكِ الخاص بكِ يا يمنى')
+      );
+      vaultSubtitle.textContent =
+        'سبعة أظرف ذهبية مختومة من والدكِ ووالدتكِ وإخوتكِ وخالتكِ وأولاد خالتكِ — كلها محبة ودعاء وتشجيع لكِ في تالتة ثانوي نحو كلية الفنون الجميلة';
+      renderYomnaEnvelopes();
+    } else {
+      inboxPanel.classList.add('panel-hidden');
+      senderPanel.classList.remove('panel-hidden');
+      vaultEyebrow.textContent = "SEND DIRECTLY TO YOMNA'S PRIVATE VAULT";
+      vaultTitle.replaceChildren(
+        document.createTextNode('أرسل تهنئتك إلى '),
+        el('span', 'gold-shimmer', 'صندوق يمنى الخاص')
+      );
+      vaultSubtitle.textContent =
+        'اكتب كلمة تهنئة وتشجيع ليمنى في سنتها الفاصلة (تالتة ثانوي)، وبضغطة واحدة تُختم بالشمع الذهبي وتصل مباشرة إلى صندوقها الخاص مع إمكانية إرسال الظرف لها على واتساب';
+
+      senderLabel.textContent = role.displayFullAr;
+      const existing = vaultStore.getEntry(role);
+      const presets = role.cardPresets || [];
+
+      presetsWrap.replaceChildren(
+        ...presets.map((text, idx) => {
+          const btn = el('button', `preset-btn${!existing.isCustom && idx === 0 ? ' active' : ''}`, text);
+          btn.type = 'button';
+          btn.addEventListener('click', () => {
+            presetsWrap.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            textarea.value = text;
+            renderSenderPreview();
+          });
+          return btn;
+        })
+      );
+
+      textarea.value = existing.isCustom ? existing.message : (presets[0] || role.defaultVaultMsg);
+      renderSenderPreview();
+      renderFamilyTracker();
+    }
+  };
+
+  renderYomnaEnvelopes();
+  renderFamilyTracker();
+  return { updateForPersona, openEnvelopeReader };
 }
 
-/* ==================== 3D PERSONAL WELCOME RECEPTION PORTAL ==================== */
-function initReceptionPortal(scene3d, audio, supportStudio) {
+/* ==================== 3D EXCLUSIVE 8-MEMBER FAMILY RECEPTION PORTAL ==================== */
+function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
   const cfg = FROZEN_CONFIG.reception;
   const portal = document.getElementById('reception-portal');
   const shell = portal?.querySelector('.portal-shell');
   const stepSelect = document.getElementById('portal-step-select');
   const stepLetter = document.getElementById('portal-step-letter');
   const rolesGrid = document.getElementById('portal-roles-grid');
-  const nameBox = document.getElementById('portal-name-box');
-  const nameInput = document.getElementById('guest-name-input');
-  const nameError = document.getElementById('portal-name-error');
   const continueBtn = document.getElementById('portal-continue-btn');
   const enterSiteBtn = document.getElementById('portal-enter-site-btn');
   const backBtn = document.getElementById('portal-back-btn');
   const switchBtn = document.getElementById('visitor-switch-btn');
   const visitorPillLabel = document.getElementById('visitor-pill-label');
   const heroPersonalNote = document.getElementById('hero-personal-note');
+  const giftBanner = document.getElementById('incoming-gift-banner');
+  const giftBannerText = document.getElementById('incoming-gift-text');
 
   if (!portal || !rolesGrid) return;
 
   document.getElementById('portal-eyebrow-en').textContent = cfg.eyebrowEn;
   document.getElementById('portal-title-ar').textContent = cfg.titleAr;
   document.getElementById('portal-subtitle-ar').textContent = cfg.subtitleAr;
-  nameInput.placeholder = cfg.otherPlaceholderAr;
 
   let selectedRole = cfg.roles[0];
-  let customGuestName = '';
+
+  if (incomingGift) {
+    const senderRole = cfg.roles.find((r) => r.id === incomingGift.senderId);
+    if (senderRole && giftBanner && giftBannerText) {
+      giftBannerText.textContent = `وصل ظرف تهنئة خاص جديد من ${senderRole.displayFullAr} — تم حفظه تلقائياً داخل صندوق يمنى الخاص!`;
+      giftBanner.classList.add('visible');
+      giftBanner.setAttribute('aria-hidden', 'false');
+    }
+  }
 
   const applyThemeColors = (role) => {
     document.documentElement.style.setProperty('--portal-accent', role.accentHex);
@@ -580,12 +965,12 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
     if (scene3d) scene3d.setVisitorTheme(role.themeKey);
   };
 
-  const formatPersonalText = (template, guestName) =>
-    template.replaceAll('{NAME}', guestName || 'ضيفنا العزيز');
-
-  // Build 5 Sculpted Role Persona Cards (ZERO innerHTML)
+  // Build 8 Exclusive VIP Family Cards with Exact (Parenthesized Relation) Styling
   const roleButtons = cfg.roles.map((role, idx) => {
-    const btn = el('button', `role-card${role.requiresName ? ' is-other' : ''}${idx === 0 ? ' selected' : ''}`);
+    const btn = el(
+      'button',
+      `role-card${role.isHonoree ? ' is-honoree' : ''}${idx === 0 ? ' selected' : ''}`
+    );
     btn.type = 'button';
     btn.setAttribute('role', 'radio');
     btn.setAttribute('aria-checked', String(idx === 0));
@@ -596,12 +981,13 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
     crest.appendChild(createRoleCrestSvg(role.icon));
 
     const textCol = el('div', 'role-card-text');
-    textCol.append(
-      el('span', 'role-label', role.labelAr),
-      el('span', 'role-sublabel', role.sublabelAr),
-      el('span', 'role-tag-en', role.tagEn)
+    const nameLine = el('span', 'role-name-line');
+    nameLine.append(
+      el('span', 'role-label', role.nameAr),
+      el('span', 'role-relation-paren', `(${role.relationAr})`)
     );
 
+    textCol.append(nameLine, el('span', 'role-tag-en', role.tagEn));
     btn.append(crest, textCol);
 
     const selectThisRole = () => {
@@ -612,14 +998,6 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
         b.setAttribute('aria-checked', String(isSel));
       });
       applyThemeColors(role);
-
-      const needsName = Boolean(role.requiresName);
-      nameBox.classList.toggle('visible', needsName);
-      nameBox.setAttribute('aria-hidden', String(!needsName));
-      nameError.textContent = '';
-      if (needsName) {
-        window.setTimeout(() => nameInput.focus(), 120);
-      }
     };
 
     btn.addEventListener('click', selectThisRole);
@@ -633,55 +1011,27 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
   rolesGrid.replaceChildren(...roleButtons);
   applyThemeColors(selectedRole);
 
-  // Sync default persona into Hero & Support Studio immediately
-  const applyPersonaToMainSite = (role, guestName) => {
-    const badgeText = role.requiresName && guestName ? `✨ ${guestName}` : role.badgeAr;
-    if (visitorPillLabel) visitorPillLabel.textContent = badgeText;
-    if (heroPersonalNote) {
-      heroPersonalNote.textContent = formatPersonalText(role.heroNoteAr, guestName);
-    }
+  const applyPersonaToMainSite = (role) => {
+    if (visitorPillLabel) visitorPillLabel.textContent = role.badgeAr;
+    if (heroPersonalNote) heroPersonalNote.textContent = role.heroNoteAr;
     applyThemeColors(role);
-    supportStudio.updatePersona(role, guestName);
+    vaultExperience.updateForPersona(role);
   };
 
-  applyPersonaToMainSite(selectedRole, '');
+  applyPersonaToMainSite(selectedRole);
 
   const showPersonalizedLetter = () => {
-    if (selectedRole.requiresName) {
-      const cleaned = sanitizeGuestName(nameInput.value);
-      if (!cleaned) {
-        nameError.textContent = cfg.otherErrorAr;
-        nameInput.focus();
-        return;
-      }
-      customGuestName = cleaned;
-      nameError.textContent = '';
-    } else {
-      customGuestName = '';
-    }
-
     const crestWrap = document.getElementById('letter-crest-icon');
     crestWrap.replaceChildren(createRoleCrestSvg(selectedRole.icon));
 
-    const pillText =
-      selectedRole.requiresName && customGuestName
-        ? `✨ ضيف الشرف • ${customGuestName}`
-        : selectedRole.badgeAr;
-
-    document.getElementById('letter-role-pill').textContent = pillText;
+    document.getElementById('letter-role-pill').textContent = selectedRole.badgeAr;
     document.getElementById('letter-tag-en').textContent = selectedRole.tagEn;
-    document.getElementById('letter-title-ar').textContent = formatPersonalText(
-      selectedRole.letterTitleAr,
-      customGuestName
-    );
+    document.getElementById('letter-title-ar').textContent = selectedRole.letterTitleAr;
     document.getElementById('letter-lead-ar').textContent = selectedRole.letterLeadAr;
-    document.getElementById('letter-body-ar').textContent = formatPersonalText(
-      selectedRole.letterBodyAr,
-      customGuestName
-    );
+    document.getElementById('letter-body-ar').textContent = selectedRole.letterBodyAr;
     document.getElementById('portal-enter-btn-ar').textContent = selectedRole.enterBtnAr;
 
-    applyPersonaToMainSite(selectedRole, customGuestName);
+    applyPersonaToMainSite(selectedRole);
 
     stepSelect.classList.remove('active');
     stepSelect.setAttribute('aria-hidden', 'true');
@@ -691,12 +1041,6 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
   };
 
   continueBtn.addEventListener('click', showPersonalizedLetter);
-  nameInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      showPersonalizedLetter();
-    }
-  });
 
   backBtn.addEventListener('click', () => {
     stepLetter.classList.remove('active');
@@ -711,7 +1055,19 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
     portal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('portal-open');
     audio.playWishChime();
-    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // If opened via an incoming gift link and Yomna entered, jump smoothly to her Vault & open the envelope!
+    if (incomingGift && selectedRole.isHonoree) {
+      const senderRole = cfg.roles.find((r) => r.id === incomingGift.senderId);
+      const vaultSec = document.getElementById('yomna-vault');
+      if (vaultSec) vaultSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (senderRole) {
+        window.setTimeout(() => vaultExperience.openEnvelopeReader(senderRole), 650);
+      }
+      incomingGift = null;
+    } else {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
   });
 
   if (switchBtn) {
@@ -728,7 +1084,14 @@ function initReceptionPortal(scene3d, audio, supportStudio) {
   }
 }
 
-/* ==================== SAFE CHAPTER SECTION BUILDER ==================== */
+/* ==================== NARRATIVE BRIDGE + SAFE CHAPTER BUILDER ==================== */
+function createNarrativeBridge(text) {
+  const wrap = el('div', 'chapter-bridge reveal');
+  wrap.setAttribute('aria-hidden', 'false');
+  wrap.append(el('span', 'bridge-thread'), el('p', 'bridge-caption', `✦ ${text} ✦`), el('span', 'bridge-thread'));
+  return wrap;
+}
+
 function createChapterSection(ch, idx, cfg) {
   const isReverse = idx % 2 === 1;
   const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
@@ -789,10 +1152,7 @@ function createChapterSection(ch, idx, cfg) {
   mat.appendChild(img);
 
   const plaque = el('figcaption', 'frame-plaque');
-  plaque.append(
-    el('span', 'plaque-en', ch.captionEn),
-    el('span', 'plaque-ar', ch.captionAr)
-  );
+  plaque.append(el('span', 'plaque-en', ch.captionEn), el('span', 'plaque-ar', ch.captionAr));
 
   figure.append(el('span', 'frame-year-pill', ch.yearTag), mat, plaque);
   artCol.appendChild(figure);
@@ -821,10 +1181,7 @@ function createChapterSection(ch, idx, cfg) {
     );
 
     const serialCol = el('div', 'pass-serial');
-    serialCol.append(
-      el('div', '', cfg.dreamPass.batchAr),
-      el('div', '', cfg.dreamPass.serialNo)
-    );
+    serialCol.append(el('div', '', cfg.dreamPass.batchAr), el('div', '', cfg.dreamPass.serialNo));
 
     passBody.append(leftCol, serialCol);
     pass.append(passTop, passBody);
@@ -870,8 +1227,15 @@ function renderContent() {
 
   cfg.chapters.forEach((ch, idx) => {
     const sec = createChapterSection(ch, idx, cfg);
-    if (idx < 3) firstRoot.appendChild(sec);
-    else secondRoot.appendChild(sec);
+    if (idx < 3) {
+      firstRoot.appendChild(sec);
+      if (idx === 0) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterChildhood));
+      if (idx === 1) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterPassion));
+      if (idx === 2) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterThanaweya));
+    } else {
+      secondRoot.appendChild(sec);
+      secondRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterFineArts));
+    }
   });
 
   const hg = cfg.horizonGoal;
@@ -922,6 +1286,7 @@ function renderContent() {
   document.getElementById('finale-btn-ar').textContent = cfg.finale.buttonAr;
   document.getElementById('wish-heading-ar').textContent = cfg.finale.wishHeadingAr;
   document.getElementById('wish-message-ar').textContent = cfg.finale.wishMessageAr;
+  document.getElementById('finale-family-names').textContent = cfg.familySignOffAr;
   document.getElementById('finale-sig-ar').textContent = cfg.signatureAr;
   document.getElementById('finale-sig-en').textContent = cfg.signatureEn;
 
@@ -1276,9 +1641,7 @@ function initAtelierSketchCanvas() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.swatch').forEach((s) => s.classList.remove('active'));
       btn.classList.add('active');
-      if (/^#[0-9a-fA-F]{6}$/.test(btn.dataset.color || '')) {
-        activeColor = btn.dataset.color;
-      }
+      if (/^#[0-9a-fA-F]{6}$/.test(btn.dataset.color || '')) activeColor = btn.dataset.color;
     });
   });
 
@@ -1347,9 +1710,7 @@ function initScrollAndNavigation(scene3d, audio) {
       }
     });
     const sec = document.getElementById(id);
-    if (hudLabel && sec?.dataset.stage) {
-      hudLabel.textContent = sec.dataset.stage;
-    }
+    if (hudLabel && sec?.dataset.stage) hudLabel.textContent = sec.dataset.stage;
   };
 
   const checkRevealsAndActiveSection = () => {
@@ -1357,9 +1718,7 @@ function initScrollAndNavigation(scene3d, audio) {
     for (const node of reveals) {
       if (!node.classList.contains('visible')) {
         const rect = node.getBoundingClientRect();
-        if (rect.top <= vh + 120 && rect.bottom >= -120) {
-          node.classList.add('visible');
-        }
+        if (rect.top <= vh + 120 && rect.bottom >= -120) node.classList.add('visible');
       }
     }
 
@@ -1404,7 +1763,6 @@ function initScrollAndNavigation(scene3d, audio) {
   railDots.forEach((dot) => dot.addEventListener('click', () => scrollToTarget(dot.dataset.target)));
   dockChips.forEach((chip) => chip.addEventListener('click', () => scrollToTarget(chip.dataset.target)));
 
-  // Full-Screen 3D Inspect Mode Toggle
   const inspectBtn = document.getElementById('inspect-3d-btn');
   const exitInspectBtn = document.getElementById('exit-inspect-btn');
   const inspectBanner = document.getElementById('inspect-banner');
@@ -1440,6 +1798,7 @@ function initScrollAndNavigation(scene3d, audio) {
   const wishBtnAr = document.getElementById('finale-btn-ar');
   const wishLetter = document.getElementById('wish-letter');
   const candlesStatus = document.getElementById('candles-status');
+  const certBtn = document.getElementById('certificate-download-btn');
   let candlesBlown = false;
 
   const setCandlesStatusText = (msg, isBlown) => {
@@ -1462,11 +1821,36 @@ function initScrollAndNavigation(scene3d, audio) {
       setCandlesStatusText('19 شمعة ذهبية مضيئة في الخلفية ثلاثية الأبعاد', false);
     }
   });
+
+  if (certBtn) {
+    certBtn.addEventListener('click', downloadFamilyCertificatePng);
+  }
 }
 
 /* ==================== BOOTSTRAP ==================== */
 function bootstrap() {
   renderContent();
+
+  const vaultStore = new FamilyVaultStore();
+  let incomingGift = null;
+
+  // Safely process incoming ?gift= envelope delivery link (strictly validated + cleaned from URL!)
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const giftParam = params.get('gift');
+    if (giftParam) {
+      const decoded = decodeGiftToken(giftParam);
+      if (decoded) {
+        vaultStore.save(decoded.senderId, decoded.message);
+        incomingGift = decoded;
+      }
+      params.delete('gift');
+      const cleanUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  } catch {
+    // Ignore malformed URL params safely
+  }
 
   let scene3d = null;
   try {
@@ -1477,10 +1861,10 @@ function bootstrap() {
   }
 
   const audio = new AtelierAudio();
-  const supportStudio = initSupportCardStudio();
+  const vaultExperience = initFamilyVaultExperience(vaultStore, audio);
 
   initBirthdayCountdown();
-  initReceptionPortal(scene3d, audio, supportStudio);
+  initReceptionPortal(scene3d, audio, vaultExperience, incomingGift);
   initSparkleCursorTrail();
   initGuideModal();
   initHorizonMotionGraphics();

@@ -36,13 +36,16 @@ export class Atelier3DScene {
     this.isHidden = false;
     this.isMobile = window.innerWidth < 900;
 
-    // Live Visitor Persona 3D Theme Palette (morphs lighting & aura smoothly!)
+    // Live 8-Member VIP Family 3D Theme Palettes (morphs lighting & aura smoothly!)
     this.themePresets = {
       yomna:   { key: 0xffd288, rim: 0xdca454, fog: 0x110c09, dust: 0xfbe3a4 },
-      father:  { key: 0xffd17a, rim: 0x4b74a8, fog: 0x0d1018, dust: 0xe6c87d },
-      mother:  { key: 0xffe0c4, rim: 0xd98f7c, fog: 0x160e0e, dust: 0xf9d8c7 },
-      brother: { key: 0xffe0a8, rim: 0x5c94c9, fog: 0x0b121b, dust: 0xcfe4fa },
-      guest:   { key: 0xf8d994, rim: 0x6ea074, fog: 0x0d1410, dust: 0xdcf0d8 },
+      essam:   { key: 0xffd17a, rim: 0x4b74a8, fog: 0x0d1018, dust: 0xe6c87d },
+      heba:    { key: 0xffe0c4, rim: 0xd98f7c, fog: 0x160e0e, dust: 0xf9d8c7 },
+      youssef: { key: 0xffe0a8, rim: 0x5c94c9, fog: 0x0b121b, dust: 0xcfe4fa },
+      islam:   { key: 0xffdfad, rim: 0x4fa89b, fog: 0x0a1514, dust: 0xc4f2ea },
+      salwa:   { key: 0xffd9b0, rim: 0xd18a5c, fog: 0x16100b, dust: 0xf6d5b8 },
+      nada:    { key: 0xffe2c6, rim: 0xa67bc4, fog: 0x130e17, dust: 0xe8d4f7 },
+      mohamed: { key: 0xf8d994, rim: 0x6ea074, fog: 0x0d1410, dust: 0xdcf0d8 },
     };
     this.targetTheme = this.themePresets.yomna;
     this.curKeyColor = new THREE.Color(this.targetTheme.key);
