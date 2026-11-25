@@ -8,7 +8,7 @@
 
 export const SITE_CONFIG = {
   // 1. الاسم والتفاصيل الأساسية (غيّر "الفنانة" لاسمها الحقيقي مثل: "مريم" أو "سلمى")
-  artistName: "يمني",
+  artistName: "يمنى",
   artistNameEn: "The Young Artist",
   birthdayDateAr: "5 ديسمبر",
   birthdayDateEn: "5 DECEMBER",

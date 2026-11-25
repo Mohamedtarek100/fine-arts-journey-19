@@ -7,7 +7,7 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=2';
+import { SITE_CONFIG } from './config.js?v=3';
 import { Atelier3DScene } from './scene3d.js?v=2';
 
 /* ==================== MOTION-GRAPHICS GOLDEN SPARKLE CURSOR TRAIL ==================== */
