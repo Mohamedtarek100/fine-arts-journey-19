@@ -24,9 +24,9 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=4" />
+  <link rel="stylesheet" href="./styles.css?v=5" />
 </head>
-<body>
+<body class="portal-open">
   <!-- Top Cinema Scroll Progress Bar -->
   <div class="scroll-progress-track" aria-hidden="true">
     <div class="scroll-progress-fill" id="scroll-progress-fill"></div>
@@ -54,6 +54,94 @@
   <!-- Subtle Motion-Graphics Golden Cursor Trail Overlay -->
   <canvas id="sparkle-canvas" aria-hidden="true"></canvas>
 
+  <!-- ==================== 3D PERSONAL WELCOME RECEPTION PORTAL ==================== -->
+  <section
+    id="reception-portal"
+    class="reception-portal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="portal-title-ar"
+  >
+    <div class="portal-shell">
+      <!-- Live 5 December Countdown Bar -->
+      <div class="countdown-bar" id="portal-countdown" aria-live="off">
+        <span class="cd-title">✦ العد التنازلي ليوم 5 ديسمبر</span>
+        <div class="cd-units" id="portal-countdown-units"></div>
+      </div>
+
+      <!-- STEP A: ROLE SELECTION -->
+      <div class="portal-step active" id="portal-step-select">
+        <div class="portal-head">
+          <div class="portal-seal-badge" aria-hidden="true">XIX</div>
+          <p class="eyebrow-en" id="portal-eyebrow-en">PERSONAL 3D EXHIBITION RECEPTION • 5 DECEMBER</p>
+          <h1 class="portal-title" id="portal-title-ar">أهلاً بك في معرض رحلة يمنى</h1>
+          <p class="portal-subtitle" id="portal-subtitle-ar"></p>
+        </div>
+
+        <div class="portal-roles-grid" id="portal-roles-grid" role="radiogroup" aria-label="اختر صفتك لدخول المعرض"></div>
+
+        <!-- Custom Name Input for "Other / ضيف آخر" (uses div, no <form>, CSP form-action 'none' compliant) -->
+        <div class="portal-name-box" id="portal-name-box" aria-hidden="true">
+          <label class="portal-name-label" for="guest-name-input">
+            <span>✦ يرجى كتابة الاسم</span>
+            <small>لتخصيص رسالة الترحيب وبطاقة التشجيع باسمك</small>
+          </label>
+          <input
+            id="guest-name-input"
+            class="portal-name-input"
+            type="text"
+            maxlength="32"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="يرجى كتابة الاسم هنا..."
+          />
+          <p class="portal-name-error" id="portal-name-error" role="alert"></p>
+        </div>
+
+        <div class="portal-actions">
+          <button id="portal-continue-btn" class="btn-gold-seal" type="button">
+            <span class="btn-ar">عرض رسالتك الخاصة ودخول المعرض ✦</span>
+            <span class="btn-en">REVEAL PERSONAL INVITATION</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP B: PERSONALIZED RECEPTION LETTER -->
+      <div class="portal-step" id="portal-step-letter" aria-hidden="true">
+        <div class="letter-crest-wrap">
+          <span class="letter-crest-ring"></span>
+          <div class="letter-crest-icon" id="letter-crest-icon" aria-hidden="true"></div>
+        </div>
+
+        <span class="letter-role-pill" id="letter-role-pill"></span>
+        <p class="eyebrow-en" id="letter-tag-en"></p>
+        <h2 class="letter-title" id="letter-title-ar"></h2>
+        <p class="letter-lead" id="letter-lead-ar"></p>
+
+        <div class="letter-body-box">
+          <p id="letter-body-ar"></p>
+        </div>
+
+        <div class="letter-mission-strip">
+          <span class="mission-chip live"><i class="pulse-dot"></i> المحطة الآن: تالتة ثانوي (سنة فاصلة)</span>
+          <span class="mission-arrow" aria-hidden="true">← خطوة واحدة ←</span>
+          <span class="mission-chip gold">✦ الهدف: كلية الفنون الجميلة</span>
+        </div>
+
+        <div class="portal-actions letter-actions">
+          <button id="portal-enter-site-btn" class="btn-gold-seal" type="button">
+            <span class="btn-ar" id="portal-enter-btn-ar">افتح بوابة المعرض الـ 3D ←</span>
+            <span class="btn-en">ENTER THE 3D EXHIBITION</span>
+          </button>
+
+          <button id="portal-back-btn" class="btn-glass-secondary" type="button">
+            <span>← اختيار صفة أخرى</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Floating Museum Top Bar -->
   <header class="topbar" id="topbar">
     <a href="#hero" class="brand-mark" aria-label="العودة للبداية">
@@ -72,6 +160,15 @@
     </div>
 
     <div class="topbar-actions">
+      <button
+        id="visitor-switch-btn"
+        class="icon-pill visitor-pill"
+        type="button"
+        title="تغيير الزائر أو عرض الرسالة الشخصية"
+      >
+        <span class="pill-label" id="visitor-pill-label">🎨 يمنى</span>
+      </button>
+
       <button
         id="inspect-3d-btn"
         class="icon-pill"
@@ -129,6 +226,7 @@
     <button class="dock-chip" data-target="fine-arts" type="button">فنون جميلة</button>
     <button class="dock-chip" data-target="gallery" type="button">المعرض</button>
     <button class="dock-chip" data-target="canvas-studio" type="button">لوحتكِ</button>
+    <button class="dock-chip gold-chip" data-target="support-card-studio" type="button">بطاقة دعم ✦</button>
     <button class="dock-chip" data-target="finale" type="button">19 عاماً</button>
   </nav>
 
@@ -143,6 +241,7 @@
     <button class="rail-dot" data-target="fine-arts" data-label="فنون جميلة" aria-label="الفصل الرابع: كلية الفنون الجميلة"></button>
     <button class="rail-dot" data-target="gallery" data-label="المعرض" aria-label="معرض اللوحات"></button>
     <button class="rail-dot" data-target="canvas-studio" data-label="لوحتكِ" aria-label="ارسمي لوحة العام الـ 19"></button>
+    <button class="rail-dot" data-target="support-card-studio" data-label="بطاقة دعم" aria-label="صمّم بطاقة تشجيع ليمنى"></button>
     <button class="rail-dot" data-target="finale" data-label="19 عاماً" aria-label="الخاتمة: عيد الميلاد الـ 19"></button>
   </nav>
 
@@ -162,8 +261,10 @@
 
         <h1 class="hero-title kinetic-heading">
           <span id="hero-title-prefix">رحلة</span>
-          <span class="gold-shimmer" id="hero-artist-name">الفنانة</span>
+          <span class="gold-shimmer" id="hero-artist-name">يمنى</span>
         </h1>
+
+        <p class="hero-personal-note" id="hero-personal-note"></p>
 
         <p class="hero-subtitle" id="hero-subtitle-ar"></p>
 
@@ -396,6 +497,50 @@
       </div>
     </section>
 
+    <!-- ==================== SECTION 6.5: PRO FAMILY SUPPORT CARD STUDIO ==================== -->
+    <section id="support-card-studio" class="section support-studio-section" data-stage="بطاقة دعم وتشجيع ليمنى">
+      <div class="section-header centered reveal">
+        <p class="eyebrow-en">FAMILY ENCOURAGEMENT STUDIO • KEEPSAKE CARD</p>
+        <h2 class="section-title">أهدِ يمنى <span class="gold-shimmer">بطاقة تشجيع فنية</span></h2>
+        <p class="section-lead">
+          كلمة دعم صادقة في سنة تالتة ثانوي تصنع فرقاً لا يُنسى.. اختر عبارة جاهزة أو اكتب رسالتك الخاصة وصدّرها فوراً كبطاقة ذهبية فاخرة لإرسالها لها
+        </p>
+      </div>
+
+      <div class="support-studio-grid reveal">
+        <div class="support-controls-card">
+          <div class="support-sender-badge">
+            <span>التوقيع التلقائي على البطاقة:</span>
+            <strong id="support-sender-label">يمنى</strong>
+          </div>
+
+          <p class="support-label">اختر رسالة تشجيع جاهزة (تتخصّص تلقائياً حسب صفتك):</p>
+          <div class="support-presets" id="support-presets"></div>
+
+          <label class="support-label" for="support-message-input">أو اكتب رسالتك الخاصة ليمنى (حتى 180 حرفاً):</label>
+          <textarea
+            id="support-message-input"
+            class="support-textarea"
+            rows="3"
+            maxlength="180"
+            placeholder="اكتب كلمة تشجيع ودعاء ليمنى في تالتة ثانوي وحلم كلية الفنون الجميلة..."
+          ></textarea>
+
+          <button id="support-download-btn" class="btn-gold-seal compact" type="button">
+            <span class="btn-ar">تحميل بطاقة التشجيع الفاخرة (PNG) ↓</span>
+            <span class="btn-en">SAVE GOLDEN KEEPSAKE CARD</span>
+          </button>
+        </div>
+
+        <div class="support-preview-wrap">
+          <div class="ornate-canvas-frame">
+            <canvas id="support-card-canvas" width="900" height="560" aria-label="معاينة بطاقة التشجيع الذهبية ليمنى"></canvas>
+          </div>
+          <p class="support-privacy-note">🔒 يتم تصميم البطاقة محلياً بالكامل على جهازك بدون إرسال أو تخزين أي بيانات.</p>
+        </div>
+      </div>
+    </section>
+
     <!-- ==================== SECTION 7: FINALE — HAPPY 19TH BIRTHDAY ==================== -->
     <section id="finale" class="section finale-section" data-stage="5 ديسمبر • العام التاسع عشر">
       <div class="finale-card reveal">
@@ -501,6 +646,6 @@
   </div>
 
   <!-- Main Scripts (100% Self-Hosted, Strict CSP script-src 'self') -->
-  <script type="module" src="./app.js?v=4"></script>
+  <script type="module" src="./app.js?v=5"></script>
 </body>
 </html>

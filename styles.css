@@ -2535,3 +2535,650 @@ body.inspect-3d-mode .inspect-banner {
     text-align: center;
   }
 }
+
+
+/* =========================================================================
+   3D PERSONAL WELCOME RECEPTION PORTAL, COUNTDOWN & SUPPORT CARD STUDIO
+   ========================================================================= */
+
+body.portal-open {
+  overflow: hidden;
+}
+
+body.portal-open .topbar,
+body.portal-open .chapter-rail,
+body.portal-open .mobile-journey-dock {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reception-portal {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(14px, 3vw, 28px);
+  background: radial-gradient(circle at 50% 25%, rgba(28, 20, 14, 0.56) 0%, rgba(10, 7, 5, 0.84) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  overflow-y: auto;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.65s var(--ease-museum), visibility 0.65s var(--ease-museum), transform 0.65s var(--ease-museum);
+}
+
+.reception-portal.dismissed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: scale(1.03);
+}
+
+.portal-shell {
+  width: min(95vw, 920px);
+  margin: auto;
+  padding: clamp(20px, 3.6vw, 40px);
+  border-radius: 26px;
+  background: linear-gradient(160deg, rgba(24, 18, 13, 0.88) 0%, rgba(13, 10, 8, 0.84) 100%);
+  border: 1px solid var(--portal-accent, rgba(238, 210, 138, 0.52));
+  box-shadow:
+    0 38px 110px rgba(0, 0, 0, 0.82),
+    0 0 70px color-mix(in srgb, var(--portal-accent, #e8c268) 20%, transparent);
+  position: relative;
+  transition: border-color 0.45s ease, box-shadow 0.45s ease;
+}
+
+.portal-shell::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 19px;
+  border: 1px solid rgba(238, 210, 138, 0.14);
+  pointer-events: none;
+}
+
+/* Live 5 December Countdown Bar */
+.countdown-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 18px;
+  padding: 10px 16px;
+  margin-bottom: 22px;
+  border-radius: 14px;
+  background: rgba(214, 171, 82, 0.08);
+  border: 1px solid rgba(214, 171, 82, 0.28);
+}
+
+.cd-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--gold-100);
+}
+
+.cd-units {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  direction: ltr;
+}
+
+.cd-box {
+  min-width: 52px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: rgba(14, 10, 7, 0.72);
+  border: 1px solid rgba(238, 210, 138, 0.28);
+  text-align: center;
+  line-height: 1.15;
+}
+
+.cd-box strong {
+  display: block;
+  font-family: var(--font-en-display);
+  font-size: 1.05rem;
+  color: var(--gold-100);
+}
+
+.cd-box small {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--gold-300);
+}
+
+.cd-live-celebration {
+  font-family: var(--font-ar-display);
+  font-size: 1.05rem;
+  color: var(--gold-100);
+}
+
+/* Portal Steps */
+.portal-step {
+  display: none;
+  animation: portalFadeIn 0.55s var(--ease-museum);
+}
+
+.portal-step.active {
+  display: block;
+}
+
+@keyframes portalFadeIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.portal-head {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.portal-seal-badge {
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--portal-accent, var(--gold-200));
+  background: radial-gradient(circle at 30% 30%, rgba(238, 210, 138, 0.24), rgba(16, 11, 8, 0.9));
+  display: grid;
+  place-items: center;
+  font-family: var(--font-en-display);
+  font-size: 0.95rem;
+  color: var(--gold-100);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--portal-accent, #e8c268) 32%, transparent);
+}
+
+.portal-title {
+  font-family: var(--font-ar-display);
+  font-size: clamp(1.9rem, 3.8vw, 2.85rem);
+  line-height: 1.2;
+  color: var(--ivory);
+  margin-bottom: 8px;
+}
+
+.portal-subtitle {
+  font-size: clamp(0.88rem, 1.15vw, 0.98rem);
+  color: var(--ivory-muted);
+  max-width: 60ch;
+  margin: 0 auto;
+}
+
+/* 5 Role Persona Cards Grid */
+.portal-roles-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.role-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 18px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(214, 171, 82, 0.24);
+  background: linear-gradient(160deg, rgba(30, 22, 16, 0.72), rgba(15, 11, 8, 0.78));
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  cursor: pointer;
+  transition: transform 0.32s var(--ease-museum), border-color 0.32s ease, box-shadow 0.32s ease, background 0.32s ease;
+}
+
+.role-card.is-other {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  justify-content: center;
+  gap: 14px;
+  padding: 14px 20px;
+}
+
+.role-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--role-accent, var(--gold-200));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 24px color-mix(in srgb, var(--role-accent, #e8c268) 25%, transparent);
+}
+
+.role-card.selected {
+  border-color: var(--role-accent, var(--gold-200));
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--role-accent, #e8c268) 22%, rgba(28, 20, 14, 0.9)),
+    rgba(16, 12, 9, 0.92)
+  );
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--role-accent, var(--gold-200));
+  transform: translateY(-3px);
+}
+
+.role-icon-crest {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--role-accent, #e8c268) 55%, transparent);
+  background: color-mix(in srgb, var(--role-accent, #e8c268) 14%, rgba(16, 12, 9, 0.8));
+  color: var(--role-accent, var(--gold-200));
+  flex-shrink: 0;
+}
+
+.role-icon-crest svg {
+  width: 23px;
+  height: 23px;
+}
+
+.role-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-card.is-other .role-card-text {
+  text-align: right;
+}
+
+.role-label {
+  font-family: var(--font-ar-display);
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--ivory);
+}
+
+.role-sublabel {
+  font-size: 0.76rem;
+  color: var(--ivory-muted);
+}
+
+.role-tag-en {
+  font-family: var(--font-en-display);
+  font-size: 0.54rem;
+  letter-spacing: 0.16em;
+  color: var(--role-accent, var(--gold-300));
+  margin-top: 2px;
+}
+
+/* Custom Name Input Panel ("Other / غير ذلك") */
+.portal-name-box {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.45s var(--ease-museum), opacity 0.35s ease, margin-bottom 0.35s ease;
+}
+
+.portal-name-box.visible {
+  max-height: 190px;
+  opacity: 1;
+  margin-bottom: 18px;
+}
+
+.portal-name-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--gold-100);
+}
+
+.portal-name-label small {
+  font-weight: 400;
+  font-size: 0.76rem;
+  color: var(--ivory-soft);
+}
+
+.portal-name-input {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(141, 184, 137, 0.55);
+  background: rgba(14, 11, 8, 0.85);
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  font-size: 0.98rem;
+  outline: none;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.portal-name-input:focus {
+  border-color: var(--gold-200);
+  box-shadow: 0 0 0 3px rgba(214, 171, 82, 0.2);
+}
+
+.portal-name-error {
+  min-height: 20px;
+  margin-top: 6px;
+  font-size: 0.8rem;
+  color: #f39c88;
+}
+
+.portal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+/* STEP B: Personalized Reception Letter */
+#portal-step-letter {
+  text-align: center;
+}
+
+.letter-crest-wrap {
+  position: relative;
+  width: 82px;
+  height: 82px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+}
+
+.letter-crest-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px dashed var(--portal-accent, var(--gold-200));
+  animation: spin 14s linear infinite;
+}
+
+.letter-crest-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--portal-accent, #e8c268) 18%, rgba(16, 12, 9, 0.92));
+  border: 1px solid var(--portal-accent, var(--gold-200));
+  color: var(--portal-accent, var(--gold-100));
+}
+
+.letter-crest-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.letter-role-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 15px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--portal-accent, #e8c268) 16%, rgba(18, 13, 9, 0.85));
+  border: 1px solid var(--portal-accent, var(--gold-200));
+  color: var(--gold-100);
+  font-size: 0.84rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.letter-title {
+  font-family: var(--font-ar-display);
+  font-size: clamp(1.65rem, 3.2vw, 2.35rem);
+  line-height: 1.28;
+  color: var(--ivory);
+  margin-bottom: 6px;
+}
+
+.letter-lead {
+  font-size: 0.9rem;
+  color: var(--portal-accent, var(--gold-300));
+  margin-bottom: 16px;
+}
+
+.letter-body-box {
+  padding: clamp(18px, 3vw, 26px);
+  border-radius: 18px;
+  background: rgba(250, 241, 224, 0.05);
+  border: 1px solid color-mix(in srgb, var(--portal-accent, #e8c268) 40%, transparent);
+  margin-bottom: 18px;
+}
+
+.letter-body-box p {
+  font-size: clamp(0.95rem, 1.25vw, 1.08rem);
+  line-height: 1.98;
+  color: var(--ivory);
+}
+
+.letter-mission-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+
+.mission-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mission-chip.live {
+  background: rgba(158, 209, 152, 0.14);
+  border: 1px solid rgba(158, 209, 152, 0.45);
+  color: #d6f3d3;
+}
+
+.mission-chip.live .pulse-dot {
+  background: var(--emerald-soft);
+  box-shadow: 0 0 10px var(--emerald-soft);
+}
+
+.mission-chip.gold {
+  background: rgba(214, 171, 82, 0.16);
+  border: 1px solid rgba(238, 210, 138, 0.48);
+  color: var(--gold-100);
+}
+
+.mission-arrow {
+  font-size: 0.78rem;
+  color: var(--gold-300);
+  font-weight: 700;
+}
+
+/* Hero Personalized Visitor Welcome Strip */
+.hero-personal-note {
+  padding: 10px 15px;
+  margin-bottom: 14px;
+  border-radius: 12px;
+  border-right: 3px solid var(--portal-accent, var(--gold-200));
+  background: color-mix(in srgb, var(--portal-accent, #e8c268) 12%, rgba(16, 12, 9, 0.6));
+  color: var(--gold-100);
+  font-size: 0.88rem;
+  line-height: 1.7;
+}
+
+.visitor-pill {
+  border-color: var(--portal-accent, var(--border-gold-strong));
+  color: var(--gold-100);
+}
+
+/* ==================== FAMILY SUPPORT CARD STUDIO ==================== */
+.support-studio-grid {
+  width: 100%;
+  max-width: 1160px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(20px, 3.5vw, 38px);
+  align-items: center;
+}
+
+.support-controls-card {
+  padding: clamp(20px, 3vw, 30px);
+  border-radius: 22px;
+  background: var(--bg-glass-strong);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-gold);
+  box-shadow: var(--shadow-museum);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.support-sender-badge {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(214, 171, 82, 0.1);
+  border: 1px solid rgba(238, 210, 138, 0.34);
+  font-size: 0.84rem;
+  color: var(--ivory-muted);
+}
+
+.support-sender-badge strong {
+  color: var(--gold-100);
+  font-family: var(--font-ar-display);
+  font-size: 1.1rem;
+}
+
+.support-label {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--gold-200);
+}
+
+.support-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.preset-btn {
+  text-align: right;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(214, 171, 82, 0.24);
+  background: rgba(255, 245, 224, 0.04);
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  font-size: 0.83rem;
+  line-height: 1.65;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.preset-btn:hover,
+.preset-btn.active {
+  border-color: var(--gold-200);
+  background: rgba(214, 171, 82, 0.16);
+  color: var(--gold-100);
+}
+
+.support-textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-gold);
+  background: rgba(14, 10, 7, 0.82);
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  resize: vertical;
+  outline: none;
+}
+
+.support-textarea:focus {
+  border-color: var(--gold-200);
+}
+
+.support-preview-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#support-card-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 900 / 560;
+  border-radius: 8px;
+}
+
+.support-privacy-note {
+  text-align: center;
+  font-size: 0.76rem;
+  color: #cde8ca;
+}
+
+/* Responsive Adjustments for Portal & Support Studio */
+@media (max-width: 980px) {
+  .support-studio-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .portal-roles-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .role-card {
+    padding: 14px 10px;
+  }
+
+  .role-card.is-other {
+    padding: 12px 14px;
+  }
+
+  .countdown-bar {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .cd-box {
+    min-width: 46px;
+  }
+
+  .visitor-pill .pill-label {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 480px) {
+  .portal-shell {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+
+  .portal-title {
+    font-size: 1.65rem;
+  }
+
+  .role-icon-crest {
+    width: 40px;
+    height: 40px;
+  }
+
+  .role-label {
+    font-size: 1.06rem;
+  }
+
+  .letter-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

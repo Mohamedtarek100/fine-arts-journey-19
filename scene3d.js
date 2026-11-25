@@ -36,6 +36,19 @@ export class Atelier3DScene {
     this.isHidden = false;
     this.isMobile = window.innerWidth < 900;
 
+    // Live Visitor Persona 3D Theme Palette (morphs lighting & aura smoothly!)
+    this.themePresets = {
+      yomna:   { key: 0xffd288, rim: 0xdca454, fog: 0x110c09, dust: 0xfbe3a4 },
+      father:  { key: 0xffd17a, rim: 0x4b74a8, fog: 0x0d1018, dust: 0xe6c87d },
+      mother:  { key: 0xffe0c4, rim: 0xd98f7c, fog: 0x160e0e, dust: 0xf9d8c7 },
+      brother: { key: 0xffe0a8, rim: 0x5c94c9, fog: 0x0b121b, dust: 0xcfe4fa },
+      guest:   { key: 0xf8d994, rim: 0x6ea074, fog: 0x0d1410, dust: 0xdcf0d8 },
+    };
+    this.targetTheme = this.themePresets.yomna;
+    this.curKeyColor = new THREE.Color(this.targetTheme.key);
+    this.curRimBase = new THREE.Color(this.targetTheme.rim);
+    this.curFogBase = new THREE.Color(this.targetTheme.fog);
+
     this.clock = new THREE.Clock();
     this.animatedObjects = [];
     this.lanterns = [];
@@ -141,6 +154,11 @@ export class Atelier3DScene {
       this.orbitTarget.x = 0;
       this.orbitTarget.y = 0;
     }
+  }
+
+  setVisitorTheme(themeKey) {
+    const preset = this.themePresets[themeKey] || this.themePresets.yomna;
+    this.targetTheme = preset;
   }
 
   createRadialGlowTexture() {
@@ -988,14 +1006,18 @@ export class Atelier3DScene {
     const twilightFactor = Math.exp(-Math.pow((this.smoothScroll - 0.42) / 0.12, 2));
     const fineArtsGlow = Math.exp(-Math.pow((this.smoothScroll - 0.66) / 0.14, 2));
 
-    const warmRim = new THREE.Color(0xd8a056);
+    // Smoothly morph base 3D lighting & atmosphere to match selected Visitor Persona
+    this.curKeyColor.lerp(new THREE.Color(this.targetTheme.key), 0.05);
+    this.curRimBase.lerp(new THREE.Color(this.targetTheme.rim), 0.05);
+    this.curFogBase.lerp(new THREE.Color(this.targetTheme.fog), 0.05);
+
+    this.keyLight.color.copy(this.curKeyColor);
     const twilightRim = new THREE.Color(0x4b74b8);
-    this.rimLight.color.copy(warmRim).lerp(twilightRim, twilightFactor * 0.85);
+    this.rimLight.color.copy(this.curRimBase).lerp(twilightRim, twilightFactor * 0.75);
     this.keyLight.intensity = 38 + fineArtsGlow * 16;
 
-    const warmFog = new THREE.Color(0x110c09);
     const twilightFog = new THREE.Color(0x0c1222);
-    this.scene.fog.color.copy(warmFog).lerp(twilightFog, twilightFactor * 0.72);
+    this.scene.fog.color.copy(this.curFogBase).lerp(twilightFog, twilightFactor * 0.65);
 
     if (this.goldLeafMesh) {
       for (let i = 0; i < this.goldLeafData.length; i++) {

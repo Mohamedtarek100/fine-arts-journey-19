@@ -1,28 +1,26 @@
 /**
  * =========================================================================
  *  Main Application Logic — Hardened Cinema-Grade 3D Fine Arts Journey
- *  Security Architecture:
- *  - ZERO innerHTML sinks (100% safe DOM node creation + textContent)
- *  - Deep-frozen SITE_CONFIG against runtime tampering
- *  - Strict local asset path allowlist (prevents protocol/path injection)
- *  - Anti-Clickjacking frame guard (blocks unauthorized cross-origin framing)
- *  - Zero tracking, zero cookies, zero external JS dependencies
+ *  Includes:
+ *  - 3D Personal Welcome Reception Portal (5 Personas + Custom Name Input)
+ *  - Real-Time 3D Lighting Theme Morphing per Visitor Persona
+ *  - Live 5 December Kinetic Countdown
+ *  - Interactive Family Encouragement Card Studio (Local PNG Generator)
+ *  - Strict OWASP Zero-innerHTML DOM Security & Anti-Clickjacking
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=4';
-import { Atelier3DScene } from './scene3d.js?v=4';
+import { SITE_CONFIG } from './config.js?v=5';
+import { Atelier3DScene } from './scene3d.js?v=5';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
   try {
     if (window.top !== window.self) {
-      // Block unauthorized cross-origin iframe embedding (Clickjacking defense)
       document.documentElement.style.display = 'none';
       window.top.location.replace(window.self.location.href);
     }
   } catch {
-    // Cross-origin frame blocked top navigation: keep page hidden safely
     document.documentElement.style.display = 'none';
   }
 })();
@@ -47,6 +45,16 @@ function safeAssetUrl(path, fallback = './assets/art/chapter4-fine-arts.jpg') {
   if (trimmed.includes('..')) return fallback;
   if (/^\.\/assets\/[a-zA-Z0-9._/-]+$/.test(trimmed)) return trimmed;
   return fallback;
+}
+
+function sanitizeGuestName(raw) {
+  if (typeof raw !== 'string') return '';
+  // Remove control chars, angle brackets, and collapse whitespace; limit to 32 chars
+  return raw
+    .replace(/[\u0000-\u001F\u007F<>`"'\\]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 32);
 }
 
 function el(tag, className, text) {
@@ -232,7 +240,53 @@ class AtelierAudio {
   }
 }
 
-/* ==================== SAFE SVG ICON BUILDER (ZERO innerHTML) ==================== */
+/* ==================== SAFE SVG CRESTS FOR VISITOR PERSONAS & GUIDE ==================== */
+function createRoleCrestSvg(type) {
+  const svg = svgEl('svg', {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    'stroke-width': '1.6',
+    'stroke-linecap': 'round',
+    'stroke-linejoin': 'round',
+  });
+
+  if (type === 'palette') {
+    // Yomna — Artist Palette Crest
+    svg.append(
+      svgEl('path', { d: 'M12 3a9 9 0 1 0 0 18h1.5a2.5 2.5 0 0 0 0-5H12a2 2 0 0 1 0-4h4.5A4.5 4.5 0 0 0 12 3Z' }),
+      svgEl('circle', { cx: 7.5, cy: 10.5, r: 1 }),
+      svgEl('circle', { cx: 10.5, cy: 7.5, r: 1 }),
+      svgEl('circle', { cx: 15, cy: 8.5, r: 1 })
+    );
+  } else if (type === 'pillar') {
+    // Father — Classical Architectural Pillar & Crown Crest
+    svg.append(
+      svgEl('path', { d: 'M4 20h16M6 20V9M18 20V9M10 20V9M14 20V9' }),
+      svgEl('path', { d: 'M3 9l9-5 9 5H3Z' })
+    );
+  } else if (type === 'blossom') {
+    // Mother — Botanical Jasmine Blossom & Warm Heart-Light Crest
+    svg.append(
+      svgEl('path', { d: 'M12 20c-4.5-3.2-7-6.3-7-9.6A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 7 3.4c0 3.3-2.5 6.4-7 9.6Z' }),
+      svgEl('path', { d: 'M12 3v2M5 5l1.5 1.5M19 5l-1.5 1.5' })
+    );
+  } else if (type === 'shield') {
+    // Brother — Geometric Star Shield Crest
+    svg.append(
+      svgEl('path', { d: 'M12 3l7 3v5.5c0 4.6-3 8.1-7 9.5-4-1.4-7-4.9-7-9.5V6l7-3Z' }),
+      svgEl('path', { d: 'M12 8.5l1.1 2.4 2.6.3-2 1.8.5 2.5-2.2-1.3-2.2 1.3.5-2.5-2-1.8 2.6-.3L12 8.5Z' })
+    );
+  } else {
+    // Special Guest — Museum Wax-Seal Star Crest
+    svg.append(
+      svgEl('circle', { cx: 12, cy: 12, r: 8.5 }),
+      svgEl('path', { d: 'M12 6.5l1.5 3.8 4 1.2-4 1.2L12 16.5l-1.5-3.8-4-1.2 4-1.2L12 6.5Z' })
+    );
+  }
+  return svg;
+}
+
 function createGuideIconSvg(type) {
   const svg = svgEl('svg', {
     viewBox: '0 0 24 24',
@@ -287,7 +341,394 @@ function createGuideCard(step) {
   return card;
 }
 
-/* ==================== SAFE CHAPTER SECTION BUILDER (ZERO innerHTML) ==================== */
+/* ==================== LIVE 5 DECEMBER COUNTDOWN ==================== */
+function initBirthdayCountdown() {
+  const container = document.getElementById('portal-countdown-units');
+  if (!container) return;
+  const targetMs = Date.parse(FROZEN_CONFIG.birthdayTargetISO);
+
+  const renderTick = () => {
+    const now = Date.now();
+    const diff = targetMs - now;
+    if (diff <= 0) {
+      container.replaceChildren(
+        el('span', 'cd-live-celebration', '✦ اليوم 5 ديسمبر — كل عامٍ ويمنى بألف خير! ✦')
+      );
+      return;
+    }
+    const days = Math.floor(diff / 86400000);
+    const hours = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+
+    const units = [
+      { v: String(days).padStart(2, '0'), l: 'يوم' },
+      { v: String(hours).padStart(2, '0'), l: 'ساعة' },
+      { v: String(mins).padStart(2, '0'), l: 'دقيقة' },
+      { v: String(secs).padStart(2, '0'), l: 'ثانية' },
+    ];
+
+    container.replaceChildren(
+      ...units.map((u) => {
+        const box = el('div', 'cd-box');
+        box.append(el('strong', '', u.v), el('small', '', u.l));
+        return box;
+      })
+    );
+  };
+
+  renderTick();
+  window.setInterval(renderTick, 1000);
+}
+
+/* ==================== FAMILY ENCOURAGEMENT CARD STUDIO (LOCAL PNG GENERATOR) ==================== */
+function initSupportCardStudio() {
+  const canvas = document.getElementById('support-card-canvas');
+  const presetsWrap = document.getElementById('support-presets');
+  const textarea = document.getElementById('support-message-input');
+  const senderLabel = document.getElementById('support-sender-label');
+  const downloadBtn = document.getElementById('support-download-btn');
+  if (!canvas || !presetsWrap || !textarea) return { updatePersona: () => {} };
+
+  const ctx = canvas.getContext('2d');
+  let currentSender = 'يمنى';
+  let currentAccent = '#e8c268';
+  let currentMsg = FROZEN_CONFIG.reception.roles[0].cardPresets[0];
+
+  function wrapArabicLines(text, maxWidth) {
+    const words = text.split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    for (const w of words) {
+      const candidate = line ? `${line} ${w}` : w;
+      if (ctx.measureText(candidate).width > maxWidth && line) {
+        lines.push(line);
+        line = w;
+      } else {
+        line = candidate;
+      }
+    }
+    if (line) lines.push(line);
+    return lines.slice(0, 5);
+  }
+
+  function renderCard() {
+    const W = canvas.width;
+    const H = canvas.height;
+
+    // Deep Warm Obsidian-Gold Background
+    const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 40, W * 0.5, H * 0.5, W * 0.65);
+    bg.addColorStop(0, '#271c13');
+    bg.addColorStop(0.65, '#150f0b');
+    bg.addColorStop(1, '#0d0907');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    // Subtle Diagonal Sunbeam Glow
+    const beam = ctx.createLinearGradient(0, 0, W, H);
+    beam.addColorStop(0, 'rgba(232, 194, 104, 0.14)');
+    beam.addColorStop(0.5, 'rgba(232, 194, 104, 0.02)');
+    beam.addColorStop(1, 'rgba(232, 194, 104, 0.1)');
+    ctx.fillStyle = beam;
+    ctx.fillRect(0, 0, W, H);
+
+    // Outer & Inner Ornate Antique Gold Museum Borders
+    ctx.strokeStyle = currentAccent;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(24, 24, W - 48, H - 48);
+
+    ctx.strokeStyle = 'rgba(238, 210, 138, 0.32)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(36, 36, W - 72, H - 72);
+
+    // Subtle Stardust Motes
+    for (let i = 0; i < 28; i++) {
+      const px = 55 + ((i * 173) % (W - 110));
+      const py = 55 + ((i * 97) % (H - 110));
+      ctx.fillStyle = i % 2 === 0 ? 'rgba(248, 224, 158, 0.45)' : 'rgba(255, 248, 232, 0.25)';
+      ctx.beginPath();
+      ctx.arc(px, py, (i % 3) + 1, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Header Museum Inscription
+    ctx.textAlign = 'center';
+    ctx.direction = 'ltr';
+    ctx.fillStyle = currentAccent;
+    ctx.font = '600 15px Cinzel, Georgia, serif';
+    ctx.fillText('5 DECEMBER  •  CHAPTER XIX  •  FACULTY OF FINE ARTS DREAM', W / 2, 78);
+
+    // Arabic Dedication Header
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#fbf0cf';
+    ctx.font = '700 34px Amiri, Georgia, serif';
+    ctx.fillText(`رسالة دعم وتشجيع إلى الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 136);
+
+    // Delicate Gold Divider
+    ctx.strokeStyle = 'rgba(232, 194, 104, 0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(W * 0.28, 160);
+    ctx.lineTo(W * 0.72, 160);
+    ctx.stroke();
+
+    // Main Encouragement Message
+    const displayText = (currentMsg || '').trim() || 'كل التوفيق والنجاح في تالتة ثانوي نحو كلية الفنون الجميلة بإذن الله.';
+    ctx.fillStyle = '#f8f1e4';
+    ctx.font = '500 26px Cairo, sans-serif';
+    const lines = wrapArabicLines(displayText, W - 180);
+    const lineHeight = 46;
+    const startY = 232 + Math.max(0, (4 - lines.length) * 16);
+    lines.forEach((ln, i) => {
+      ctx.fillText(ln, W / 2, startY + i * lineHeight);
+    });
+
+    // Bottom Mission Pill + Sender Signature
+    ctx.fillStyle = 'rgba(214, 171, 82, 0.14)';
+    ctx.fillRect(W * 0.18, H - 146, W * 0.64, 42);
+    ctx.strokeStyle = 'rgba(232, 194, 104, 0.45)';
+    ctx.strokeRect(W * 0.18, H - 146, W * 0.64, 42);
+
+    ctx.fillStyle = '#eed28a';
+    ctx.font = '600 17px Cairo, sans-serif';
+    ctx.fillText('تالتة ثانوي (السنة الفاصلة)  ←  خطوة واحدة نحو كلية الفنون الجميلة ✦', W / 2, H - 119);
+
+    ctx.fillStyle = currentAccent;
+    ctx.font = '700 23px Amiri, Georgia, serif';
+    ctx.fillText(`بكل فخر ودعم — ${currentSender}`, W / 2, H - 64);
+  }
+
+  textarea.addEventListener('input', () => {
+    currentMsg = sanitizeGuestName(textarea.value) ? textarea.value.slice(0, 180) : '';
+    document.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+    renderCard();
+  });
+
+  if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => {
+      renderCard();
+      const link = document.createElement('a');
+      link.download = `Support-Card-For-Yomna-${Date.now()}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+  }
+
+  const updatePersona = (role, customName) => {
+    currentSender = role.requiresName && customName ? customName : role.labelAr;
+    currentAccent = role.accentHex || '#e8c268';
+    if (senderLabel) senderLabel.textContent = currentSender;
+
+    const presets = role.cardPresets || [];
+    presetsWrap.replaceChildren(
+      ...presets.map((text, idx) => {
+        const btn = el('button', `preset-btn${idx === 0 ? ' active' : ''}`, text);
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          presetsWrap.querySelectorAll('.preset-btn').forEach((b) => b.classList.remove('active'));
+          btn.classList.add('active');
+          textarea.value = text;
+          currentMsg = text;
+          renderCard();
+        });
+        return btn;
+      })
+    );
+
+    if (presets[0]) {
+      textarea.value = presets[0];
+      currentMsg = presets[0];
+    }
+    renderCard();
+  };
+
+  renderCard();
+  return { updatePersona };
+}
+
+/* ==================== 3D PERSONAL WELCOME RECEPTION PORTAL ==================== */
+function initReceptionPortal(scene3d, audio, supportStudio) {
+  const cfg = FROZEN_CONFIG.reception;
+  const portal = document.getElementById('reception-portal');
+  const shell = portal?.querySelector('.portal-shell');
+  const stepSelect = document.getElementById('portal-step-select');
+  const stepLetter = document.getElementById('portal-step-letter');
+  const rolesGrid = document.getElementById('portal-roles-grid');
+  const nameBox = document.getElementById('portal-name-box');
+  const nameInput = document.getElementById('guest-name-input');
+  const nameError = document.getElementById('portal-name-error');
+  const continueBtn = document.getElementById('portal-continue-btn');
+  const enterSiteBtn = document.getElementById('portal-enter-site-btn');
+  const backBtn = document.getElementById('portal-back-btn');
+  const switchBtn = document.getElementById('visitor-switch-btn');
+  const visitorPillLabel = document.getElementById('visitor-pill-label');
+  const heroPersonalNote = document.getElementById('hero-personal-note');
+
+  if (!portal || !rolesGrid) return;
+
+  document.getElementById('portal-eyebrow-en').textContent = cfg.eyebrowEn;
+  document.getElementById('portal-title-ar').textContent = cfg.titleAr;
+  document.getElementById('portal-subtitle-ar').textContent = cfg.subtitleAr;
+  nameInput.placeholder = cfg.otherPlaceholderAr;
+
+  let selectedRole = cfg.roles[0];
+  let customGuestName = '';
+
+  const applyThemeColors = (role) => {
+    document.documentElement.style.setProperty('--portal-accent', role.accentHex);
+    if (shell) shell.style.setProperty('--portal-accent', role.accentHex);
+    if (scene3d) scene3d.setVisitorTheme(role.themeKey);
+  };
+
+  const formatPersonalText = (template, guestName) =>
+    template.replaceAll('{NAME}', guestName || 'ضيفنا العزيز');
+
+  // Build 5 Sculpted Role Persona Cards (ZERO innerHTML)
+  const roleButtons = cfg.roles.map((role, idx) => {
+    const btn = el('button', `role-card${role.requiresName ? ' is-other' : ''}${idx === 0 ? ' selected' : ''}`);
+    btn.type = 'button';
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', String(idx === 0));
+    btn.style.setProperty('--role-accent', role.accentHex);
+
+    const crest = el('div', 'role-icon-crest');
+    crest.setAttribute('aria-hidden', 'true');
+    crest.appendChild(createRoleCrestSvg(role.icon));
+
+    const textCol = el('div', 'role-card-text');
+    textCol.append(
+      el('span', 'role-label', role.labelAr),
+      el('span', 'role-sublabel', role.sublabelAr),
+      el('span', 'role-tag-en', role.tagEn)
+    );
+
+    btn.append(crest, textCol);
+
+    const selectThisRole = () => {
+      selectedRole = role;
+      roleButtons.forEach((b, i) => {
+        const isSel = i === idx;
+        b.classList.toggle('selected', isSel);
+        b.setAttribute('aria-checked', String(isSel));
+      });
+      applyThemeColors(role);
+
+      const needsName = Boolean(role.requiresName);
+      nameBox.classList.toggle('visible', needsName);
+      nameBox.setAttribute('aria-hidden', String(!needsName));
+      nameError.textContent = '';
+      if (needsName) {
+        window.setTimeout(() => nameInput.focus(), 120);
+      }
+    };
+
+    btn.addEventListener('click', selectThisRole);
+    btn.addEventListener('pointerenter', (e) => {
+      if (e.pointerType === 'mouse') applyThemeColors(role);
+    });
+
+    return btn;
+  });
+
+  rolesGrid.replaceChildren(...roleButtons);
+  applyThemeColors(selectedRole);
+
+  // Sync default persona into Hero & Support Studio immediately
+  const applyPersonaToMainSite = (role, guestName) => {
+    const badgeText = role.requiresName && guestName ? `✨ ${guestName}` : role.badgeAr;
+    if (visitorPillLabel) visitorPillLabel.textContent = badgeText;
+    if (heroPersonalNote) {
+      heroPersonalNote.textContent = formatPersonalText(role.heroNoteAr, guestName);
+    }
+    applyThemeColors(role);
+    supportStudio.updatePersona(role, guestName);
+  };
+
+  applyPersonaToMainSite(selectedRole, '');
+
+  const showPersonalizedLetter = () => {
+    if (selectedRole.requiresName) {
+      const cleaned = sanitizeGuestName(nameInput.value);
+      if (!cleaned) {
+        nameError.textContent = cfg.otherErrorAr;
+        nameInput.focus();
+        return;
+      }
+      customGuestName = cleaned;
+      nameError.textContent = '';
+    } else {
+      customGuestName = '';
+    }
+
+    const crestWrap = document.getElementById('letter-crest-icon');
+    crestWrap.replaceChildren(createRoleCrestSvg(selectedRole.icon));
+
+    const pillText =
+      selectedRole.requiresName && customGuestName
+        ? `✨ ضيف الشرف • ${customGuestName}`
+        : selectedRole.badgeAr;
+
+    document.getElementById('letter-role-pill').textContent = pillText;
+    document.getElementById('letter-tag-en').textContent = selectedRole.tagEn;
+    document.getElementById('letter-title-ar').textContent = formatPersonalText(
+      selectedRole.letterTitleAr,
+      customGuestName
+    );
+    document.getElementById('letter-lead-ar').textContent = selectedRole.letterLeadAr;
+    document.getElementById('letter-body-ar').textContent = formatPersonalText(
+      selectedRole.letterBodyAr,
+      customGuestName
+    );
+    document.getElementById('portal-enter-btn-ar').textContent = selectedRole.enterBtnAr;
+
+    applyPersonaToMainSite(selectedRole, customGuestName);
+
+    stepSelect.classList.remove('active');
+    stepSelect.setAttribute('aria-hidden', 'true');
+    stepLetter.classList.add('active');
+    stepLetter.setAttribute('aria-hidden', 'false');
+    portal.scrollTop = 0;
+  };
+
+  continueBtn.addEventListener('click', showPersonalizedLetter);
+  nameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      showPersonalizedLetter();
+    }
+  });
+
+  backBtn.addEventListener('click', () => {
+    stepLetter.classList.remove('active');
+    stepLetter.setAttribute('aria-hidden', 'true');
+    stepSelect.classList.add('active');
+    stepSelect.setAttribute('aria-hidden', 'false');
+    portal.scrollTop = 0;
+  });
+
+  enterSiteBtn.addEventListener('click', () => {
+    portal.classList.add('dismissed');
+    portal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('portal-open');
+    audio.playWishChime();
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
+  if (switchBtn) {
+    switchBtn.addEventListener('click', () => {
+      stepLetter.classList.remove('active');
+      stepLetter.setAttribute('aria-hidden', 'true');
+      stepSelect.classList.add('active');
+      stepSelect.setAttribute('aria-hidden', 'false');
+      portal.classList.remove('dismissed');
+      portal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('portal-open');
+      portal.scrollTop = 0;
+    });
+  }
+}
+
+/* ==================== SAFE CHAPTER SECTION BUILDER ==================== */
 function createChapterSection(ch, idx, cfg) {
   const isReverse = idx % 2 === 1;
   const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
@@ -296,7 +737,6 @@ function createChapterSection(ch, idx, cfg) {
 
   const grid = el('div', 'chapter-grid');
 
-  // Text Card
   const card = el('article', 'chapter-card reveal');
   const numBg = el('span', 'chapter-number-bg', ch.number);
   numBg.setAttribute('aria-hidden', 'true');
@@ -310,7 +750,6 @@ function createChapterSection(ch, idx, cfg) {
     el('blockquote', 'chapter-quote', ch.quoteAr)
   );
 
-  // Chapter 3 Encouragement Envelope
   if (ch.id === 'thanaweya' && ch.encouragementBodyAr) {
     const envBox = el('div', 'envelope-box');
     envBox.id = 'encouragement-envelope';
@@ -320,7 +759,7 @@ function createChapterSection(ch, idx, cfg) {
     envBtn.id = 'envelope-btn';
     envBtn.setAttribute('aria-expanded', 'false');
     envBtn.append(
-      el('span', '', `✦ ${ch.encouragementTitleAr} (اضغطي لفتح الرسالة)`),
+      el('span', '', `✦ ${ch.encouragementTitleAr} (اضغط لفتح الرسالة)`),
       el('span', 'wax-seal-mini', 'XIX')
     );
 
@@ -331,7 +770,6 @@ function createChapterSection(ch, idx, cfg) {
     card.appendChild(envBox);
   }
 
-  // Art Column
   const artCol = el('div', 'art-column reveal');
   const safeImg = safeAssetUrl(ch.image);
 
@@ -359,7 +797,6 @@ function createChapterSection(ch, idx, cfg) {
   figure.append(el('span', 'frame-year-pill', ch.yearTag), mat, plaque);
   artCol.appendChild(figure);
 
-  // Chapter 4 Holographic Fine Arts Dream Pass
   if (ch.id === 'fine-arts') {
     const passWrap = el('div', 'dream-pass-wrap');
     const pass = el('div', 'dream-pass');
@@ -408,7 +845,6 @@ function renderContent() {
   document.getElementById('nav-date-en').textContent = cfg.birthdayDateEn;
   document.getElementById('nav-title-ar').textContent = `رحلة ${cfg.artistName}`;
 
-  // Hero
   document.getElementById('hero-eyebrow-en').textContent = cfg.hero.eyebrowEn;
   document.getElementById('hero-badge-ar').textContent = cfg.hero.badgeAr;
   document.getElementById('hero-title-prefix').textContent = cfg.hero.titlePrefixAr;
@@ -418,7 +854,6 @@ function renderContent() {
   document.getElementById('hero-cta-en').textContent = cfg.hero.ctaEn;
   document.getElementById('hero-guide-btn-ar').textContent = cfg.hero.guideBtnAr;
 
-  // Visitor Guide Strip + Modal Cards
   document.getElementById('guide-eyebrow-en').textContent = cfg.guide.eyebrowEn;
   document.getElementById('guide-title-ar').textContent = cfg.guide.titleAr;
   document.getElementById('guide-subtitle-ar').textContent = cfg.guide.subtitleAr;
@@ -428,7 +863,6 @@ function renderContent() {
   stripGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
   modalGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
 
-  // Chapters 1..3 before Horizon Goal; Chapter 4 right after it
   const firstRoot = document.getElementById('chapters-first-container');
   const secondRoot = document.getElementById('chapters-second-container');
   firstRoot.replaceChildren();
@@ -440,7 +874,6 @@ function renderContent() {
     else secondRoot.appendChild(sec);
   });
 
-  // Horizon Goal Section
   const hg = cfg.horizonGoal;
   document.getElementById('horizon-eyebrow-en').textContent = hg.eyebrowEn;
   document.getElementById('horizon-title-ar').textContent = hg.titleAr;
@@ -482,7 +915,6 @@ function renderContent() {
     })
   );
 
-  // Finale & Copyright Footer
   document.getElementById('finale-eyebrow-en').textContent = cfg.finale.eyebrowEn;
   document.getElementById('finale-age').textContent = String(cfg.age);
   document.getElementById('finale-title-ar').textContent = `${cfg.finale.titleAr} يا ${cfg.artistName}`;
@@ -610,7 +1042,7 @@ function initEnvelope() {
   });
 }
 
-/* ==================== INTERACTIVE 3D GALLERY & LIGHTBOX (ZERO innerHTML) ==================== */
+/* ==================== INTERACTIVE 3D GALLERY & LIGHTBOX ==================== */
 function initGalleryAndLightbox() {
   const items = FROZEN_CONFIG.gallery;
   const viewport = document.getElementById('gallery-viewport');
@@ -649,11 +1081,8 @@ function initGalleryAndLightbox() {
     if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
   });
 
-  // Gentle artwork context-menu protection on displayed photos/frames
   document.addEventListener('contextmenu', (e) => {
-    if (e.target instanceof HTMLImageElement) {
-      e.preventDefault();
-    }
+    if (e.target instanceof HTMLImageElement) e.preventDefault();
   });
 
   document.querySelectorAll('.museum-frame').forEach((frame) => {
@@ -684,7 +1113,7 @@ function initGalleryAndLightbox() {
     img.draggable = false;
     img.referrerPolicy = 'no-referrer';
 
-    inner.append(img, el('span', 'gallery-zoom-hint', '✦ اضغطي لتكبير اللوحة'));
+    inner.append(img, el('span', 'gallery-zoom-hint', '✦ اضغط لتكبير اللوحة'));
     slide.appendChild(inner);
 
     slide.addEventListener('click', () => {
@@ -901,7 +1330,7 @@ function initScrollAndNavigation(scene3d, audio) {
   const hudLabel = document.getElementById('hud-stage-label');
   const railDots = Array.from(document.querySelectorAll('.rail-dot'));
   const dockChips = Array.from(document.querySelectorAll('.dock-chip'));
-  const sections = Array.from(document.querySelectorAll('section[id]'));
+  const sections = Array.from(document.querySelectorAll('section[id]:not(#reception-portal)'));
   const reveals = Array.from(document.querySelectorAll('.reveal'));
 
   let activeSectionId = 'hero';
@@ -1048,6 +1477,10 @@ function bootstrap() {
   }
 
   const audio = new AtelierAudio();
+  const supportStudio = initSupportCardStudio();
+
+  initBirthdayCountdown();
+  initReceptionPortal(scene3d, audio, supportStudio);
   initSparkleCursorTrail();
   initGuideModal();
   initHorizonMotionGraphics();
