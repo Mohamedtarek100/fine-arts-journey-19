@@ -7,13 +7,14 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js';
-import { Atelier3DScene } from './scene3d.js';
+import { SITE_CONFIG } from './config.js?v=2';
+import { Atelier3DScene } from './scene3d.js?v=2';
 
 /* ==================== MOTION-GRAPHICS GOLDEN SPARKLE CURSOR TRAIL ==================== */
 function initSparkleCursorTrail() {
   const canvas = document.getElementById('sparkle-canvas');
-  if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const isTouchOnly = window.matchMedia('(pointer: coarse)').matches;
+  if (!canvas || isTouchOnly || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const ctx = canvas.getContext('2d');
   const particles = [];
 
@@ -420,34 +421,48 @@ function initHorizonMotionGraphics() {
   let animated = false;
   const targetVal = Number(counterEl.dataset.target || 90);
 
+  const triggerAnimation = () => {
+    if (animated) return;
+    animated = true;
+    beam.style.width = `${targetVal}%`;
+    const start = performance.now();
+    const duration = 1500;
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      counterEl.textContent = String(Math.round(eased * targetVal));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
   const obs = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
-        if (entry.isIntersecting && !animated) {
-          animated = true;
-          beam.style.width = `${targetVal}%`;
-          const start = performance.now();
-          const duration = 1600;
-          const step = (now) => {
-            const p = Math.min(1, (now - start) / duration);
-            const eased = 1 - Math.pow(1 - p, 3);
-            counterEl.textContent = String(Math.round(eased * targetVal));
-            if (p < 1) requestAnimationFrame(step);
-          };
-          requestAnimationFrame(step);
-        }
+        if (entry.isIntersecting) triggerAnimation();
       });
     },
-    { threshold: 0.3 }
+    { threshold: 0.01, rootMargin: '80px 0px 80px 0px' }
   );
   obs.observe(shell);
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!animated && shell.getBoundingClientRect().top <= window.innerHeight + 60) {
+        triggerAnimation();
+      }
+    },
+    { passive: true }
+  );
 }
 
-/* ==================== 3D TILT INTERACTIONS ==================== */
+/* ==================== 3D TILT INTERACTIONS (DESKTOP MOUSE ONLY) ==================== */
 function initTiltEffects() {
   const frames = document.querySelectorAll('.js-tilt-frame, #fine-arts-pass');
   frames.forEach((el) => {
     el.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
       const rect = el.getBoundingClientRect();
       const x = (e.clientX - rect.left) / rect.width;
       const y = (e.clientY - rect.top) / rect.height;
@@ -745,13 +760,58 @@ function initAtelierSketchCanvas() {
   });
 }
 
-/* ==================== SCROLL REVEALS, RAIL, HUD & FINALE ==================== */
+/* ==================== SCROLL REVEALS, RAIL, MOBILE DOCK, 3D INSPECT & FINALE ==================== */
 function initScrollAndNavigation(scene3d, audio) {
   const topbar = document.getElementById('topbar');
   const progressBar = document.getElementById('scroll-progress-fill');
   const hudLabel = document.getElementById('hud-stage-label');
   const railDots = Array.from(document.querySelectorAll('.rail-dot'));
+  const dockChips = Array.from(document.querySelectorAll('.dock-chip'));
   const sections = Array.from(document.querySelectorAll('section[id]'));
+  const reveals = Array.from(document.querySelectorAll('.reveal'));
+
+  let activeSectionId = 'hero';
+
+  const setActiveStage = (id) => {
+    if (id === activeSectionId) return;
+    activeSectionId = id;
+    railDots.forEach((dot) => dot.classList.toggle('active', dot.dataset.target === id));
+    dockChips.forEach((chip) => {
+      const isMatch = chip.dataset.target === id;
+      chip.classList.toggle('active', isMatch);
+      if (isMatch && window.innerWidth <= 980) {
+        chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    });
+    const sec = document.getElementById(id);
+    if (hudLabel && sec?.dataset.stage) {
+      hudLabel.textContent = sec.dataset.stage;
+    }
+  };
+
+  // Bulletproof reveal check (guarantees NOTHING stays hidden on tall mobile screens!)
+  const checkRevealsAndActiveSection = () => {
+    const vh = window.innerHeight || 800;
+    for (const el of reveals) {
+      if (!el.classList.contains('visible')) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= vh + 120 && rect.bottom >= -120) {
+          el.classList.add('visible');
+        }
+      }
+    }
+
+    // Determine active section by viewport focal line (works reliably on ANY height!)
+    const focalY = vh * 0.4;
+    let currentId = sections[0]?.id || 'hero';
+    for (const sec of sections) {
+      const rect = sec.getBoundingClientRect();
+      if (rect.top <= focalY) {
+        currentId = sec.id;
+      }
+    }
+    setActiveStage(currentId);
+  };
 
   const onScroll = () => {
     const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
@@ -759,41 +819,51 @@ function initScrollAndNavigation(scene3d, audio) {
     if (scene3d) scene3d.setScrollProgress(progress);
     if (progressBar) progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
     topbar.classList.toggle('scrolled', window.scrollY > 40);
+    checkRevealsAndActiveSection();
   };
-  window.addEventListener('scroll', onScroll, { passive: true });
-  onScroll();
 
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', checkRevealsAndActiveSection, { passive: true });
+
+  // IntersectionObserver with threshold: 0 for instant mobile & desktop triggering
   const revealObs = new IntersectionObserver(
     (entries) => {
       entries.forEach((entry) => {
         if (entry.isIntersecting) entry.target.classList.add('visible');
       });
     },
-    { threshold: 0.14 }
+    { threshold: 0, rootMargin: '120px 0px 120px 0px' }
   );
-  document.querySelectorAll('.reveal').forEach((el) => revealObs.observe(el));
+  reveals.forEach((el) => revealObs.observe(el));
 
-  const secObs = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id;
-          railDots.forEach((dot) => dot.classList.toggle('active', dot.dataset.target === id));
-          if (hudLabel && entry.target.dataset.stage) {
-            hudLabel.textContent = entry.target.dataset.stage;
-          }
-        }
-      });
-    },
-    { threshold: 0.38 }
-  );
-  sections.forEach((sec) => secObs.observe(sec));
+  onScroll();
 
-  railDots.forEach((dot) => {
-    dot.addEventListener('click', () => {
-      const target = document.getElementById(dot.dataset.target);
-      if (target) target.scrollIntoView({ behavior: 'smooth' });
-    });
+  const scrollToTarget = (targetId) => {
+    const target = document.getElementById(targetId);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  railDots.forEach((dot) => dot.addEventListener('click', () => scrollToTarget(dot.dataset.target)));
+  dockChips.forEach((chip) => chip.addEventListener('click', () => scrollToTarget(chip.dataset.target)));
+
+  // Full-Screen 3D Inspect Mode Toggle (awesome on mobile & PC!)
+  const inspectBtn = document.getElementById('inspect-3d-btn');
+  const exitInspectBtn = document.getElementById('exit-inspect-btn');
+  const inspectBanner = document.getElementById('inspect-banner');
+  let inspectActive = false;
+
+  const setInspect = (val) => {
+    inspectActive = Boolean(val);
+    document.body.classList.toggle('inspect-3d-mode', inspectActive);
+    if (inspectBtn) inspectBtn.setAttribute('aria-pressed', String(inspectActive));
+    if (inspectBanner) inspectBanner.setAttribute('aria-hidden', String(!inspectActive));
+    if (scene3d) scene3d.setInspectMode(inspectActive);
+  };
+
+  if (inspectBtn) inspectBtn.addEventListener('click', () => setInspect(!inspectActive));
+  if (exitInspectBtn) exitInspectBtn.addEventListener('click', () => setInspect(false));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && inspectActive) setInspect(false);
   });
 
   document.getElementById('enter-exhibition-btn').addEventListener('click', () => {

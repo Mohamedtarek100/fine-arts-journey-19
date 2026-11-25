@@ -49,14 +49,13 @@ html {
   color: var(--ivory);
   font-family: var(--font-ar-body);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 body {
   background: radial-gradient(circle at 20% 10%, #241911 0%, var(--bg-deep) 60%);
   color: var(--ivory);
   line-height: 1.85;
-  overflow-x: hidden;
+  overflow-x: clip;
   min-height: 100vh;
 }
 
@@ -2138,11 +2137,77 @@ body {
 .lightbox-caption h3 { font-family: var(--font-ar-display); font-size: 1.6rem; color: var(--gold-100); }
 .lightbox-caption p { color: var(--ivory-muted); font-size: 0.95rem; }
 
+/* ==================== 3D INSPECT MODE & MOBILE JOURNEY DOCK ==================== */
+body.inspect-3d-mode #journey-root,
+body.inspect-3d-mode .chapter-rail,
+body.inspect-3d-mode .mobile-journey-dock {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.45s var(--ease-museum);
+}
+
+body.inspect-3d-mode #atelier-canvas {
+  touch-action: none;
+}
+
+#journey-root {
+  transition: opacity 0.45s var(--ease-museum);
+}
+
+.inspect-banner {
+  position: fixed;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%) translateY(24px);
+  z-index: 150;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 92vw;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(16, 12, 9, 0.88);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-gold-strong);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.72);
+  color: var(--gold-100);
+  font-size: 0.82rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.35s var(--ease-museum);
+}
+
+body.inspect-3d-mode .inspect-banner {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.inspect-banner button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--gold-200);
+  background: linear-gradient(135deg, #c99b42, #ebd089);
+  color: #19120b;
+  font-family: var(--font-ar-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobile-journey-dock {
+  display: none;
+}
+
 /* ==================== SCROLL REVEALS ==================== */
 .reveal {
   opacity: 0;
-  transform: translateY(34px);
-  transition: opacity 0.95s var(--ease-museum), transform 0.95s var(--ease-museum);
+  transform: translateY(26px);
+  transition: opacity 0.75s var(--ease-museum), transform 0.75s var(--ease-museum);
 }
 
 .reveal.visible {
@@ -2160,22 +2225,290 @@ body {
 }
 
 @media (max-width: 980px) {
-  .chapter-grid { grid-template-columns: 1fr; }
+  .chapter-grid { grid-template-columns: 1fr; gap: 22px; }
   .chapter-section.reverse .chapter-grid { direction: rtl; }
   .chapter-rail { display: none; }
-  .hero-section { align-items: center; }
-  .hero-content { margin: 0 auto; }
+
+  .section {
+    min-height: auto;
+    padding: 64px 16px;
+  }
+
+  /* Showcase the 3D Easel, Palette & Halos cleanly at the top of mobile screens! */
+  .hero-section {
+    min-height: 100svh;
+    justify-content: flex-end;
+    align-items: center;
+    padding-top: clamp(275px, 39vh, 360px);
+    padding-bottom: 104px;
+  }
+
+  .hero-content {
+    margin: 0 auto;
+    width: 100%;
+    background: linear-gradient(160deg, rgba(22, 16, 11, 0.76) 0%, rgba(14, 10, 7, 0.68) 100%);
+  }
+
+  .scroll-cue {
+    display: none;
+  }
+
+  .chapter-card,
+  .monument-card,
+  .horizon-progress-shell,
+  .finale-card {
+    background: linear-gradient(160deg, rgba(22, 16, 11, 0.76) 0%, rgba(14, 10, 7, 0.66) 100%);
+  }
+
+  .finale-section {
+    padding-bottom: 112px;
+  }
+
+  /* Floating Glassmorphic Mobile Journey Dock */
+  .mobile-journey-dock {
+    position: fixed;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    left: 10px;
+    right: 10px;
+    z-index: 65;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: rgba(15, 11, 8, 0.86);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(238, 210, 138, 0.34);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.72);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-journey-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-chip {
+    flex: 0 0 auto;
+    padding: 6px 13px;
+    border-radius: 999px;
+    border: 1px solid rgba(214, 171, 82, 0.24);
+    background: rgba(255, 245, 224, 0.04);
+    color: var(--ivory-muted);
+    font-family: var(--font-ar-body);
+    font-size: 0.76rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.28s ease;
+  }
+
+  .dock-chip.gold-chip {
+    border-color: rgba(238, 210, 138, 0.45);
+    color: var(--gold-200);
+  }
+
+  .dock-chip.active {
+    background: linear-gradient(135deg, #c99b42, #ebd089);
+    color: #19120b;
+    border-color: var(--gold-100);
+    box-shadow: 0 4px 16px rgba(214, 171, 82, 0.4);
+  }
 }
 
 @media (max-width: 640px) {
-  .topbar { padding: 12px 14px; }
-  .pill-label { font-size: 0.74rem; }
-  .brand-sep, .brand-en { display: none; }
-  .topbar-actions .gold-outline { display: none; }
-  .guide-grid, .guide-modal-grid, .hp-nodes { grid-template-columns: 1fr; }
-  .gallery-controls { grid-template-columns: 1fr; text-align: center; }
-  .gallery-nav-btn { flex-direction: row; justify-content: center; gap: 8px; }
-  .gallery-slide.is-prev { transform: translate3d(26%, 16px, -200px) rotateY(-18deg) scale(0.76); }
-  .gallery-slide.is-next { transform: translate3d(-26%, 16px, -200px) rotateY(18deg) scale(0.76); }
-  .footer-brand { flex-direction: column; text-align: center; }
+  .topbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .brand-monogram {
+    width: 34px;
+    height: 34px;
+    font-size: 0.72rem;
+  }
+
+  .brand-sep,
+  .brand-en,
+  .topbar-actions .gold-outline,
+  .audio-label {
+    display: none;
+  }
+
+  .brand-ar {
+    font-size: 0.92rem;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .icon-pill {
+    padding: 7px 11px;
+    font-size: 0.74rem;
+    gap: 6px;
+  }
+
+  .hero-content {
+    padding: 20px 18px;
+  }
+
+  .hero-title {
+    font-size: 2.35rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.94rem;
+    line-height: 1.75;
+  }
+
+  .hero-status-ribbon {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .ribbon-chip {
+    justify-content: center;
+    font-size: 0.78rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-gold-seal,
+  .btn-glass-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .guide-grid,
+  .guide-modal-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .guide-card {
+    padding: 18px 16px;
+  }
+
+  .hp-nodes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .hp-node {
+    font-size: 0.74rem;
+    padding: 7px 9px;
+  }
+
+  .chapter-card {
+    padding: 22px 18px;
+  }
+
+  .chapter-title-ar {
+    font-size: 1.75rem;
+  }
+
+  .chapter-number-bg {
+    font-size: 3.1rem;
+  }
+
+  .museum-frame {
+    padding: 11px;
+  }
+
+  .museum-mat {
+    padding: 9px;
+  }
+
+  .dream-pass {
+    padding: 18px;
+  }
+
+  .pass-body {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .pass-serial {
+    text-align: right;
+  }
+
+  .gallery-stage {
+    overflow: hidden;
+  }
+
+  .gallery-3d-viewport {
+    height: 260px;
+    margin-bottom: 18px;
+  }
+
+  .gallery-slide {
+    width: 84vw;
+    padding: 9px;
+  }
+
+  .gallery-slide-inner {
+    padding: 7px;
+  }
+
+  .gallery-slide.is-prev {
+    transform: translate3d(28%, 12px, -210px) rotateY(-16deg) scale(0.75);
+    opacity: 0.45;
+  }
+
+  .gallery-slide.is-next {
+    transform: translate3d(-28%, 12px, -210px) rotateY(16deg) scale(0.75);
+    opacity: 0.45;
+  }
+
+  .gallery-controls {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .gallery-plaque {
+    grid-column: 1 / -1;
+    order: -1;
+  }
+
+  .gallery-nav-btn {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .atelier-toolbar {
+    justify-content: center;
+  }
+
+  .brush-controls {
+    justify-content: center;
+  }
+
+  .finale-card {
+    padding: 26px 18px;
+  }
+
+  .age-medallion {
+    width: 112px;
+    height: 112px;
+  }
+
+  .age-num {
+    font-size: 2.6rem;
+  }
+
+  .footer-brand {
+    flex-direction: column;
+    text-align: center;
+  }
 }

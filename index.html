@@ -15,7 +15,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=2" />
 
   <!-- Three.js Import Map (Zero-Build GitHub Pages Ready) -->
   <script type="importmap">
@@ -73,6 +73,17 @@
 
     <div class="topbar-actions">
       <button
+        id="inspect-3d-btn"
+        class="icon-pill"
+        type="button"
+        aria-pressed="false"
+        title="معاينة المشهد ثلاثي الأبعاد بالكامل"
+      >
+        <span class="pill-icon" aria-hidden="true">❖</span>
+        <span class="pill-label">عرض 3D</span>
+      </button>
+
+      <button
         id="guide-open-btn"
         class="icon-pill"
         type="button"
@@ -92,7 +103,7 @@
         <span class="sound-bars" aria-hidden="true">
           <i></i><i></i><i></i>
         </span>
-        <span class="pill-label">موسيقى الأتيليه</span>
+        <span class="pill-label audio-label">موسيقى الأتيليه</span>
       </button>
 
       <a href="#horizon-goal" class="icon-pill gold-outline">
@@ -100,6 +111,26 @@
       </a>
     </div>
   </header>
+
+  <!-- Floating 3D Inspect Mode Exit Banner -->
+  <div id="inspect-banner" class="inspect-banner" aria-hidden="true">
+    <span>✦ اسحبي الشاشة بإصبعك أو بالماوس لتدوير المشهد الـ 3D</span>
+    <button id="exit-inspect-btn" type="button">العودة للرحلة ✕</button>
+  </div>
+
+  <!-- Mobile Bottom Journey Dock (Visible on Mobile & Tablet <= 980px) -->
+  <nav class="mobile-journey-dock" id="mobile-journey-dock" aria-label="شريط مراحل الرحلة للموبايل">
+    <button class="dock-chip active" data-target="hero" type="button">البداية</button>
+    <button class="dock-chip" data-target="guide-strip" type="button">الدليل</button>
+    <button class="dock-chip" data-target="childhood" type="button">الطفولة</button>
+    <button class="dock-chip" data-target="passion" type="button">الشغف</button>
+    <button class="dock-chip" data-target="thanaweya" type="button">تالتة ثانوي</button>
+    <button class="dock-chip gold-chip" data-target="horizon-goal" type="button">الهدف ✦</button>
+    <button class="dock-chip" data-target="fine-arts" type="button">فنون جميلة</button>
+    <button class="dock-chip" data-target="gallery" type="button">المعرض</button>
+    <button class="dock-chip" data-target="canvas-studio" type="button">لوحتكِ</button>
+    <button class="dock-chip" data-target="finale" type="button">19 عاماً</button>
+  </nav>
 
   <!-- Vertical Chapter Navigation Rail (Desktop & Tablet) -->
   <nav class="chapter-rail" aria-label="فصول الرحلة">
@@ -466,6 +497,6 @@
   </div>
 
   <!-- Main Scripts -->
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=2"></script>
 </body>
 </html>

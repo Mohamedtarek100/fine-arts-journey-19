@@ -1,11 +1,10 @@
 /**
  * =========================================================================
  *  Three.js Cinema-Grade 3D Fine Arts Atelier & Motion-Graphics World
- *  - Continuous 3D Golden Journey Ribbon + Traveling Light Comet
- *  - Interactive Drag-to-Orbit + Pointer Parallax
- *  - Floating Gold-Leaf Flakes (InstancedMesh)
- *  - 7 Choreographed 3D Zones: Easel, Childhood, Passion, Thanaweya Lanterns,
- *    One-Step Golden Bridge, Neoclassical Fine Arts Archway, 19 Birthday Candles
+ *  Fully Responsive for BOTH Desktop Widescreen AND Mobile Portrait!
+ *  - Dynamic portrait FOV & horizontal layout compression so ALL 3D models
+ *    stay centered and framed on narrow mobile screens
+ *  - Native touch scroll preserved; full touch 3D-orbit enabled in 3D Inspect mode
  * =========================================================================
  */
 
@@ -20,7 +19,8 @@ export class Atelier3DScene {
     this.pointer = { x: 0, y: 0 };
     this.smoothPointer = { x: 0, y: 0 };
 
-    // Interactive Drag-to-Orbit state with smooth spring return
+    // Orbit drag state (Mouse anytime; Touch when in 3D Inspect Mode)
+    this.inspectMode = false;
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
     this.orbitTarget = { x: 0, y: 0 };
@@ -30,6 +30,7 @@ export class Atelier3DScene {
     this.wishBurstTime = -1;
     this.disposed = false;
     this.isHidden = false;
+    this.isMobile = window.innerWidth < 900;
 
     this.clock = new THREE.Clock();
     this.animatedObjects = [];
@@ -37,6 +38,7 @@ export class Atelier3DScene {
     this.candles = [];
     this.flames = [];
     this.goldLeafData = [];
+    this.responsiveGroups = [];
 
     this.init();
   }
@@ -44,25 +46,22 @@ export class Atelier3DScene {
   init() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: true,
+      antialias: !this.isMobile || (window.devicePixelRatio || 1) <= 2,
       alpha: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.isMobile ? 1.75 : 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.18;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x110c09, 0.032);
+    this.scene.fog = new THREE.FogExp2(0x110c09, this.isMobile ? 0.026 : 0.032);
 
-    this.camera = new THREE.PerspectiveCamera(
-      46,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      165
-    );
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    const fov = aspect < 0.85 ? 64 : aspect < 1.1 ? 54 : 46;
+    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 175);
     this.camera.position.set(0.6, 0.4, 8.6);
 
     this.glowTexture = this.createRadialGlowTexture();
@@ -71,45 +70,45 @@ export class Atelier3DScene {
 
     this.materials = {
       gold: new THREE.MeshStandardMaterial({
-        color: 0xe6be63,
-        metalness: 0.88,
+        color: 0xe8c268,
+        metalness: 0.86,
         roughness: 0.22,
       }),
       goldGlow: new THREE.MeshStandardMaterial({
-        color: 0xfbe29b,
-        emissive: 0xd9a23b,
-        emissiveIntensity: 0.85,
-        metalness: 0.65,
+        color: 0xfce6a6,
+        emissive: 0xdca53d,
+        emissiveIntensity: 0.9,
+        metalness: 0.62,
         roughness: 0.2,
       }),
       antiqueBrass: new THREE.MeshStandardMaterial({
-        color: 0xb08232,
+        color: 0xb88937,
         metalness: 0.78,
-        roughness: 0.34,
+        roughness: 0.32,
       }),
       wood: new THREE.MeshStandardMaterial({
-        color: 0x4b2f1d,
+        color: 0x563622,
         metalness: 0.08,
-        roughness: 0.66,
+        roughness: 0.62,
       }),
       darkWood: new THREE.MeshStandardMaterial({
-        color: 0x2c1a10,
+        color: 0x331f13,
         metalness: 0.06,
-        roughness: 0.72,
+        roughness: 0.7,
       }),
       marble: new THREE.MeshPhysicalMaterial({
-        color: 0xf4ece0,
+        color: 0xf6eee3,
         metalness: 0.04,
-        roughness: 0.26,
+        roughness: 0.25,
         clearcoat: 0.4,
         clearcoatRoughness: 0.22,
       }),
       candleWax: new THREE.MeshStandardMaterial({
-        color: 0xf7ecd8,
-        roughness: 0.52,
+        color: 0xf8eedb,
+        roughness: 0.5,
         metalness: 0.02,
-        emissive: 0x3f2408,
-        emissiveIntensity: 0.28,
+        emissive: 0x452809,
+        emissiveIntensity: 0.3,
       }),
     };
 
@@ -127,8 +126,17 @@ export class Atelier3DScene {
     this.buildFinaleCandlesZone();
     this.buildCelebrationBurstSystem();
 
+    this.applyResponsiveLayout();
     this.bindEvents();
     this.animate();
+  }
+
+  setInspectMode(enabled) {
+    this.inspectMode = Boolean(enabled);
+    if (!enabled) {
+      this.orbitTarget.x = 0;
+      this.orbitTarget.y = 0;
+    }
   }
 
   createRadialGlowTexture() {
@@ -139,8 +147,8 @@ export class Atelier3DScene {
     const ctx = c.getContext('2d');
     const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
     g.addColorStop(0, 'rgba(255, 250, 232, 1)');
-    g.addColorStop(0.28, 'rgba(244, 206, 120, 0.82)');
-    g.addColorStop(0.62, 'rgba(205, 145, 58, 0.22)');
+    g.addColorStop(0.28, 'rgba(244, 206, 120, 0.84)');
+    g.addColorStop(0.62, 'rgba(205, 145, 58, 0.24)');
     g.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
@@ -155,7 +163,7 @@ export class Atelier3DScene {
     c.height = 256;
     const ctx = c.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, 'rgba(255, 234, 170, 0.42)');
+    g.addColorStop(0, 'rgba(255, 234, 170, 0.44)');
     g.addColorStop(0.55, 'rgba(235, 188, 96, 0.14)');
     g.addColorStop(1, 'rgba(235, 188, 96, 0)');
     ctx.fillStyle = g;
@@ -173,24 +181,24 @@ export class Atelier3DScene {
   }
 
   setupLights() {
-    this.ambientLight = new THREE.AmbientLight(0xffe6c2, 0.68);
+    this.ambientLight = new THREE.AmbientLight(0xffe8c6, 0.74);
     this.scene.add(this.ambientLight);
 
-    this.hemiLight = new THREE.HemisphereLight(0xfff1d6, 0x241710, 0.58);
+    this.hemiLight = new THREE.HemisphereLight(0xfff3dc, 0x261810, 0.62);
     this.scene.add(this.hemiLight);
 
-    this.keyLight = new THREE.PointLight(0xffcf82, 36, 38, 1.45);
+    this.keyLight = new THREE.PointLight(0xffd288, 38, 42, 1.4);
     this.keyLight.position.set(3.5, 4.2, 6.5);
     this.scene.add(this.keyLight);
 
-    this.rimLight = new THREE.PointLight(0xd49b54, 20, 40, 1.55);
+    this.rimLight = new THREE.PointLight(0xd8a056, 22, 42, 1.5);
     this.rimLight.position.set(-5.5, 2.5, 2.5);
     this.scene.add(this.rimLight);
   }
 
   /* ==================== PERSISTENT GOLDEN DUST FIELD ==================== */
   buildGoldenDustField() {
-    const count = 780;
+    const count = this.isMobile ? 420 : 760;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const palette = [
@@ -201,8 +209,8 @@ export class Atelier3DScene {
     ];
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 30;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 17;
+      positions[i * 3] = (Math.random() - 0.5) * (this.isMobile ? 16 : 30);
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
       positions[i * 3 + 2] = 14 - Math.random() * 108;
 
       const col = palette[i % palette.length];
@@ -216,11 +224,11 @@ export class Atelier3DScene {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: 0.22,
+      size: this.isMobile ? 0.25 : 0.22,
       map: this.glowTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.78,
+      opacity: 0.8,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -231,7 +239,7 @@ export class Atelier3DScene {
 
   /* ==================== FLOATING METALLIC GOLD-LEAF FLAKES ==================== */
   buildFloatingGoldLeafFlakes() {
-    const count = 90;
+    const count = this.isMobile ? 48 : 90;
     const flakeGeo = new THREE.PlaneGeometry(0.14, 0.14);
     const flakeMat = new THREE.MeshStandardMaterial({
       color: 0xf2cd74,
@@ -245,7 +253,7 @@ export class Atelier3DScene {
 
     for (let i = 0; i < count; i++) {
       this.goldLeafData.push({
-        x: (Math.random() - 0.5) * 16,
+        x: (Math.random() - 0.5) * (this.isMobile ? 9 : 16),
         y: (Math.random() - 0.5) * 9,
         z: 8 - Math.random() * 94,
         rotX: Math.random() * Math.PI,
@@ -261,35 +269,35 @@ export class Atelier3DScene {
 
   /* ==================== CONTINUOUS 3D GOLDEN MOTION-GRAPHIC RIBBON ==================== */
   buildJourneyLightRibbon() {
+    const xAmp = this.isMobile ? 0.85 : 2.4;
     this.journeyCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-2.4, -1.35, 3.2),
-      new THREE.Vector3(2.4, -0.9, -9.0),
-      new THREE.Vector3(-2.8, 0.2, -21.5),
-      new THREE.Vector3(2.3, -0.5, -34.0),
-      new THREE.Vector3(0.0, -0.25, -45.5), // One-Step Bridge center
-      new THREE.Vector3(0.0, -0.1, -57.5),  // Fine Arts Archway center
-      new THREE.Vector3(-1.8, -0.7, -69.0),
-      new THREE.Vector3(0.0, -0.4, -81.0),  // 19 Birthday Candles center
+      new THREE.Vector3(-xAmp * 0.85, -1.1, 3.2),
+      new THREE.Vector3(xAmp, -0.75, -9.0),
+      new THREE.Vector3(-xAmp, 0.2, -21.5),
+      new THREE.Vector3(xAmp * 0.9, -0.45, -34.0),
+      new THREE.Vector3(0.0, -0.25, -45.5),
+      new THREE.Vector3(0.0, -0.1, -57.5),
+      new THREE.Vector3(-xAmp * 0.7, -0.6, -69.0),
+      new THREE.Vector3(0.0, -0.35, -81.0),
     ]);
 
-    const tubeGeo = new THREE.TubeGeometry(this.journeyCurve, 260, 0.032, 8, false);
+    const tubeGeo = new THREE.TubeGeometry(this.journeyCurve, 220, 0.036, 8, false);
     const tubeMat = new THREE.MeshStandardMaterial({
       color: 0xf4cf76,
       emissive: 0xc98b2c,
-      emissiveIntensity: 0.7,
+      emissiveIntensity: 0.78,
       metalness: 0.85,
       roughness: 0.22,
       transparent: true,
-      opacity: 0.72,
+      opacity: 0.76,
     });
 
     this.ribbonMesh = new THREE.Mesh(tubeGeo, tubeMat);
     this.scene.add(this.ribbonMesh);
 
-    // Traveling Golden Comet gliding along the 3D Ribbon as user scrolls
     this.cometGroup = new THREE.Group();
     const cometCore = new THREE.Mesh(
-      new THREE.SphereGeometry(0.14, 16, 16),
+      new THREE.SphereGeometry(0.15, 16, 16),
       new THREE.MeshBasicMaterial({ color: 0xfff3cb })
     );
     const cometGlow = new THREE.Sprite(
@@ -297,11 +305,11 @@ export class Atelier3DScene {
         map: this.glowTexture,
         color: 0xffd271,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.96,
         blending: THREE.AdditiveBlending,
       })
     );
-    cometGlow.scale.set(1.9, 1.9, 1);
+    cometGlow.scale.set(2.0, 2.0, 1);
     this.cometGroup.add(cometCore, cometGlow);
     this.scene.add(this.cometGroup);
   }
@@ -309,9 +317,6 @@ export class Atelier3DScene {
   /* ==================== ZONE 0: HERO WOODEN EASEL & PALETTE ==================== */
   buildHeroEaselZone() {
     const group = new THREE.Group();
-    const isMobile = window.innerWidth < 980;
-    group.position.set(isMobile ? 0 : -2.45, isMobile ? 0.35 : -0.15, 1.6);
-    group.rotation.y = isMobile ? 0.1 : 0.34;
 
     const easel = new THREE.Group();
     const legGeo = new THREE.BoxGeometry(0.11, 4.3, 0.11);
@@ -356,29 +361,29 @@ export class Atelier3DScene {
     group.add(easel);
 
     const palette = this.createArtistPalette();
-    palette.position.set(1.55, -0.55, 0.95);
+    palette.position.set(1.42, -0.52, 0.9);
     palette.rotation.set(0.45, -0.5, 0.22);
     group.add(palette);
-    this.animatedObjects.push({ mesh: palette, baseY: -0.55, speed: 1.15, amp: 0.14, rotY: 0.28 });
+    this.animatedObjects.push({ mesh: palette, baseY: -0.52, speed: 1.15, amp: 0.14, rotY: 0.28 });
 
     const brush1 = this.createPaintbrush(0xd9804c);
-    brush1.position.set(-1.55, 0.72, 0.8);
+    brush1.position.set(-1.42, 0.72, 0.75);
     brush1.rotation.set(0.3, 0.2, -0.65);
     group.add(brush1);
     this.animatedObjects.push({ mesh: brush1, baseY: 0.72, speed: 1.4, amp: 0.16, rotZ: 0.18 });
 
     const brush2 = this.createPaintbrush(0x4b749f);
-    brush2.position.set(1.42, 0.95, 0.35);
+    brush2.position.set(1.32, 0.95, 0.35);
     brush2.rotation.set(-0.25, 0.4, 0.52);
     group.add(brush2);
     this.animatedObjects.push({ mesh: brush2, baseY: 0.95, speed: 1.05, amp: 0.13, rotZ: -0.15 });
 
-    const halo1 = new THREE.Mesh(new THREE.TorusGeometry(2.38, 0.016, 16, 128), this.materials.gold);
+    const halo1 = new THREE.Mesh(new THREE.TorusGeometry(2.32, 0.018, 16, 128), this.materials.gold);
     halo1.position.set(0, 0.15, -0.3);
     halo1.rotation.set(0.35, 0.2, 0);
     group.add(halo1);
 
-    const halo2 = new THREE.Mesh(new THREE.TorusGeometry(2.74, 0.009, 12, 128), this.materials.antiqueBrass);
+    const halo2 = new THREE.Mesh(new THREE.TorusGeometry(2.68, 0.01, 12, 128), this.materials.antiqueBrass);
     halo2.position.set(0, 0.15, -0.35);
     halo2.rotation.set(-0.42, 0.55, 0.2);
     group.add(halo2);
@@ -395,26 +400,18 @@ export class Atelier3DScene {
 
     const topBar = new THREE.Mesh(new THREE.BoxGeometry(width + border * 2, border, depth), this.materials.gold);
     topBar.position.y = height / 2 + border / 2;
-    frameGroup.add(topBar);
-
     const botBar = topBar.clone();
     botBar.position.y = -(height / 2 + border / 2);
-    frameGroup.add(botBar);
-
     const leftBar = new THREE.Mesh(new THREE.BoxGeometry(border, height, depth), this.materials.gold);
     leftBar.position.x = -(width / 2 + border / 2);
-    frameGroup.add(leftBar);
-
     const rightBar = leftBar.clone();
     rightBar.position.x = width / 2 + border / 2;
-    frameGroup.add(rightBar);
 
     const back = new THREE.Mesh(
       new THREE.BoxGeometry(width + border, height + border, 0.025),
       this.materials.darkWood
     );
     back.position.z = -0.025;
-    frameGroup.add(back);
 
     const artTex = this.loadArtTexture(imagePath);
     const canvasMat = new THREE.MeshStandardMaterial({
@@ -424,8 +421,8 @@ export class Atelier3DScene {
     });
     const painting = new THREE.Mesh(new THREE.PlaneGeometry(width, height), canvasMat);
     painting.position.z = 0.01;
-    frameGroup.add(painting);
 
+    frameGroup.add(topBar, botBar, leftBar, rightBar, back, painting);
     return frameGroup;
   }
 
@@ -450,7 +447,6 @@ export class Atelier3DScene {
       bevelSegments: 3,
     });
     extrude.center();
-
     group.add(new THREE.Mesh(extrude, this.materials.wood));
 
     const paints = [
@@ -462,7 +458,7 @@ export class Atelier3DScene {
       { color: 0xf7efe0, x: 0.14, y: -0.44 },
     ];
 
-    const dabGeo = new THREE.SphereGeometry(0.12, 18, 14);
+    const dabGeo = new THREE.SphereGeometry(0.12, 16, 12);
     paints.forEach((p) => {
       const mat = new THREE.MeshPhysicalMaterial({
         color: p.color,
@@ -501,9 +497,9 @@ export class Atelier3DScene {
     group.position.set(0, 0, -10.5);
 
     const artPath = this.config.chapters?.[0]?.image || './assets/art/chapter1-childhood.jpg';
-    const frame = this.createFramedPainting(2.2, 1.65, artPath);
-    frame.position.set(3.2, 0.4, -1.2);
-    frame.rotation.y = -0.42;
+    const frame = this.createFramedPainting(2.1, 1.58, artPath);
+    frame.position.set(2.9, 0.4, -1.2);
+    frame.rotation.y = -0.38;
     group.add(frame);
     this.animatedObjects.push({ mesh: frame, baseY: 0.4, speed: 0.9, amp: 0.18 });
 
@@ -523,8 +519,8 @@ export class Atelier3DScene {
 
       const angle = (idx / pastelColors.length) * Math.PI * 2;
       pencil.position.set(
-        -2.9 + Math.cos(angle) * 1.4,
-        -0.4 + Math.sin(angle) * 1.1,
+        -2.5 + Math.cos(angle) * 1.25,
+        -0.3 + Math.sin(angle) * 1.0,
         (idx - 2) * 0.7
       );
       pencil.rotation.set(0.4 + idx * 0.2, idx * 0.5, 0.6);
@@ -538,6 +534,7 @@ export class Atelier3DScene {
       });
     });
 
+    this.responsiveGroups.push({ group, mobileScale: 0.58 });
     this.scene.add(group);
   }
 
@@ -547,7 +544,7 @@ export class Atelier3DScene {
     group.position.set(0, 0, -22.5);
 
     const geomCore = new THREE.Group();
-    geomCore.position.set(-2.9, 0.15, -0.8);
+    geomCore.position.set(-2.6, 0.15, -0.8);
 
     const icoWire = new THREE.Mesh(
       new THREE.IcosahedronGeometry(1.48, 0),
@@ -559,7 +556,7 @@ export class Atelier3DScene {
       })
     );
     const innerGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.68, 0), this.materials.marble);
-    const orbitRing = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.018, 12, 96), this.materials.gold);
+    const orbitRing = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.018, 12, 96), this.materials.gold);
     orbitRing.rotation.x = 1.15;
     geomCore.add(icoWire, innerGem, orbitRing);
 
@@ -567,11 +564,12 @@ export class Atelier3DScene {
     this.passionSculpture = { group: geomCore, icoWire, innerGem, orbitRing };
 
     const palette2 = this.createArtistPalette();
-    palette2.position.set(3.2, -0.25, -1.6);
+    palette2.position.set(2.9, -0.25, -1.6);
     palette2.rotation.set(0.25, -0.6, -0.2);
     group.add(palette2);
     this.animatedObjects.push({ mesh: palette2, baseY: -0.25, speed: 1.0, amp: 0.18, rotY: -0.25 });
 
+    this.responsiveGroups.push({ group, mobileScale: 0.58 });
     this.scene.add(group);
   }
 
@@ -580,7 +578,7 @@ export class Atelier3DScene {
     const group = new THREE.Group();
     group.position.set(0, 0, -34.5);
 
-    const orbGeo = new THREE.SphereGeometry(0.22, 18, 18);
+    const orbGeo = new THREE.SphereGeometry(0.22, 16, 16);
     const haloMat = new THREE.SpriteMaterial({
       map: this.glowTexture,
       color: 0xffcf77,
@@ -608,11 +606,11 @@ export class Atelier3DScene {
       lantern.add(core, ring, glow);
 
       const side = i % 2 === 0 ? -1 : 1;
-      const x = side * (2.3 + Math.random() * 3.8);
-      const y = (Math.random() - 0.5) * 6.5;
+      const x = side * (1.5 + Math.random() * 3.4);
+      const y = (Math.random() - 0.5) * 6.0;
       const z = (Math.random() - 0.5) * 8;
       lantern.position.set(x, y, z);
-      lantern.scale.setScalar(0.65 + Math.random() * 0.65);
+      lantern.scale.setScalar(0.65 + Math.random() * 0.62);
 
       group.add(lantern);
       this.lanterns.push({
@@ -623,15 +621,15 @@ export class Atelier3DScene {
       });
     }
 
+    this.responsiveGroups.push({ group, mobileScale: 0.62 });
     this.scene.add(group);
   }
 
-  /* ==================== ZONE 4: ONE-STEP GOLDEN BRIDGE (NOW -> FINE ARTS) ==================== */
+  /* ==================== ZONE 4: ONE-STEP GOLDEN BRIDGE ==================== */
   buildOneStepBridgeZone() {
     const group = new THREE.Group();
     group.position.set(0, -0.2, -46);
 
-    // 7 Floating Golden Stepping Discs forming a luminous 3D bridge straight toward Fine Arts
     this.bridgeSteps = [];
     for (let i = 0; i < 6; i++) {
       const stepGroup = new THREE.Group();
@@ -646,19 +644,19 @@ export class Atelier3DScene {
       rim.rotation.x = Math.PI / 2;
       rim.position.y = 0.04;
       stepGroup.add(disc, rim);
-      stepGroup.position.set(0, -2.1 + i * 0.14, 3.4 - i * 1.45);
+      stepGroup.position.set(0, -2.0 + i * 0.14, 3.4 - i * 1.45);
       group.add(stepGroup);
       this.bridgeSteps.push({ mesh: stepGroup, baseY: stepGroup.position.y, phase: i * 0.7 });
     }
 
-    // Twin Rotating Golden Compass Rings framing "One Step to the Dream"
-    const compassOuter = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.022, 12, 128), this.materials.gold);
-    const compassInner = new THREE.Mesh(new THREE.TorusGeometry(2.8, 0.014, 12, 128), this.materials.antiqueBrass);
+    const compassOuter = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.022, 12, 128), this.materials.gold);
+    const compassInner = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.014, 12, 128), this.materials.antiqueBrass);
     compassOuter.position.set(0, 0.4, -1.5);
     compassInner.position.set(0, 0.4, -1.5);
     group.add(compassOuter, compassInner);
     this.bridgeCompass = { outer: compassOuter, inner: compassInner };
 
+    this.responsiveGroups.push({ group, mobileScale: 0.68 });
     this.scene.add(group);
   }
 
@@ -684,28 +682,23 @@ export class Atelier3DScene {
       return col;
     };
 
-    // Grand Triumphal Archway Pillars
-    group.add(buildColumn(-3.4, -1.2));
-    group.add(buildColumn(3.4, -1.2));
-    group.add(buildColumn(-5.2, -4.6));
-    group.add(buildColumn(5.2, -4.6));
+    group.add(buildColumn(-3.2, -1.2));
+    group.add(buildColumn(3.2, -1.2));
+    group.add(buildColumn(-4.8, -4.6));
+    group.add(buildColumn(4.8, -4.6));
 
-    // Classical Golden-Trimmed Arch & Entablature crowning the Faculty of Fine Arts Portal
     const archCurve = new THREE.Mesh(
-      new THREE.TorusGeometry(3.4, 0.24, 16, 64, Math.PI),
+      new THREE.TorusGeometry(3.2, 0.24, 16, 64, Math.PI),
       this.materials.marble
     );
     archCurve.position.set(0, 2.85, -1.2);
-    group.add(archCurve);
-
     const archGoldTrim = new THREE.Mesh(
-      new THREE.TorusGeometry(3.15, 0.05, 12, 64, Math.PI),
+      new THREE.TorusGeometry(2.96, 0.05, 12, 64, Math.PI),
       this.materials.goldGlow
     );
     archGoldTrim.position.set(0, 2.85, -1.05);
-    group.add(archGoldTrim);
+    group.add(archCurve, archGoldTrim);
 
-    // Volumetric-style Cathedral Golden Light Beams pouring through the Fine Arts Archway
     const beamMat = new THREE.MeshBasicMaterial({
       map: this.beamTexture,
       transparent: true,
@@ -716,13 +709,12 @@ export class Atelier3DScene {
     });
     for (let i = -1; i <= 1; i++) {
       const beam = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 8.8), beamMat);
-      beam.position.set(i * 1.45, 1.4, -2.6);
+      beam.position.set(i * 1.35, 1.4, -2.6);
       beam.rotation.z = -0.22 + i * 0.06;
       beam.rotation.y = i * 0.15;
       group.add(beam);
     }
 
-    // Central Sculptural Pedestal & Classical Fine Arts Sculpture
     const pedestalGroup = new THREE.Group();
     pedestalGroup.position.set(0, -0.35, -3.4);
 
@@ -733,7 +725,7 @@ export class Atelier3DScene {
     plinthRing.position.y = -0.68;
 
     const sculpture = new THREE.Mesh(
-      new THREE.TorusKnotGeometry(0.84, 0.24, 128, 24, 2, 3),
+      new THREE.TorusKnotGeometry(0.84, 0.24, 112, 20, 2, 3),
       this.materials.marble
     );
     sculpture.position.y = 0.65;
@@ -745,6 +737,7 @@ export class Atelier3DScene {
     group.add(pedestalGroup);
     this.fineArtsSculpture = { sculpture, goldCrown };
 
+    this.responsiveGroups.push({ group, mobileScale: 0.64 });
     this.scene.add(group);
   }
 
@@ -753,8 +746,8 @@ export class Atelier3DScene {
     const group = new THREE.Group();
     group.position.set(0, 0, -82);
 
-    const candleGeo = new THREE.CylinderGeometry(0.075, 0.085, 0.72, 16);
-    const holderGeo = new THREE.CylinderGeometry(0.13, 0.07, 0.08, 16);
+    const candleGeo = new THREE.CylinderGeometry(0.075, 0.085, 0.72, 14);
+    const holderGeo = new THREE.CylinderGeometry(0.13, 0.07, 0.08, 14);
     const flameGeo = new THREE.ConeGeometry(0.055, 0.22, 12);
     const flameMat = new THREE.MeshBasicMaterial({ color: 0xffe699 });
     const glowMat = new THREE.SpriteMaterial({
@@ -783,10 +776,10 @@ export class Atelier3DScene {
 
       const t = i / (totalCandles - 1);
       const angle = (t - 0.5) * Math.PI * 1.45;
-      const radius = 4.0 + (i % 3) * 0.65;
+      const radius = 3.7 + (i % 3) * 0.55;
       const x = Math.sin(angle) * radius;
       const z = -Math.cos(angle) * radius + 1.2;
-      const y = -1.6 + Math.sin(t * Math.PI) * 2.55 + ((i % 2) * 0.55 - 0.25);
+      const y = -1.5 + Math.sin(t * Math.PI) * 2.4 + ((i % 2) * 0.5 - 0.25);
 
       candleUnit.position.set(x, y, z);
       group.add(candleUnit);
@@ -799,12 +792,13 @@ export class Atelier3DScene {
     this.finaleLight.position.set(0, 1.5, -81);
     this.scene.add(this.finaleLight);
 
+    this.responsiveGroups.push({ group, mobileScale: 0.66 });
     this.scene.add(group);
   }
 
   /* ==================== CELEBRATION 3D GOLDEN BURST ==================== */
   buildCelebrationBurstSystem() {
-    const count = 380;
+    const count = this.isMobile ? 220 : 380;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     this.burstVelocities = [];
@@ -855,15 +849,45 @@ export class Atelier3DScene {
     this.scene.add(this.burstPoints);
   }
 
+  /* ==================== DYNAMIC DESKTOP / MOBILE RESPONSIVE FRAMING ==================== */
+  applyResponsiveLayout() {
+    const w = window.innerWidth;
+    const h = Math.max(1, window.innerHeight);
+    const aspect = w / h;
+    this.isMobile = w < 900;
+    const isPortrait = aspect < 0.9;
+
+    this.camera.aspect = aspect;
+    this.camera.fov = isPortrait ? 64 : aspect < 1.15 ? 54 : 46;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(w, h);
+
+    if (this.heroGroup) {
+      if (this.isMobile) {
+        // Centered & elevated into the mobile top 3D showcase window!
+        this.heroGroup.position.set(0, isPortrait ? 1.55 : 0.75, 1.3);
+        this.heroGroup.scale.setScalar(isPortrait ? 0.62 : 0.74);
+      } else {
+        this.heroGroup.position.set(-2.45, -0.15, 1.6);
+        this.heroGroup.scale.setScalar(1);
+      }
+    }
+
+    for (const entry of this.responsiveGroups) {
+      const s = isPortrait ? entry.mobileScale : this.isMobile ? 0.8 : 1;
+      entry.group.scale.set(s, s, 1);
+    }
+  }
+
   triggerWishCelebration(blowOut = true) {
     this.candlesLit = !blowOut;
     if (blowOut) {
       this.wishBurstTime = 0;
       const pos = this.burstPoints.geometry.attributes.position.array;
       for (let i = 0; i < this.burstVelocities.length; i++) {
-        pos[i * 3] = (Math.random() - 0.5) * 1.6;
-        pos[i * 3 + 1] = -0.3 + (Math.random() - 0.5) * 0.8;
-        pos[i * 3 + 2] = -81 + (Math.random() - 0.5) * 1.4;
+        pos[i * 3] = (Math.random() - 0.5) * 1.4;
+        pos[i * 3 + 1] = -0.2 + (Math.random() - 0.5) * 0.8;
+        pos[i * 3 + 2] = -81 + (Math.random() - 0.5) * 1.2;
       }
       this.burstPoints.geometry.attributes.position.needsUpdate = true;
       this.burstPoints.material.opacity = 1;
@@ -875,24 +899,28 @@ export class Atelier3DScene {
   }
 
   bindEvents() {
-    window.addEventListener('resize', () => this.onResize(), { passive: true });
+    window.addEventListener('resize', () => this.applyResponsiveLayout(), { passive: true });
     window.addEventListener(
       'pointermove',
       (e) => {
-        this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-        this.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        if (e.pointerType === 'mouse' || this.inspectMode) {
+          this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+          this.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+        }
         if (this.isDragging) {
           const dx = (e.clientX - this.dragStart.x) / window.innerWidth;
           const dy = (e.clientY - this.dragStart.y) / window.innerHeight;
-          this.orbitTarget.x = Math.max(-2.4, Math.min(2.4, dx * 4.5));
-          this.orbitTarget.y = Math.max(-1.2, Math.min(1.2, -dy * 2.6));
+          this.orbitTarget.x = Math.max(-2.6, Math.min(2.6, dx * 4.8));
+          this.orbitTarget.y = Math.max(-1.4, Math.min(1.4, -dy * 2.8));
         }
       },
       { passive: true }
     );
 
-    // Drag directly on the 3D background to orbit smoothly
+    // Preserve native smooth vertical touch scrolling on mobile!
+    // Allow drag-to-orbit on desktop mouse anytime, OR on mobile touch inside 3D Inspect Mode.
     this.canvas.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch' && !this.inspectMode) return;
       this.isDragging = true;
       this.dragStart.x = e.clientX;
       this.dragStart.y = e.clientY;
@@ -911,19 +939,6 @@ export class Atelier3DScene {
     });
   }
 
-  onResize() {
-    if (!this.renderer || !this.camera) return;
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
-
-    if (this.heroGroup) {
-      const isMobile = window.innerWidth < 980;
-      this.heroGroup.position.x = isMobile ? 0 : -2.45;
-      this.heroGroup.position.y = isMobile ? 0.35 : -0.15;
-    }
-  }
-
   animate() {
     if (this.disposed) return;
     requestAnimationFrame(() => this.animate());
@@ -932,60 +947,57 @@ export class Atelier3DScene {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const t = this.clock.getElapsedTime();
 
-    this.smoothScroll += (this.scrollProgress - this.smoothScroll) * 0.062;
+    this.smoothScroll += (this.scrollProgress - this.smoothScroll) * 0.075;
     this.smoothPointer.x += (this.pointer.x - this.smoothPointer.x) * 0.06;
     this.smoothPointer.y += (this.pointer.y - this.smoothPointer.y) * 0.06;
-    this.orbitCurrent.x += (this.orbitTarget.x - this.orbitCurrent.x) * 0.075;
-    this.orbitCurrent.y += (this.orbitTarget.y - this.orbitCurrent.y) * 0.075;
+    this.orbitCurrent.x += (this.orbitTarget.x - this.orbitCurrent.x) * 0.08;
+    this.orbitCurrent.y += (this.orbitTarget.y - this.orbitCurrent.y) * 0.08;
 
-    // Camera Journey Choreography along Z from +8.6 to -75.8
-    const targetZ = 8.6 - this.smoothScroll * 84.4;
-    const curveSway = Math.sin(this.smoothScroll * Math.PI * 3.2) * 0.95;
-    const targetX = curveSway + this.smoothPointer.x * 0.65 + this.orbitCurrent.x;
+    const zPullBack = this.isMobile ? 1.8 : 0;
+    const targetZ = 8.6 + zPullBack - this.smoothScroll * 84.4;
+    const curveSway = Math.sin(this.smoothScroll * Math.PI * 3.2) * (this.isMobile ? 0.35 : 0.95);
+    const autoMobileParallax = this.isMobile && !this.inspectMode ? Math.sin(t * 0.45) * 0.28 : 0;
+
+    const targetX = curveSway + this.smoothPointer.x * 0.6 + autoMobileParallax + this.orbitCurrent.x;
     const targetY =
-      0.38 + Math.cos(this.smoothScroll * Math.PI * 2.2) * 0.25 + this.smoothPointer.y * 0.35 + this.orbitCurrent.y;
+      0.38 + Math.cos(this.smoothScroll * Math.PI * 2.2) * 0.22 + this.smoothPointer.y * 0.32 + this.orbitCurrent.y;
 
     this.camera.position.set(targetX, targetY, targetZ);
     this.camera.lookAt(
-      this.smoothPointer.x * 0.28 - this.orbitCurrent.x * 0.22,
-      0.08 + this.smoothPointer.y * 0.18,
-      targetZ - 9.0
+      this.smoothPointer.x * 0.25 - this.orbitCurrent.x * 0.22,
+      0.08 + this.smoothPointer.y * 0.16,
+      targetZ - 9.2
     );
-    // Subtle cinematic banking roll
-    this.camera.rotation.z += -curveSway * 0.015;
+    this.camera.rotation.z += -curveSway * 0.014;
 
-    // Move Golden Comet along the 3D Ribbon ahead of camera
     if (this.journeyCurve && this.cometGroup) {
       const cometT = Math.min(0.995, Math.max(0.01, this.smoothScroll * 0.96 + 0.03));
       const pt = this.journeyCurve.getPointAt(cometT);
       this.cometGroup.position.copy(pt);
-      const pulse = 1.0 + Math.sin(t * 5.2) * 0.18;
-      this.cometGroup.scale.setScalar(pulse);
+      this.cometGroup.scale.setScalar(1.0 + Math.sin(t * 5.2) * 0.18);
     }
 
-    // Dynamic Mood Lighting (Thanaweya twilight indigo -> Fine Arts warm cathedral gold)
     this.keyLight.position.set(targetX + 3.4, targetY + 4.0, targetZ - 2.6);
     this.rimLight.position.set(targetX - 5.0, targetY + 2.0, targetZ - 6.8);
 
     const twilightFactor = Math.exp(-Math.pow((this.smoothScroll - 0.42) / 0.12, 2));
     const fineArtsGlow = Math.exp(-Math.pow((this.smoothScroll - 0.66) / 0.14, 2));
 
-    const warmRim = new THREE.Color(0xd49b54);
+    const warmRim = new THREE.Color(0xd8a056);
     const twilightRim = new THREE.Color(0x4b74b8);
     this.rimLight.color.copy(warmRim).lerp(twilightRim, twilightFactor * 0.85);
-    this.keyLight.intensity = 36 + fineArtsGlow * 16;
+    this.keyLight.intensity = 38 + fineArtsGlow * 16;
 
     const warmFog = new THREE.Color(0x110c09);
     const twilightFog = new THREE.Color(0x0c1222);
     this.scene.fog.color.copy(warmFog).lerp(twilightFog, twilightFactor * 0.72);
 
-    // Floating metallic gold-leaf flakes
     if (this.goldLeafMesh) {
       for (let i = 0; i < this.goldLeafData.length; i++) {
         const d = this.goldLeafData[i];
         this.dummyObj.position.set(
-          d.x + Math.sin(t * d.speed + i) * 0.3,
-          d.y + Math.cos(t * d.speed * 0.7 + i) * 0.25,
+          d.x + Math.sin(t * d.speed + i) * 0.28,
+          d.y + Math.cos(t * d.speed * 0.7 + i) * 0.24,
           d.z
         );
         this.dummyObj.rotation.set(
@@ -1001,8 +1013,8 @@ export class Atelier3DScene {
     }
 
     if (this.heroGroup) {
-      this.heroGroup.rotation.y =
-        (window.innerWidth < 980 ? 0.1 : 0.34) + Math.sin(t * 0.45) * 0.08 + this.smoothPointer.x * 0.14;
+      const baseRotY = this.isMobile ? 0.08 : 0.34;
+      this.heroGroup.rotation.y = baseRotY + Math.sin(t * 0.48) * 0.12 + this.smoothPointer.x * 0.14;
       this.heroHalos[0].rotation.z = t * 0.18;
       this.heroHalos[1].rotation.z = -t * 0.12;
       this.heroHalos[1].rotation.x = -0.42 + Math.sin(t * 0.35) * 0.12;
