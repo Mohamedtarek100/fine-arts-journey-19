@@ -73,10 +73,10 @@ export const STORY_WAYPOINTS = [
   {
     id: 'easel',
     labelAr: 'مرسم الزوار • علّق لوحتك باللوفر 🎨',
-    x: 0,
-    z: -26.5,
-    catX: 1.5,
-    catZ: -27.2,
+    x: 1.8,
+    z: -26.8,
+    catX: 2.2,
+    catZ: -27.4,
     interactId: 'easel',
     tipAr: 'مفاجأة خاصة! 🖼️ اضغط على الحامل الذهبي عشان ترسم أو توقّع لوحة بإيدك وهتتعلّق فوراً قدامك على جدار متحف اللوفر بالـ 3D!',
   },
@@ -755,8 +755,8 @@ export class LouvreParisWorld3D {
   /* ==================== ARCHITECTURAL EIFFEL TOWER ==================== */
   buildArchitecturalEiffelTower() {
     const tower = new THREE.Group();
-    tower.position.set(-37, 0, -14);
-    tower.scale.setScalar(0.84);
+    tower.position.set(-30, 0, -20);
+    tower.scale.setScalar(1.32);
 
     const profile = [
       { y: 0.0, r: 6.8 }, { y: 5.5, r: 4.8 }, { y: 11.0, r: 3.55 },
@@ -1240,26 +1240,25 @@ export class LouvreParisWorld3D {
         const cap2 = cap1.clone(); cap2.position.y = -0.52;
         artCenter.add(topC, botC, cap1, cap2);
       } else {
-        // Station 04: Load REAL Museum-Scanned Classical Sculpture Bust in Carrara Marble!
-        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.02, 8, 48), this.mats.goldGlow);
-        artCenter.add(halo);
-        this.gltfLoader.load('./assets/models/classical-bust.glb', (gltf) => {
-          const bust = gltf.scene;
-          const box = new THREE.Box3().setFromObject(bust);
-          const sz = box.getSize(new THREE.Vector3());
-          const sc = 1.05 / Math.max(0.01, sz.y);
-          bust.scale.setScalar(sc);
-          const center = box.getCenter(new THREE.Vector3()).multiplyScalar(sc);
-          bust.position.set(-center.x, -center.y - 0.12, -center.z);
-          bust.traverse((o) => {
-            if (o.isMesh) {
-              o.material = this.mats.marble;
-              o.castShadow = true;
-              o.receiveShadow = true;
-            }
-          });
-          artCenter.add(bust);
-        });
+        // Station 04: High-Subdivision Sculpted Classical Carrara Marble Louvre Sculpture + Golden Laurel Halo (Zero Draco!)
+        const pts = [
+          new THREE.Vector2(0.0, -0.48),
+          new THREE.Vector2(0.24, -0.48),
+          new THREE.Vector2(0.20, -0.40),
+          new THREE.Vector2(0.09, -0.32),
+          new THREE.Vector2(0.14, -0.16),
+          new THREE.Vector2(0.28, 0.04),
+          new THREE.Vector2(0.24, 0.22),
+          new THREE.Vector2(0.11, 0.31),
+          new THREE.Vector2(0.15, 0.44),
+          new THREE.Vector2(0.12, 0.54),
+          new THREE.Vector2(0.0, 0.56),
+        ];
+        const marbleSculpture = new THREE.Mesh(new THREE.LatheGeometry(pts, 36), this.mats.marble);
+        marbleSculpture.castShadow = true;
+        marbleSculpture.receiveShadow = true;
+        const halo = new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.022, 10, 48), this.mats.goldGlow);
+        artCenter.add(marbleSculpture, halo);
       }
       grp.add(artCenter);
       this.floatingProps.push({ mesh: artCenter, baseY: 2.08, speed: 1.2 + idx * 0.2 });
@@ -1831,8 +1830,8 @@ export class LouvreParisWorld3D {
     this.resolveCollisions(this.playerPos);
     this.catPos.set(wp.catX, 0, wp.catZ);
     this.catRoot.position.copy(this.catPos);
-    const lookX = idx === 0 ? -1.5 : wp.catX * 0.55;
-    const lookZ = wp.z - 4.0;
+    const lookX = idx === 0 ? -1.8 : wp.catX * 1.25;
+    const lookZ = wp.z - 3.2;
     this.targetYaw = Math.atan2(-(lookX - this.playerPos.x), -(lookZ - this.playerPos.z));
     this.playerYaw = this.targetYaw;
     this.targetPitch = idx === 0 ? 0.03 : -0.02;
