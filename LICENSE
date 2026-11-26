@@ -1,13 +1,12 @@
-Copyright (c) 2026 — Exhibition XIX (5 December) — All Rights Reserved.
+Copyright (c) 2026 — HEY Edition • Yomna 19th Birthday Exhibition (5 December) — All Rights Reserved.
+Designed & Developed by ENG / Mohamed Tarek.
 
 This interactive 3D web exhibition, including its bespoke 3D scenes,
 motion-graphics design, layout, and custom fine-art illustrations,
 is protected under copyright law.
 
-Unauthorized reproduction, redistribution, or commercial reuse without
-explicit prior permission from the author is prohibited.
-
-
 ---
-Third-Party 3D Asset Attribution:
-- Base 3D Feline Skeletal Mesh ("Bicolor Cat") by kenchoo (https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf), licensed under Creative Commons Attribution 4.0 International (CC BY 4.0). Adapted and reskinned into a golden-apricot Persian cat for this private family exhibition.
+Third-Party Open-Licensed 3D & PBR Asset Attributions:
+- Base 3D Feline Skeletal Mesh ("Bicolor Cat") by kenchoo (https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf), licensed under Creative Commons Attribution 4.0 International (CC BY 4.0). Adapted and reskinned into a golden-apricot Persian cat.
+- Photogrammetry PBR Textures (herringbone_parquet, cobblestone_floor_08, marble_01, sandstone_blocks_05) from Poly Haven (https://polyhaven.com), dedicated to the Public Domain under CC0 1.0.
+- 3D Civilian Visitor Avatar & Classical Bust (readyplayer.me.glb, tennyson-bust.glb) from the official Three.js repository (https://github.com/mrdoob/three.js, MIT License) and Locomotion/Idle Motion-Capture Clips from Ready Player Me Animation Library (https://github.com/readyplayerme/animation-library, MIT License).
