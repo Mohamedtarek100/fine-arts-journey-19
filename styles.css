@@ -4452,12 +4452,13 @@ body.portal-open .mobile-journey-dock {
   }
 
   .visitor-pill .pill-label {
-    max-width: 68px;
+    max-width: 58px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  #inspect-3d-btn .pill-label {
+  #inspect-3d-btn .pill-label,
+  #cat-toggle-btn .pill-label {
     display: none;
   }
 
@@ -4478,5 +4479,215 @@ body.portal-open .mobile-journey-dock {
   .manifesto-quote-box p {
     font-size: 1.18rem;
     line-height: 1.85;
+  }
+}
+
+/* =========================================================================
+   3D FLUFFY GOLDEN SHIRAZI CAT MENTOR COMPANION (V12)
+   ========================================================================= */
+
+.cat-pill.active {
+  border-color: rgba(244, 205, 114, 0.65);
+  background: rgba(232, 194, 104, 0.16);
+  color: var(--gold-100);
+}
+
+.cat-mentor-widget {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  z-index: 82;
+  pointer-events: none;
+  transition: opacity 0.45s var(--ease-museum), transform 0.45s var(--ease-museum);
+}
+
+body.portal-open .cat-mentor-widget,
+body.inspect-3d-mode .cat-mentor-widget,
+body.cat-hidden .cat-mentor-widget {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(28px);
+}
+
+.cat-mentor-mover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.cat-speech-bubble {
+  position: relative;
+  width: 288px;
+  max-width: calc(100vw - 32px);
+  margin-bottom: -14px;
+  padding: 12px 14px 11px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(25, 18, 12, 0.96) 0%, rgba(13, 9, 6, 0.95) 100%);
+  border: 1px solid rgba(238, 210, 138, 0.56);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.72), 0 0 26px rgba(214, 171, 82, 0.16);
+  color: var(--ivory);
+  pointer-events: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px) scale(0.95);
+  transform-origin: bottom right;
+  transition: opacity 0.32s var(--ease-museum), transform 0.32s var(--ease-museum), visibility 0.32s ease;
+}
+
+.cat-speech-bubble.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.cat-speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -7px;
+  right: 48px;
+  width: 14px;
+  height: 14px;
+  background: #100b08;
+  border-right: 1px solid rgba(238, 210, 138, 0.56);
+  border-bottom: 1px solid rgba(238, 210, 138, 0.56);
+  transform: rotate(45deg);
+}
+
+.cat-bubble-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.cat-bubble-name {
+  font-family: var(--font-ar-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold-100);
+}
+
+.cat-state-badge {
+  margin-right: auto;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(232, 194, 104, 0.14);
+  border: 1px solid rgba(238, 210, 138, 0.32);
+  color: var(--gold-200);
+  font-size: 0.66rem;
+  font-weight: 600;
+}
+
+.cat-bubble-close {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid rgba(238, 210, 138, 0.36);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gold-100);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+
+.cat-bubble-close:hover {
+  background: rgba(232, 194, 104, 0.2);
+}
+
+.cat-bubble-text {
+  font-size: 0.78rem;
+  line-height: 1.65;
+  color: var(--ivory);
+  margin-bottom: 9px;
+}
+
+.cat-action-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.cat-act-btn {
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 210, 138, 0.34);
+  background: rgba(232, 194, 104, 0.08);
+  color: var(--gold-100);
+  font-family: var(--font-ar-body);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.cat-act-btn:hover {
+  background: rgba(232, 194, 104, 0.24);
+  border-color: var(--gold-100);
+  transform: translateY(-1px);
+}
+
+.cat-pet-hitbox {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  transition: transform 0.25s var(--ease-museum);
+}
+
+.cat-pet-hitbox:hover {
+  transform: scale(1.04);
+}
+
+#cat-mentor-canvas {
+  display: block;
+  width: 190px;
+  height: 190px;
+  pointer-events: none;
+  filter: drop-shadow(0 12px 18px rgba(0, 0, 0, 0.52));
+}
+
+@media (max-width: 980px) {
+  .cat-mentor-widget {
+    right: 6px;
+    bottom: calc(60px + env(safe-area-inset-bottom));
+  }
+
+  .cat-speech-bubble {
+    width: min(252px, 72vw);
+    padding: 9px 11px 9px;
+    margin-bottom: -14px;
+    border-radius: 15px;
+  }
+
+  .cat-bubble-text {
+    font-size: 0.72rem;
+    line-height: 1.55;
+    margin-bottom: 7px;
+  }
+
+  .cat-act-btn {
+    padding: 3px 7px;
+    font-size: 0.64rem;
+  }
+
+  .cat-pet-hitbox,
+  #cat-mentor-canvas {
+    width: 138px;
+    height: 138px;
+  }
+
+  .cat-speech-bubble::after {
+    right: 34px;
   }
 }

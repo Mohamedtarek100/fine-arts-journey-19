@@ -24,7 +24,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=11" />
+  <link rel="stylesheet" href="./styles.css?v=12" />
 </head>
 <body class="portal-open">
   <!-- Top Cinema Scroll Progress Bar -->
@@ -209,6 +209,18 @@
       >
         <span class="pill-icon" aria-hidden="true">❖</span>
         <span class="pill-label">3D كامل</span>
+      </button>
+
+      <button
+        id="cat-toggle-btn"
+        class="icon-pill cat-pill active"
+        type="button"
+        aria-pressed="true"
+        title="إظهار أو إخفاء القطة المرشدة الـ 3D"
+        aria-label="القطة المرشدة 3D"
+      >
+        <span class="pill-icon" aria-hidden="true">🐾</span>
+        <span class="pill-label hide-sm">القطة</span>
       </button>
 
       <button
@@ -686,7 +698,41 @@
     </div>
   </div>
 
-  <!-- Main Scripts (v11) -->
-  <script type="module" src="./app.js?v=11"></script>
+  <!-- ==================== 3D FLUFFY SHIRAZI CAT MENTOR COMPANION ==================== -->
+  <aside id="cat-mentor-widget" class="cat-mentor-widget" aria-label="القطة المرشدة ثلاثية الأبعاد">
+    <div id="cat-mentor-mover" class="cat-mentor-mover">
+      <!-- Luxury Arabic Guide Speech Bubble -->
+      <div id="cat-speech-bubble" class="cat-speech-bubble open" role="status" aria-live="polite">
+        <div class="cat-bubble-head">
+          <span class="cat-bubble-name" id="cat-mentor-name">مرشدة الرحلة 🐾</span>
+          <span class="cat-state-badge" id="cat-state-badge">متابعة معك</span>
+          <button id="cat-bubble-close" class="cat-bubble-close" type="button" aria-label="طي الرسالة">−</button>
+        </div>
+        <p class="cat-bubble-text" id="cat-bubble-text">
+          مياو! أهلاً بيك في معرض رحلة يمنى 🐾 أنا رفيقتك الـ 3D طول الرحلة.. مرّر لتحت وهجري معاك وأشرحلك كل خطوة!
+        </p>
+        <div class="cat-action-chips" role="toolbar" aria-label="تفاعلات القطة المرشدة">
+          <button class="cat-act-btn" data-cat-action="run" type="button" title="خلي القطة تجري">🏃 اجري</button>
+          <button class="cat-act-btn" data-cat-action="play" type="button" title="خلي القطة تلعب بكرة الخيط">🧶 العبي</button>
+          <button class="cat-act-btn" data-cat-action="groom" type="button" title="خلي القطة تلحس نفسها وتنضف كفها">👅 نضّفي نفسك</button>
+          <button class="cat-act-btn" data-cat-action="tip" type="button" title="نصيحة وتعليمات القسم الحالي">💡 التعليمات</button>
+        </div>
+      </div>
+
+      <!-- Interactive 3D Sculpted Shirazi Cat WebGL Canvas (Click to Pet / Toggle Bubble!) -->
+      <button
+        id="cat-pet-hitbox"
+        class="cat-pet-hitbox"
+        type="button"
+        title="اضغط للطبطبة على القطة أو إظهار نصيحتها 🐾"
+        aria-label="الطبطبة على القطة المرشدة الـ 3D"
+      >
+        <canvas id="cat-mentor-canvas" width="206" height="206"></canvas>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Scripts (v12) -->
+  <script type="module" src="./app.js?v=12"></script>
 </body>
 </html>

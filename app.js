@@ -11,9 +11,10 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=11';
-import { Atelier3DScene } from './scene3d.js?v=11';
-import { FamilyCloudVault } from './firebase-sync.js?v=11';
+import { SITE_CONFIG } from './config.js?v=12';
+import { Atelier3DScene } from './scene3d.js?v=12';
+import { FamilyCloudVault } from './firebase-sync.js?v=12';
+import { CatMentor3D } from './cat-mentor.js?v=12';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -340,6 +341,63 @@ class AtelierAudio {
       [392.0, 493.88, 587.33, 783.99].forEach((f, idx) => {
         setTimeout(() => this.playTone(f, 2.1, 0.24), idx * 80);
       });
+    } catch {
+      // Ignore if blocked
+    }
+  }
+
+  playCatMeow() {
+    try {
+      this.ensureContext();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(620, now);
+      osc.frequency.exponentialRampToValueAtTime(920, now + 0.14);
+      osc.frequency.exponentialRampToValueAtTime(520, now + 0.42);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.14, now + 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.48);
+    } catch {
+      // Ignore if blocked
+    }
+  }
+
+  playCatPurr() {
+    try {
+      this.ensureContext();
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const lfo = this.ctx.createOscillator();
+      const lfoGain = this.ctx.createGain();
+      const gain = this.ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(112, now);
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(24, now);
+      lfoGain.gain.value = 0.06;
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.05);
+
+      lfo.connect(lfoGain);
+      lfoGain.connect(gain.gain);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      lfo.start(now);
+      osc.stop(now + 1.1);
+      lfo.stop(now + 1.1);
     } catch {
       // Ignore if blocked
     }
@@ -1234,7 +1292,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
 }
 
 /* ==================== 3D EXCLUSIVE 8-MEMBER FAMILY RECEPTION PORTAL ==================== */
-function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
+function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift, catMentorCtrl) {
   const cfg = FROZEN_CONFIG.reception;
   const portal = document.getElementById('reception-portal');
   const shell = portal?.querySelector('.portal-shell');
@@ -1354,6 +1412,7 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
     portal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('portal-open');
     audio.playWishChime();
+    if (catMentorCtrl) catMentorCtrl.onPersonaEntered(selectedRole);
 
     if (incomingGift && selectedRole.isHonoree) {
       const senderRole = cfg.roles.find((r) => r.id === incomingGift.senderId);
@@ -1858,8 +1917,159 @@ function initEnvelope() {
   });
 }
 
+/* ==================== 3D FLUFFY SHIRAZI CAT MENTOR CONTROLLER ==================== */
+function initCatMentorController(audio) {
+  const cfg = FROZEN_CONFIG.catMentor;
+  const canvas = document.getElementById('cat-mentor-canvas');
+  const mover = document.getElementById('cat-mentor-mover');
+  const bubble = document.getElementById('cat-speech-bubble');
+  const nameEl = document.getElementById('cat-mentor-name');
+  const stateBadge = document.getElementById('cat-state-badge');
+  const textEl = document.getElementById('cat-bubble-text');
+  const closeBubbleBtn = document.getElementById('cat-bubble-close');
+  const petHitbox = document.getElementById('cat-pet-hitbox');
+  const toggleBtn = document.getElementById('cat-toggle-btn');
+
+  if (!canvas || !mover || !cfg) {
+    return {
+      onPersonaEntered: () => {},
+      onSectionChanged: () => {},
+      onUserScroll: () => {},
+    };
+  }
+
+  if (nameEl) nameEl.textContent = cfg.nameAr;
+
+  const STATE_LABELS = {
+    guide: 'مرشدتك معك 🐾',
+    run: 'تجري معك 💨',
+    play: 'تلعب بالخيط 🧶',
+    groom: 'تنظّف نفسها 👅',
+    pet: 'سعيدة وتخرخر 💛',
+  };
+
+  let cat3d = null;
+  let currentSection = 'hero';
+  let bubbleManuallyFolded = false;
+  let catVisible = true;
+  let bubbleAutoHideTimer = null;
+
+  const setBubbleOpen = (isOpen) => {
+    if (!bubble) return;
+    bubble.classList.toggle('open', Boolean(isOpen));
+  };
+
+  const speak = (message, forceOpen = true, autoFoldMs = 0) => {
+    if (!textEl || !message) return;
+    textEl.textContent = message;
+    if (forceOpen && !bubbleManuallyFolded) setBubbleOpen(true);
+    if (bubbleAutoHideTimer) {
+      clearTimeout(bubbleAutoHideTimer);
+      bubbleAutoHideTimer = null;
+    }
+    if (autoFoldMs > 0) {
+      bubbleAutoHideTimer = window.setTimeout(() => {
+        if (window.innerWidth <= 980) setBubbleOpen(false);
+      }, autoFoldMs);
+    }
+  };
+
+  const pickLine = (key) => {
+    const arr = cfg.actionLines?.[key] || [];
+    if (!arr.length) return '';
+    return arr[Math.floor(Math.random() * arr.length)];
+  };
+
+  try {
+    cat3d = new CatMentor3D(canvas, mover, (nextState) => {
+      if (stateBadge) stateBadge.textContent = STATE_LABELS[nextState] || STATE_LABELS.guide;
+    });
+  } catch (err) {
+    console.warn('Cat Mentor 3D fallback:', err);
+  }
+
+  if (closeBubbleBtn) {
+    closeBubbleBtn.addEventListener('click', () => {
+      bubbleManuallyFolded = true;
+      setBubbleOpen(false);
+    });
+  }
+
+  // Click directly on the 3D Cat -> Pets her, purrs, sparkles & shows bubble!
+  if (petHitbox) {
+    petHitbox.addEventListener('click', () => {
+      bubbleManuallyFolded = false;
+      setBubbleOpen(true);
+      if (cat3d) cat3d.setState('pet', 3.4);
+      audio.playCatPurr();
+      speak(pickLine('pet'), true);
+    });
+  }
+
+  // Interactive Action Buttons inside Speech Bubble
+  document.querySelectorAll('[data-cat-action]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const act = btn.dataset.catAction;
+      bubbleManuallyFolded = false;
+      if (act === 'run') {
+        if (cat3d) cat3d.setState('run', 4.2);
+        audio.playCatMeow();
+        speak(pickLine('run'), true);
+      } else if (act === 'play') {
+        if (cat3d) cat3d.setState('play', 6.5);
+        audio.playCatMeow();
+        speak(pickLine('play'), true);
+      } else if (act === 'groom') {
+        if (cat3d) cat3d.setState('groom', 5.8);
+        audio.playCatPurr();
+        speak(pickLine('groom'), true);
+      } else if (act === 'tip') {
+        if (cat3d) cat3d.setState('guide', 7.0);
+        const tip = cfg.sectionTips?.[currentSection] || cfg.sectionTips.hero;
+        speak(tip, true);
+      }
+    });
+  });
+
+  // Topbar Toggle Button (Show/Hide 3D Cat Mentor cleanly anytime)
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      catVisible = !catVisible;
+      document.body.classList.toggle('cat-hidden', !catVisible);
+      toggleBtn.classList.toggle('active', catVisible);
+      toggleBtn.setAttribute('aria-pressed', String(catVisible));
+      if (cat3d) cat3d.setPaused(!catVisible);
+      if (catVisible) {
+        bubbleManuallyFolded = false;
+        setBubbleOpen(true);
+      }
+    });
+  }
+
+  return {
+    onPersonaEntered(role) {
+      bubbleManuallyFolded = false;
+      const msg = role?.isHonoree
+        ? cfg.welcomeByHonoree
+        : (cfg.welcomeByGuest || '').replace('{name}', role?.nameAr || '');
+      speak(msg, true, 9000);
+      if (cat3d) cat3d.setState('pet', 2.8);
+      window.setTimeout(() => audio.playCatMeow(), 450);
+    },
+    onSectionChanged(sectionId) {
+      if (!sectionId || sectionId === currentSection) return;
+      currentSection = sectionId;
+      const tip = cfg.sectionTips?.[sectionId];
+      if (tip) speak(tip, true, 8500);
+    },
+    onUserScroll(scrollDelta) {
+      if (cat3d && catVisible) cat3d.onUserScroll(scrollDelta);
+    },
+  };
+}
+
 /* ==================== CONTINUOUS 60FPS 3D SCROLL, CAKE CONTROLS & FINALE ==================== */
-function initScrollNavigationAndFinale(scene3d, audio) {
+function initScrollNavigationAndFinale(scene3d, audio, catMentorCtrl) {
   const topbar = document.getElementById('topbar');
   const progressBar = document.getElementById('scroll-progress-fill');
   const hudLabel = document.getElementById('hud-stage-label');
@@ -1883,6 +2093,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     });
     const sec = document.getElementById(id);
     if (hudLabel && sec?.dataset.stage) hudLabel.textContent = sec.dataset.stage;
+    if (catMentorCtrl) catMentorCtrl.onSectionChanged(id);
   };
 
   // Continuous pixel-by-pixel 3D Zone Float [0..5] — ZERO plateau freeze!
@@ -1926,16 +2137,21 @@ function initScrollNavigationAndFinale(scene3d, audio) {
   };
 
   let scrollTicking = false;
+  let lastScrollY = window.scrollY;
   const onScroll = () => {
     if (scrollTicking) return;
     scrollTicking = true;
     requestAnimationFrame(() => {
       scrollTicking = false;
+      const curY = window.scrollY;
+      const deltaY = curY - lastScrollY;
+      lastScrollY = curY;
       const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-      const progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      const progress = Math.max(0, Math.min(1, curY / maxScroll));
       if (progressBar) progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
-      topbar.classList.toggle('scrolled', window.scrollY > 40);
+      topbar.classList.toggle('scrolled', curY > 40);
       updateSceneZoneAndReveals(progress);
+      if (catMentorCtrl && Math.abs(deltaY) > 4) catMentorCtrl.onUserScroll(deltaY);
     });
   };
 
@@ -2113,8 +2329,9 @@ function bootstrap() {
   const audio = new AtelierAudio();
   const cloudVault = new FamilyCloudVault();
   const vaultExperience = initFamilyVaultExperience(vaultStore, cloudVault, audio);
+  const catMentorCtrl = initCatMentorController(audio);
 
-  initReceptionPortal(scene3d, audio, vaultExperience, incomingGift);
+  initReceptionPortal(scene3d, audio, vaultExperience, incomingGift, catMentorCtrl);
   initSpotlightManifesto(scene3d, audio);
   initSparkleCursorTrail();
   initGuideModal();
@@ -2122,7 +2339,7 @@ function bootstrap() {
   initTiltAndTouchSpinWindows(scene3d);
   initEnvelope();
   initProFineArtsStudio();
-  initScrollNavigationAndFinale(scene3d, audio);
+  initScrollNavigationAndFinale(scene3d, audio, catMentorCtrl);
 
   window.setTimeout(() => {
     const preloader = document.getElementById('preloader');
