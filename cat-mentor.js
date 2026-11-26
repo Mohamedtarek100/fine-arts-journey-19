@@ -88,7 +88,7 @@ export class CatMentor3D {
     this.state = 'guide'; // 'guide' | 'run' | 'groom' | 'play' | 'stretch' | 'pet'
     this.stateTimer = 0;
     this.stateDuration = 7.5;
-    this.groomStyle = 0; // 0 = paw-lick & face-wash, 1 = curved-spine flank grooming
+    this.groomStyle = 1; // First toggle flips to 0 (classic paw-lick & face-wash!), then alternates with 1 (flank-lick)
 
     // Screen horizontal roaming state (px offset from right edge, negative = left)
     this.roamX = 0;
@@ -209,24 +209,33 @@ export class CatMentor3D {
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, size, size);
 
-    // Dense overlapping soft fluffy hair tufts for volumetric shell fur!
-    for (let i = 0; i < 2400; i++) {
+    // Bold painterly fluffy fur-clump tufts (no mipmap washout -> lush visible Persian fluff at any screen size!)
+    for (let i = 0; i < 620; i++) {
       const x = Math.random() * size;
       const y = Math.random() * size;
-      const rad = 1.4 + Math.random() * 3.4;
-      const bright = Math.floor(155 + Math.random() * 100);
-      const grad = ctx.createRadialGradient(x, y, 0, x, y, rad);
+      const rx = 3.2 + Math.random() * 5.8;
+      const ry = rx * (1.35 + Math.random() * 0.7);
+      const bright = Math.floor(170 + Math.random() * 85);
+      const grad = ctx.createRadialGradient(x, y, 0, x, y, ry);
       grad.addColorStop(0, `rgb(${bright},${bright},${bright})`);
+      grad.addColorStop(0.6, `rgb(${Math.floor(bright * 0.65)},${Math.floor(bright * 0.65)},${Math.floor(bright * 0.65)})`);
       grad.addColorStop(1, 'rgb(0,0,0)');
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(rx / ry, 1);
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.arc(0, 0, ry, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     }
 
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
     return tex;
   }
 
@@ -289,7 +298,7 @@ export class CatMentor3D {
   }
 
   /* ==================== MULTI-SHELL VOLUMETRIC FUR BUILDER ==================== */
-  addFurShells(parentMesh, colorMap, { layers = 4, maxLen = 0.068, droop = 0.022, density = 6.5 } = {}) {
+  addFurShells(parentMesh, colorMap, { layers = 5, maxLen = 0.082, droop = 0.028, density = 2.8 } = {}) {
     const geo = parentMesh.geometry;
     for (let i = 1; i <= layers; i++) {
       const frac = i / layers;
@@ -305,7 +314,7 @@ export class CatMentor3D {
           uDensity: { value: density },
           uColorMap: { value: colorMap },
           uFurAlphaMap: { value: this.furAlphaTex },
-          uRimColor: { value: new THREE.Color(0xffe1a6) },
+          uRimColor: { value: new THREE.Color(0xffe6b0) },
         },
       });
       const shell = new THREE.Mesh(geo, mat);
@@ -370,8 +379,8 @@ export class CatMentor3D {
       let y = pos.getY(i);
       let z = pos.getZ(i);
 
-      // Stretch upward into rounded triangular ear silhouette
-      const h = (y + 0.115) / 0.23; // 0 at base -> 1 at tip
+      // Stretch upward into rounded triangular ear silhouette (clamped [0..1] -> ZERO NaN!)
+      const h = Math.max(0, Math.min(1, (y + 0.115) / 0.23));
       const taper = Math.max(0.16, 1.0 - Math.pow(h, 1.25) * 0.84);
       x *= taper * 1.08;
       y = h * 0.24;
@@ -504,53 +513,53 @@ export class CatMentor3D {
     this.pelvisGroup.position.set(0, 0.56, -0.18);
     this.catRoot.add(this.pelvisGroup);
 
-    // Rounded Hind Haunches with Volumetric Fur
-    const haunchMesh = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.34, 0.31, 0.38, 0.12), this.mats.furBody);
-    this.addFurShells(haunchMesh, this.furMaps.body, { layers: 4, maxLen: 0.072, droop: 0.024, density: 6.2 });
+    // Rounded Hind Haunches with Plush Volumetric Fur
+    const haunchMesh = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.32, 0.29, 0.37, 0.12), this.mats.furBody);
+    this.addFurShells(haunchMesh, this.furMaps.body, { layers: 5, maxLen: 0.088, droop: 0.03, density: 2.8 });
     this.pelvisGroup.add(haunchMesh);
 
-    // Flexible Spine -> Chest / Thorax Group (allows real arching, stretching, and flank-grooming curve!)
+    // Flexible Spine -> Chest / Thorax Group
     this.spinePivot = new THREE.Group();
-    this.spinePivot.position.set(0, 0.05, 0.24);
+    this.spinePivot.position.set(0, 0.04, 0.24);
     this.pelvisGroup.add(this.spinePivot);
 
-    const thoraxMesh = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.32, 0.30, 0.42, 0.08), this.mats.furBody);
-    thoraxMesh.position.set(0, 0.02, 0.24);
-    this.addFurShells(thoraxMesh, this.furMaps.body, { layers: 4, maxLen: 0.074, droop: 0.025, density: 6.2 });
+    const thoraxMesh = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.30, 0.28, 0.40, 0.08), this.mats.furBody);
+    thoraxMesh.position.set(0, 0.02, 0.22);
+    this.addFurShells(thoraxMesh, this.furMaps.body, { layers: 5, maxLen: 0.088, droop: 0.032, density: 2.8 });
     this.spinePivot.add(thoraxMesh);
 
-    // Iconic Plush Ivory-Cream Persian Chest Mane / Ruff (longer flowing volumetric fur!)
-    this.chestRuff = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.28, 0.27, 0.26, 0.0), this.mats.furCream);
-    this.chestRuff.position.set(0, 0.04, 0.48);
-    this.addFurShells(this.chestRuff, this.furMaps.cream, { layers: 4, maxLen: 0.095, droop: 0.038, density: 5.5 });
+    // Sculpted Organic Flowing Golden-Cream Persian Chest Mane (blends seamlessly — NOT a protruding ball!)
+    this.chestRuff = new THREE.Mesh(this.createSculptedBodySegmentGeo(0.24, 0.24, 0.17, 0.0), this.mats.furCream);
+    this.chestRuff.position.set(0, 0.03, 0.45);
+    this.addFurShells(this.chestRuff, this.furMaps.cream, { layers: 5, maxLen: 0.105, droop: 0.045, density: 2.4 });
     this.spinePivot.add(this.chestRuff);
 
     // Delicate Velvet & Gold Atelier Collar + Tiny Bell
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.215, 0.02, 10, 28), this.mats.collar);
+    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.205, 0.018, 10, 28), this.mats.collar);
     collar.rotation.x = Math.PI / 2 + 0.36;
-    collar.position.set(0, 0.22, 0.46);
-    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.044, 12, 10), this.mats.gold);
-    bell.position.set(0, 0.12, 0.66);
+    collar.position.set(0, 0.21, 0.42);
+    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.042, 12, 10), this.mats.gold);
+    bell.position.set(0, 0.11, 0.60);
     this.spinePivot.add(collar, bell);
 
     // ==================== NECK -> SCULPTED SHIRAZI HEAD ====================
     this.neckPivot = new THREE.Group();
-    this.neckPivot.position.set(0, 0.24, 0.44);
+    this.neckPivot.position.set(0, 0.23, 0.41);
     this.spinePivot.add(this.neckPivot);
 
-    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.24, 0.26, 18), this.mats.furCream);
+    const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.25, 18), this.mats.furCream);
     neckMesh.position.set(0, 0.07, 0.03);
     neckMesh.rotation.x = 0.16;
-    this.addFurShells(neckMesh, this.furMaps.cream, { layers: 3, maxLen: 0.065, droop: 0.022, density: 5.5 });
+    this.addFurShells(neckMesh, this.furMaps.cream, { layers: 4, maxLen: 0.072, droop: 0.024, density: 2.6 });
     this.neckPivot.add(neckMesh);
 
     this.headGroup = new THREE.Group();
     this.headGroup.position.set(0, 0.22, 0.11);
     this.neckPivot.add(this.headGroup);
 
-    // Seamless Vertex-Sculpted Shirazi Head with Soft Multi-Shell Volumetric Fur!
+    // Seamless Vertex-Sculpted Shirazi Head with Lush Volumetric Fur Halo!
     const headMesh = new THREE.Mesh(this.createSculptedHeadGeo(), this.mats.furHead);
-    this.addFurShells(headMesh, this.furMaps.head, { layers: 4, maxLen: 0.062, droop: 0.02, density: 6.8 });
+    this.addFurShells(headMesh, this.furMaps.head, { layers: 5, maxLen: 0.078, droop: 0.025, density: 3.0 });
     this.headGroup.add(headMesh);
 
     // Subtle soft cream chin & whisker pillows blended directly into sculpted muzzle
@@ -757,10 +766,10 @@ export class CatMentor3D {
       );
       segMesh.position.y = spec.len * 0.44;
       this.addFurShells(segMesh, idx >= 4 ? this.furMaps.cream : this.furMaps.tail, {
-        layers: 3,
-        maxLen: spec.fur,
-        droop: 0.025,
-        density: 5.5,
+        layers: 4,
+        maxLen: spec.fur * 1.15,
+        droop: 0.032,
+        density: 2.6,
       });
       pivot.add(segMesh);
       parentTail.add(pivot);
@@ -1136,65 +1145,69 @@ export class CatMentor3D {
       this.yarnBall.rotation.z -= this.ball.vx * dt * 4.5;
       this.yarnBall.rotation.x += dt * 2.8;
 
-      // Playful low crouch + rump wiggle!
-      pelY = 0.46 + Math.abs(Math.sin(t * 4.2)) * 0.04;
-      pelPitch = -0.18;
-      spinePitch = 0.24;
-      spineRoll = Math.sin(t * 8.5) * 0.06;
+      // Deep authentic feline pounce crouch (chest low to floor, rump high & wiggling playfully!)
+      pelY = 0.45 + Math.abs(Math.sin(t * 4.2)) * 0.04;
+      pelPitch = 0.28; // Slopes forward-down into an unmistakable predator play crouch!
+      spinePitch = -0.08;
+      spineRoll = Math.sin(t * 9.0) * 0.09;
 
       // Eyes & head lock right onto the bouncing yarn ball!
+      neckPitch = -0.18;
       neckYaw = Math.max(-0.42, Math.min(0.42, this.ball.x * 0.72));
       headYaw = Math.max(-0.4, Math.min(0.4, this.ball.x * 0.65));
-      headPitch = 0.32 - this.ball.y * 0.45;
+      headPitch = 0.28 - this.ball.y * 0.42;
       headRoll = -this.ball.x * 0.16;
 
       // Timed paw swat directly toward the ball on impact!
       const swatArc = Math.sin((this.ball.swatTimer / 0.38) * Math.PI);
       if (this.ball.swatSide < 0 && this.ball.swatTimer > 0) {
-        flShX = -0.82 * swatArc;
-        flElX = -0.52 * swatArc;
-        flShZ = -0.22 * swatArc;
+        flShX = -1.12 * swatArc;
+        flElX = -0.35 * swatArc;
+        flShZ = -0.2 * swatArc;
       } else if (this.ball.swatSide > 0 && this.ball.swatTimer > 0) {
-        frShX = -0.82 * swatArc;
-        frElX = -0.52 * swatArc;
-        frShZ = 0.22 * swatArc;
+        frShX = -1.12 * swatArc;
+        frElX = -0.35 * swatArc;
+        frShZ = 0.2 * swatArc;
       } else {
-        // Ready play stance
-        flShX = -0.15; flElX = -0.35;
-        frShX = -0.15; frElX = -0.35;
+        // Low coiled play crouch ready to pounce!
+        flShX = -0.58; flElX = -0.68;
+        frShX = -0.58; frElX = -0.68;
       }
 
-      hlHipX = -0.52; hlKneeX = 1.15; hlHockX = -0.82;
-      hrHipX = -0.52; hrKneeX = 1.15; hrHockX = -0.82;
-      tailBasePitch = -0.52;
+      hlHipX = -0.45; hlKneeX = 1.05; hlHockX = -0.72;
+      hrHipX = -0.45; hrKneeX = 1.05; hrHockX = -0.72;
+      tailBasePitch = -0.72;
       tailSpeed = 7.4;
       tailAmp = 0.32;
     }
 
-    // ==================== STATE 4: AUTHENTIC CAT YOGA STRETCH & CUTE YAWN ====================
+    // ==================== STATE 4: AUTHENTIC CAT YOGA BOW STRETCH & CUTE YAWN ====================
     else if (this.state === 'stretch') {
       const env = Math.sin(Math.min(1, this.stateTimer / this.stateDuration) * Math.PI);
-      // Iconic feline front stretch: rump rises high, chest sinks low, front paws slide far forward!
-      pelY = 0.38 + env * 0.26;
-      pelPitch = -0.52 + env * 0.85;
-      spinePitch = 0.32 - env * 0.68;
-      neckPitch = 0.12 - env * 0.38;
-      headPitch = -0.05 - env * 0.18;
+      // TRUE feline downward bow stretch: rump rises HIGH, spine slopes STEEPLY down to chest near floor,
+      // front legs extend straight forward along the ground, head lifts with a cute sleepy yawn!
+      pelY = 0.38 + env * 0.30;
+      pelPitch = -0.42 + env * 1.02; // Reaches +0.60 rad steeply sloping down toward floor!
+      spinePitch = 0.26 - env * 0.38; // Net thorax pitch = +0.48 rad downward!
+      neckPitch = 0.10 - env * 0.68;  // Lifts head gracefully between stretched paws!
+      headPitch = -0.05 - env * 0.22;
       headYaw = 0;
 
-      flShX = 0.28 - env * 1.15; flElX = -0.05; flWrX = env * 0.45;
-      frShX = 0.28 - env * 1.15; frElX = -0.05; frWrX = env * 0.45;
+      // Front arms slide far forward along the ground!
+      flShX = 0.24 - env * 1.62; flElX = -0.05; flWrX = env * 0.65;
+      frShX = 0.24 - env * 1.62; frElX = -0.05; frWrX = env * 0.65;
 
-      hlHipX = -0.78 + env * 0.58; hlKneeX = 1.65 - env * 1.15; hlHockX = -1.25 + env * 0.88;
-      hrHipX = -0.78 + env * 0.58; hrKneeX = 1.65 - env * 1.15; hrHockX = -1.25 + env * 0.88;
+      // Hind legs straighten tall supporting her high rump!
+      hlHipX = -0.78 + env * 0.52; hlKneeX = 1.65 - env * 1.22; hlHockX = -1.25 + env * 0.92;
+      hrHipX = -0.78 + env * 0.52; hrKneeX = 1.65 - env * 1.22; hrHockX = -1.25 + env * 0.92;
 
       // Cute sleepy stretch yawn at peak!
-      jawOpen = env > 0.72 ? (env - 0.72) * 1.55 : 0;
-      tongueOut = env > 0.75 ? (env - 0.75) * 2.2 : 0;
-      happySquint = env * 0.82;
-      tailBasePitch = -0.35 - env * 0.45;
+      jawOpen = env > 0.62 ? (env - 0.62) * 1.45 : 0;
+      tongueOut = env > 0.65 ? (env - 0.65) * 2.2 : 0;
+      happySquint = env * 0.85;
+      tailBasePitch = -0.35 - env * 0.68; // Tail curls high like a question mark!
       tailSpeed = 1.6;
-      tailAmp = 0.14;
+      tailAmp = 0.16;
     }
 
     // ==================== STATE 5: AFFECTIONATE PURR & HEAD NUZZLE (PETTING!) ====================
@@ -1292,11 +1305,13 @@ export class CatMentor3D {
     this.earL.rotation.z = 0.3 + (this.earTwitchSide < 0 ? earTwitch : 0);
     this.earR.rotation.z = -0.3 - (this.earTwitchSide > 0 ? earTwitch : 0);
 
-    // Liquid-Smooth 6-Segment Persian Plume Tail Wave!
+    // Liquid-Smooth 6-Segment Persian Plume Tail Wave (curves proudly around her flank when sitting!)
+    const tailSideCurve = this.state === 'run' || this.state === 'stretch' ? 0.0 : 0.48;
     for (let i = 0; i < this.tailSegments.length; i++) {
       const seg = this.tailSegments[i];
       const baseP = i === 0 ? tailBasePitch : 0.14;
-      seg.rotation.z = Math.sin(t * tailSpeed - i * 0.58) * tailAmp;
+      seg.rotation.y += ((i === 0 ? tailSideCurve : 0) - seg.rotation.y) * damp;
+      seg.rotation.z = (i === 0 ? -tailSideCurve * 0.45 : 0) + Math.sin(t * tailSpeed - i * 0.58) * tailAmp;
       seg.rotation.x += (baseP + Math.cos(t * tailSpeed * 0.7 - i * 0.48) * 0.07 - seg.rotation.x) * damp;
     }
 

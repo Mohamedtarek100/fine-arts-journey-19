@@ -11,10 +11,10 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=14';
-import { Atelier3DScene } from './scene3d.js?v=14';
-import { FamilyCloudVault } from './firebase-sync.js?v=14';
-import { CatMentor3D } from './cat-mentor.js?v=14';
+import { SITE_CONFIG } from './config.js?v=15';
+import { Atelier3DScene } from './scene3d.js?v=15';
+import { FamilyCloudVault } from './firebase-sync.js?v=15';
+import { CatMentor3D } from './cat-mentor.js?v=15';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
