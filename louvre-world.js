@@ -383,7 +383,7 @@ export class LouvreParisWorld3D {
     this.scene.fog = new THREE.FogExp2(0x1f1721, 0.0082);
 
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-    this.camera = new THREE.PerspectiveCamera(aspect < 0.85 ? 64 : 52, aspect, 0.12, 220);
+    this.camera = new THREE.PerspectiveCamera(aspect < 0.85 ? 64 : 52, aspect, 0.12, 420);
 
     this.texLoader = new THREE.TextureLoader();
     this.glowTex = this.createGlowTex();
@@ -478,15 +478,16 @@ export class LouvreParisWorld3D {
 
   /* ==================== PARIS GOLDEN-HOUR SUNSET SKY DOME ==================== */
   buildParisGoldenSunsetSky() {
-    const skyGeo = new THREE.SphereGeometry(185, 32, 20);
+    const skyGeo = new THREE.SphereGeometry(240, 32, 20);
     const skyMat = new THREE.ShaderMaterial({
       side: THREE.BackSide,
       depthWrite: false,
+      fog: false,
       uniforms: {
-        uTop: { value: new THREE.Color(0x13162b) },
-        uMid: { value: new THREE.Color(0x4a2f43) },
-        uHorizon: { value: new THREE.Color(0xe6985e) },
-        uSunGlow: { value: new THREE.Color(0xffe19c) },
+        uTop: { value: new THREE.Color(0x161c38) },
+        uMid: { value: new THREE.Color(0x5a354d) },
+        uHorizon: { value: new THREE.Color(0xeb9b5e) },
+        uSunGlow: { value: new THREE.Color(0xffe6a4) },
       },
       vertexShader: /* glsl */ `
         varying vec3 vDir;
@@ -505,33 +506,33 @@ export class LouvreParisWorld3D {
           float h = clamp(vDir.y, 0.0, 1.0);
           vec3 col = mix(uHorizon, uMid, smoothstep(0.0, 0.24, h));
           col = mix(col, uTop, smoothstep(0.20, 0.72, h));
-          vec3 sunDir = normalize(vec3(-0.42, 0.16, -0.88));
-          float sun = pow(max(dot(normalize(vDir), sunDir), 0.0), 18.0);
-          col += uSunGlow * sun * 0.65;
+          vec3 sunDir = normalize(vec3(-0.42, 0.18, -0.88));
+          float sun = pow(max(dot(normalize(vDir), sunDir), 0.0), 14.0);
+          col += uSunGlow * sun * 0.72;
           gl_FragColor = vec4(col, 1.0);
         }
       `,
     });
-    this.scene.add(new THREE.Mesh(skyGeo, skyMat));
+    this.skyDome = new THREE.Mesh(skyGeo, skyMat);
+    this.scene.add(this.skyDome);
 
     // Twinkling twilight Paris stars above the Eiffel Tower!
     const starCount = 260;
     const pos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
       const th = Math.random() * Math.PI * 2;
-      const ph = 0.2 + Math.random() * 1.1;
-      pos[i * 3] = Math.cos(th) * Math.cos(ph) * 165;
-      pos[i * 3 + 1] = Math.sin(ph) * 145 + 15;
-      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * 165;
+      const ph = 0.22 + Math.random() * 1.1;
+      pos[i * 3] = Math.cos(th) * Math.cos(ph) * 210;
+      pos[i * 3 + 1] = Math.sin(ph) * 180 + 18;
+      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * 210;
     }
     const sGeo = new THREE.BufferGeometry();
     sGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.scene.add(
-      new THREE.Points(
-        sGeo,
-        new THREE.PointsMaterial({ size: 1.5, map: this.glowTex, color: 0xfff2cc, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending, depthWrite: false })
-      )
+    this.skyStars = new THREE.Points(
+      sGeo,
+      new THREE.PointsMaterial({ size: 1.8, map: this.glowTex, color: 0xfff2cc, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false, fog: false })
     );
+    this.scene.add(this.skyStars);
   }
 
   /* ==================== PARISIAN BOULEVARD, HAUSSMANN FACADES & STREETLAMPS ==================== */
@@ -653,8 +654,9 @@ export class LouvreParisWorld3D {
   /* ==================== TOWERING 48m 3D EIFFEL TOWER (PARIS ICON!) ==================== */
   buildToweringEiffelTower() {
     const tower = new THREE.Group();
-    // Placed majestically on the left Parisian skyline right beside the Louvre approach!
-    tower.position.set(-24, 0, 16);
+    // Placed majestically on the left Parisian skyline right beside the Louvre approach (full silhouette visible from base to spire!)
+    tower.position.set(-28, 0, 2);
+    tower.scale.setScalar(0.76);
 
     // 4 Sweeping Curved Corner Steel Legs (built with 3 tapered segments per corner!)
     const tiers = [
@@ -759,26 +761,26 @@ export class LouvreParisWorld3D {
       this.scene.add(poolBorder, water);
     });
 
-    // Iconic Illuminated Louvre Glass Pyramid centered at (x=0, z=+7) — Walk Right Beside/Through It!
+    // Iconic Illuminated Louvre Glass Pyramid centered at (x=0, z=+7) — Walk Right Through It Into the Louvre!
     const pyrGroup = new THREE.Group();
     pyrGroup.position.set(0, 0, 7);
-    const pyrGeo = new THREE.ConeGeometry(5.6, 5.2, 4, 1, true);
+    const pyrGeo = new THREE.ConeGeometry(6.1, 6.2, 4, 1, true);
     const pyrGlass = new THREE.Mesh(pyrGeo, this.mats.glassPyramid);
     pyrGlass.rotation.y = Math.PI / 4;
-    pyrGlass.position.y = 2.6;
+    pyrGlass.position.y = 3.1;
     const pyrWire = new THREE.Mesh(
-      new THREE.ConeGeometry(5.64, 5.24, 4, 6, true),
-      new THREE.MeshStandardMaterial({ color: 0xe6c16c, metalness: 0.86, roughness: 0.22, wireframe: true })
+      new THREE.ConeGeometry(6.14, 6.24, 4, 7, true),
+      new THREE.MeshStandardMaterial({ color: 0xefd07d, metalness: 0.88, roughness: 0.2, wireframe: true })
     );
     pyrWire.rotation.y = Math.PI / 4;
-    pyrWire.position.y = 2.62;
+    pyrWire.position.y = 3.12;
 
     // Warm Golden Glow Inside the Louvre Glass Pyramid
     const pyrCoreGlow = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd27a, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending })
+      new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd27a, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending })
     );
-    pyrCoreGlow.scale.set(7.5, 7.5, 1);
-    pyrCoreGlow.position.y = 2.0;
+    pyrCoreGlow.scale.set(8.8, 8.8, 1);
+    pyrCoreGlow.position.y = 2.4;
 
     pyrGroup.add(pyrGlass, pyrWire, pyrCoreGlow);
     this.scene.add(pyrGroup);
@@ -806,9 +808,19 @@ export class LouvreParisWorld3D {
     topEntablature.position.set(0, 10.3, 0);
     const goldCornice = new THREE.Mesh(new THREE.BoxGeometry(44, 0.35, 3.7), this.mats.goldGlow);
     goldCornice.position.set(0, 13.4, 0);
+    // Classical Parisian Slate Mansard Roof + Central Louvre Triangular Pediment & Pavilion Dome!
+    const louvreRoofMat = new THREE.MeshStandardMaterial({ color: 0x2a313e, roughness: 0.52, metalness: 0.38 });
+    const mansardMain = new THREE.Mesh(new THREE.BoxGeometry(43, 2.8, 3.1), louvreRoofMat);
+    mansardMain.position.set(0, 14.9, -0.2);
+    const centralPavilion = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 5.4, 4.4, 4), louvreRoofMat);
+    centralPavilion.rotation.y = Math.PI / 4;
+    centralPavilion.scale.set(1.5, 1, 0.65);
+    centralPavilion.position.set(0, 16.4, 0);
+    const pavilionCrown = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.22, 2.2), this.mats.goldGlow);
+    pavilionCrown.position.set(0, 18.65, 0);
     const archTrim = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.22, 10, 42, Math.PI), this.mats.goldGlow);
     archTrim.position.set(0, 3.4, 1.68);
-    facade.add(topEntablature, goldCornice, archTrim);
+    facade.add(topEntablature, goldCornice, mansardMain, centralPavilion, pavilionCrown, archTrim);
 
     // Illuminated Royal Louvre Entrance Sign ("متحف اللوفر • معرض رحلة يمنى • HEY")
     const signCanvas = document.createElement('canvas');
@@ -1042,7 +1054,7 @@ export class LouvreParisWorld3D {
         badgeAr: `📜 اضغط لفتح التحفة ${st.num}: ${st.shortAr}`,
         mesh: hitbox,
         worldPos: new THREE.Vector3(st.x, 1.5, st.z),
-        radius: 6.2,
+        radius: 7.4,
       });
 
       this.scene.add(grp);
@@ -1101,7 +1113,7 @@ export class LouvreParisWorld3D {
       badgeAr: '💌 اضغط لفتح صندوق رسائل العائلة السحابي',
       mesh: vHit,
       worldPos: new THREE.Vector3(-3.9, 1.6, -75),
-      radius: 6.4,
+      radius: 7.4,
     });
 
     // B. ILLUMINATED GOLDEN MANIFESTO STELE MONUMENT ("★ الرسالة الأهم في ختام الرحلة")
@@ -1136,7 +1148,7 @@ export class LouvreParisWorld3D {
       badgeAr: '★ اضغط لقراءة الرسالة الأهم وكبسولة الطمأنينة',
       mesh: mHit,
       worldPos: new THREE.Vector3(3.9, 1.7, -75),
-      radius: 6.4,
+      radius: 7.4,
     });
   }
 
@@ -1364,7 +1376,7 @@ export class LouvreParisWorld3D {
       badgeAr: '🎂 اضغط على التورتة للاحتفال وإطفاء شمعتي 1 و 9',
       mesh: cakeHit,
       worldPos: new THREE.Vector3(0, 2.2, -93),
-      radius: 8.5,
+      radius: 9.8,
     });
 
     this.scene.add(rotunda);
@@ -1525,9 +1537,14 @@ export class LouvreParisWorld3D {
           const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
           mats.forEach((m) => {
             if (!m) return;
+            const isEye = m.name === 'material';
             m.map = coatTex;
-            m.roughness = m.name === 'material' ? 0.08 : 0.82;
-            m.metalness = m.name === 'material' ? 0.12 : 0.02;
+            m.roughness = isEye ? 0.08 : 0.78;
+            m.metalness = isEye ? 0.12 : 0.02;
+            if (!isEye) {
+              m.emissive = new THREE.Color(0x523418);
+              m.emissiveIntensity = 0.22;
+            }
             m.needsUpdate = true;
           });
         }
@@ -1594,7 +1611,8 @@ export class LouvreParisWorld3D {
     const wp = STORY_WAYPOINTS[Math.max(0, Math.min(STORY_WAYPOINTS.length - 1, idx))];
     if (!wp) return;
     this.currentWaypointIdx = idx;
-    this.playerPos.set(wp.x, 1.68, wp.z + 4.8);
+    const zOffset = idx <= 1 ? 5.0 : idx === STORY_WAYPOINTS.length - 1 ? 4.0 : 3.2;
+    this.playerPos.set(wp.x, 1.68, wp.z + zOffset);
     this.catPos.set(wp.catX, 0, wp.catZ);
     this.catRoot.position.copy(this.catPos);
     // Aim camera cleanly toward the landmark/artifact!
@@ -1602,8 +1620,8 @@ export class LouvreParisWorld3D {
     const lookZ = wp.z - 4.0;
     this.targetYaw = Math.atan2(-(lookX - this.playerPos.x), -(lookZ - this.playerPos.z));
     this.playerYaw = this.targetYaw;
-    this.targetPitch = -0.04;
-    this.playerPitch = -0.04;
+    this.targetPitch = -0.02;
+    this.playerPitch = -0.02;
     if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(idx, wp);
   }
 
@@ -1824,6 +1842,8 @@ export class LouvreParisWorld3D {
     this.camera.rotation.x = this.playerPitch;
 
     this.playerLantern.position.set(this.playerPos.x, 3.2, this.playerPos.z - 2.5);
+    if (this.skyDome) this.skyDome.position.set(this.playerPos.x, 0, this.playerPos.z);
+    if (this.skyStars) this.skyStars.position.set(this.playerPos.x, 0, this.playerPos.z);
 
     // 2. Auto-detect Active Story Milestone as Player Walks Freely Through Paris & Louvre!
     if (!this.autoFollow) {
@@ -1883,9 +1903,10 @@ export class LouvreParisWorld3D {
     }
 
     const catMoving = catSpd > 0.25;
+    // When idle, stand at a graceful 3/4 feline profile showing fluffy chest, silhouette & plume tail while glancing back at you!
     const desiredCatYaw = catMoving
       ? Math.atan2(cdx, cdz)
-      : Math.atan2(this.playerPos.x - this.catPos.x, this.playerPos.z - this.catPos.z);
+      : Math.atan2(this.playerPos.x - this.catPos.x, this.playerPos.z - this.catPos.z) + 0.62;
     let cyDiff = desiredCatYaw - this.catYaw;
     while (cyDiff > Math.PI) cyDiff -= Math.PI * 2;
     while (cyDiff < -Math.PI) cyDiff += Math.PI * 2;
@@ -1943,8 +1964,10 @@ export class LouvreParisWorld3D {
       } else if (this.catState === 'pet') {
         this.rotCatBone('Wolf_Neck_TopSHJnt_14', -0.18, Math.sin(t * 4.5) * 0.22, Math.sin(t * 5) * 0.2);
         if (this.catTongue) this.catTongue.scale.setScalar(0.001);
-      } else if (this.catTongue) {
-        this.catTongue.scale.setScalar(0.001);
+      } else {
+        // Gentle inviting glance back toward player from her graceful 3/4 stance
+        this.rotCatBone('Wolf_Neck_TopSHJnt_14', -0.06, -0.34 + Math.sin(t * 1.4) * 0.08, 0);
+        if (this.catTongue) this.catTongue.scale.setScalar(0.001);
       }
 
       // Expressive 4-segment tail swish

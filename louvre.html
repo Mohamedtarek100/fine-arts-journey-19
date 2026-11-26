@@ -10,7 +10,7 @@
   <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins Only -->
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
+    content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
   />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
@@ -21,7 +21,7 @@
     href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="./louvre.css?v=1" />
+  <link rel="stylesheet" href="./louvre.css?v=2" />
 </head>
 <body class="portal-open">
   <!-- Fullscreen 60FPS 3D Paris & Louvre WebGL World -->
@@ -271,6 +271,6 @@
     </div>
   </div>
 
-  <script type="module" src="./louvre-app.js?v=1"></script>
+  <script type="module" src="./louvre-app.js?v=2"></script>
 </body>
 </html>

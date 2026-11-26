@@ -12,7 +12,7 @@
 
 import { SITE_CONFIG } from './config.js?v=16';
 import { FamilyCloudVault } from './firebase-sync.js?v=16';
-import { LouvreParisWorld3D, STORY_WAYPOINTS } from './louvre-world.js?v=1';
+import { LouvreParisWorld3D, STORY_WAYPOINTS } from './louvre-world.js?v=2';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const ALLOWED_SENDERS = new Set(SITE_CONFIG.reception.roles.filter((r) => !r.isHonoree).map((r) => r.id));

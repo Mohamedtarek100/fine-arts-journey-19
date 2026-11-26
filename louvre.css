@@ -215,10 +215,10 @@ body.portal-open .game-topbar,
 body.portal-open .joystick-zone,
 body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 
-.gt-brand { display: flex; align-items: center; gap: 9px; }
-.gt-brand-txt { display: flex; flex-direction: column; line-height: 1.15; }
-.gt-brand-txt strong { font-family: var(--font-display); font-size: 1rem; color: var(--gold-100); }
-.gt-brand-txt span { font-size: 0.68rem; color: var(--gold-300); }
+.gt-brand { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.gt-brand-txt { display: flex; flex-direction: column; line-height: 1.15; white-space: nowrap; }
+.gt-brand-txt strong { font-family: var(--font-display); font-size: 0.98rem; color: var(--gold-100); white-space: nowrap; }
+.gt-brand-txt span { font-size: 0.66rem; color: var(--gold-300); white-space: nowrap; }
 
 .quest-hud-pill {
   display: inline-flex;
@@ -262,23 +262,24 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 }
 .hud-pill.gold-hl { border-color: var(--gold-100); color: var(--gold-100); background: rgba(232, 194, 104, 0.16); }
 
-/* ==================== PROXIMITY INTERACT PROMPT ==================== */
+/* ==================== PROXIMITY INTERACT PROMPT (TOP-CENTER — ZERO OVERLAP!) ==================== */
 .proximity-prompt {
   position: fixed;
   left: 50%;
-  bottom: 112px;
-  transform: translateX(-50%) translateY(16px);
-  z-index: 65;
-  padding: 12px 24px;
+  top: 66px;
+  transform: translateX(-50%) translateY(-10px);
+  z-index: 68;
+  max-width: min(92vw, 420px);
+  padding: 10px 22px;
   border-radius: 999px;
   border: 1.5px solid var(--gold-100);
-  background: linear-gradient(135deg, rgba(212, 165, 74, 0.96), rgba(247, 224, 152, 0.96));
+  background: linear-gradient(135deg, rgba(212, 165, 74, 0.97), rgba(247, 224, 152, 0.97));
   color: #191108;
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65), 0 0 28px rgba(238, 210, 138, 0.5);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65), 0 0 26px rgba(238, 210, 138, 0.55);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
@@ -635,10 +636,35 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 
 .panel-hidden { display: none !important; }
 
-/* ==================== MOBILE RESPONSIVE ==================== */
-@media (max-width: 760px) {
+/* ==================== MOBILE & TABLET RESPONSIVE ==================== */
+@media (max-width: 1020px) {
   .quest-hud-pill { display: none; }
+}
+
+@media (max-width: 760px) {
+  .game-topbar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .hey-crest-sm { width: 30px; height: 30px; }
+  .gt-brand-txt strong { font-size: 0.84rem; }
+  .gt-brand-txt span { display: none; }
+  .gt-actions { gap: 4px; flex-shrink: 1; min-width: 0; }
+  .hud-pill {
+    padding: 5px 8px;
+    font-size: 0.7rem;
+  }
+  #gt-visitor-btn {
+    max-width: 78px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .hide-xs { display: none; }
+  .proximity-prompt {
+    top: 52px;
+    padding: 8px 14px;
+    font-size: 0.76rem;
+  }
   .lp-roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .art-modal-grid, .vm-inbox-grid, .mm-pillars, .map-stations-grid { grid-template-columns: 1fr; }
 
@@ -651,5 +677,4 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
   .cat-guide-body { padding: 9px 10px; }
   #cat-guide-text { font-size: 0.72rem; line-height: 1.5; margin-bottom: 6px; }
   .cg-btn { padding: 4px 8px; font-size: 0.65rem; }
-  .proximity-prompt { bottom: 126px; font-size: 0.8rem; padding: 9px 16px; }
 }
