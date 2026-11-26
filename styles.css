@@ -4763,3 +4763,18 @@ body.cat-hidden .cat-mentor-hud {
     padding: 8px 12px;
   }
 }
+
+/* Luxury Paris & Louvre 3D Game Entry Button inside Classic Exhibition */
+a.louvre-entry-btn {
+  text-decoration: none;
+  border-color: rgba(248, 224, 158, 0.72);
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.22), rgba(182, 134, 48, 0.12));
+  color: var(--gold-100);
+  box-shadow: 0 8px 26px rgba(214, 171, 82, 0.22);
+}
+
+a.louvre-entry-btn:hover {
+  border-color: var(--gold-100);
+  background: linear-gradient(135deg, rgba(242, 206, 120, 0.34), rgba(201, 155, 66, 0.2));
+  transform: translateY(-2px);
+}
