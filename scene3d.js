@@ -779,20 +779,20 @@ export class Atelier3DScene {
       cake.add(rosette);
     }
 
-    // Fresh Sculpted Strawberries & Pastel Macarons decorating Tier 1 Rim
-    const berryGeo = new THREE.ConeGeometry(0.13, 0.25, 12);
+    // Fresh Sculpted Realistic Plump Strawberries & Pastel Macarons decorating Tier 1 Rim
+    const berryGeo = new THREE.SphereGeometry(0.125, 14, 12);
     const macaronGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.11, 18);
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2 + 0.2;
       if (i % 2 === 0) {
         const berry = new THREE.Group();
         const fruit = new THREE.Mesh(berryGeo, this.materials.strawberry);
-        fruit.rotation.x = Math.PI;
-        const leaf = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.02, 0.04, 6), this.materials.berryLeaf);
-        leaf.position.y = 0.12;
+        fruit.scale.set(1.0, 1.28, 1.0);
+        const leaf = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.02, 0.045, 7), this.materials.berryLeaf);
+        leaf.position.y = 0.14;
         berry.add(fruit, leaf);
         berry.position.set(Math.cos(a) * 1.24, 0.36, Math.sin(a) * 1.24);
-        berry.rotation.z = 0.22;
+        berry.rotation.z = 0.2;
         cake.add(berry);
       } else {
         const mac = new THREE.Mesh(macaronGeo, i % 4 === 1 ? this.materials.macaronRose : this.materials.macaronGold);
@@ -1146,28 +1146,31 @@ export class Atelier3DScene {
 
     this.camera.position.set(camX, camY, camZ);
 
-    // Frame the 3D Cake cleanly inside the unobstructed top showcase window on BOTH desktop & mobile!
+    // Frame the 3D Cake cleanly inside the unobstructed upper showcase window on BOTH desktop & mobile!
     let verticalFocusShift = 0.05;
     if (!this.inspectMode) {
       if (this.isMobile) {
-        verticalFocusShift = -0.58 * (1 - this.cakeZoomLerp * 0.55);
+        verticalFocusShift = -0.68 - 0.32 * nearCake * (1 - this.cakeZoomLerp * 0.65);
       } else {
-        verticalFocusShift = 0.05 - 0.52 * nearCake * (1 - this.cakeZoomLerp * 0.65);
+        verticalFocusShift = 0.05 - 0.78 * nearCake * (1 - this.cakeZoomLerp * 0.72);
       }
     }
     this.camera.lookAt(
       this.smoothPointer.x * 0.22,
-      stageY + verticalFocusShift + this.cakeZoomLerp * 0.52 + this.smoothPointer.y * 0.18,
+      stageY + verticalFocusShift + this.cakeZoomLerp * 0.58 + this.smoothPointer.y * 0.18,
       stageZ
     );
 
     // Continuous scroll-linked rotation on every 3D sculpture!
+    // For the Realistic Birthday Cake: smooth luxury showcase oscillation (±26°) when turntable is active
+    // so sculpted "1" & "9" candles ALWAYS face forward cleanly as "19" (never backwards!), while still
+    // letting users freely drag 360° whenever they wish!
     const scrollRot = this.smoothScroll * Math.PI * 2.4;
     for (let i = 0; i < this.zoneGroups.length; i++) {
       const zg = this.zoneGroups[i];
       if (zg.rig === this.cakeRig) {
-        if (this.cakeTurntable) zg.rig.rotation.y += dt * 0.38;
-        zg.rig.rotation.y += this.spinVelocity * dt * 1.6;
+        const baseShowcase = this.cakeTurntable ? Math.sin(t * 0.62) * 0.42 : 0;
+        zg.rig.rotation.y = baseShowcase + this.spinAngle + this.smoothPointer.x * 0.28;
       } else {
         zg.rig.rotation.y = Math.sin(t * 0.55 + i) * 0.14 + scrollRot * 0.28 + this.spinAngle + this.smoothPointer.x * 0.26;
       }

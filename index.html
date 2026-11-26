@@ -24,7 +24,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=10" />
+  <link rel="stylesheet" href="./styles.css?v=11" />
 </head>
 <body class="portal-open">
   <!-- Top Cinema Scroll Progress Bar -->
@@ -501,24 +501,23 @@
 
     <!-- ==================== GRAND FINALE (ZONE 5): REALISTIC 3D BIRTHDAY CAKE WITH "1" & "9" CANDLES ==================== -->
     <section id="finale" class="section finale-section" data-zone="5" data-stage="الخاتمة • تورتة العام الـ 19 الـ 3D">
-      <!-- Dedicated Unobstructed 3D Birthday Cake Showcase Window (Visible on Desktop AND Mobile!) -->
-      <div class="stage-3d-window finale-3d-window" data-spin-stage="true">
-        <div class="stage-3d-pill cake-stage-pill">
-          <span>🎂 تورتة العام الـ 19 الواقعية الـ 3D بشمعتي «1» و «9» — اسحب للتدوير 360°!</span>
-        </div>
-      </div>
+      <!-- Dedicated Unobstructed 3D Birthday Cake Showcase Window (100% Open Air — Zero Pills Covering the Cake!) -->
+      <div class="stage-3d-window finale-3d-window" data-spin-stage="true" aria-label="مسرح تورتة العام الـ 19 ثلاثية الأبعاد — اسحب للتدوير"></div>
 
-      <!-- Pro Interactive 3D Cake Controls Bar -->
+      <!-- Pro Interactive 3D Cake Controls Bar cleanly BELOW the Cake -->
       <div class="cake-controls-bar reveal" role="toolbar" aria-label="أدوات التحكم في تورتة الـ 3D">
-        <button id="cake-spin-btn" class="cake-ctrl-pill active" type="button" aria-pressed="true">
-          <span>↻ دوران 360° تلقائي</span>
-        </button>
-        <button id="cake-zoom-btn" class="cake-ctrl-pill" type="button" aria-pressed="false">
-          <span>🔍 تقريب على شمعتي 1 و 9</span>
-        </button>
-        <button id="cake-fireworks-btn" class="cake-ctrl-pill gold-accent" type="button">
-          <span>🎆 ألعاب نارية ذهبية</span>
-        </button>
+        <span class="cake-micro-hint">🎂 اسحب فوق التورتة لتدويرها 360°</span>
+        <div class="cake-ctrl-row">
+          <button id="cake-spin-btn" class="cake-ctrl-pill active" type="button" aria-pressed="true">
+            <span>↻ حركة استعراض تلقائية</span>
+          </button>
+          <button id="cake-zoom-btn" class="cake-ctrl-pill" type="button" aria-pressed="false">
+            <span>🔍 تقريب على شمعتي 1 و 9</span>
+          </button>
+          <button id="cake-fireworks-btn" class="cake-ctrl-pill gold-accent" type="button">
+            <span>🎆 ألعاب نارية ذهبية</span>
+          </button>
+        </div>
       </div>
 
       <div class="finale-card reveal">
@@ -545,7 +544,7 @@
         <div class="finale-actions-stack">
           <button id="wish-btn" class="btn-gold-seal finale-btn" type="button">
             <span class="btn-ar" id="finale-btn-ar">تمنّي أمنية وأطفئي شمعتي 1 و 9 على التورتة 🎂✨</span>
-            <span class="btn-en">BLOW OUT THE 1 &amp; 9 CAKE CANDLES</span>
+            <span class="btn-en" id="finale-btn-en">BLOW OUT THE 1 &amp; 9 CAKE CANDLES</span>
           </button>
 
           <button id="mic-blow-btn" class="btn-glass-secondary mic-blow-btn" type="button" aria-pressed="false">
@@ -687,7 +686,7 @@
     </div>
   </div>
 
-  <!-- Main Scripts (v10) -->
-  <script type="module" src="./app.js?v=10"></script>
+  <!-- Main Scripts (v11) -->
+  <script type="module" src="./app.js?v=11"></script>
 </body>
 </html>

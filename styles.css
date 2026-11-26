@@ -4294,16 +4294,39 @@ body.portal-open .mobile-journey-dock {
   color: var(--gold-100);
 }
 
+/* Fix BiDi rendering for ALL English uppercase museum eyebrows & badges inside RTL! */
+.eyebrow-en,
+.brand-en,
+.copy-en,
+.btn-en,
+.role-tag-en {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Compact Portal Shell so all 8 family cards + CTA fit cleanly inside 800px height desktops */
+.portal-shell {
+  padding: clamp(16px, 2.5vw, 30px);
+}
+
+.portal-head {
+  margin-bottom: 14px;
+}
+
 /* ==================== UNOBSTRUCTED 3D REALISTIC CAKE STAGE (DESKTOP + MOBILE!) ==================== */
+.finale-section {
+  padding-top: clamp(72px, 9vh, 108px);
+  gap: 20px;
+}
+
 .stage-3d-window.finale-3d-window {
   display: flex;
   align-items: flex-end;
   justify-content: center;
   width: 100%;
   max-width: 920px;
-  height: clamp(270px, 42vh, 380px);
+  height: clamp(320px, 48vh, 430px);
   margin: 0 auto;
-  padding-bottom: 10px;
   position: relative;
   pointer-events: auto;
   touch-action: pan-y;
@@ -4315,41 +4338,45 @@ body.portal-open .mobile-journey-dock {
   cursor: grabbing;
 }
 
-.cake-stage-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 16px;
-  border-radius: 999px;
-  background: rgba(15, 11, 8, 0.78);
-  border: 1px solid rgba(238, 210, 138, 0.45);
-  color: var(--gold-100);
-  font-size: 0.8rem;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
-}
-
 .cake-controls-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin-top: -22px;
-  margin-bottom: -16px;
+  margin: 0 auto 6px;
   position: relative;
   z-index: 5;
 }
 
-.cake-ctrl-pill {
-  padding: 8px 16px;
+.cake-micro-hint {
+  font-size: 0.78rem;
+  color: var(--gold-200);
+  padding: 4px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(238, 210, 138, 0.36);
-  background: rgba(18, 13, 9, 0.86);
+  background: rgba(16, 11, 8, 0.92);
+  border: 1px solid rgba(238, 210, 138, 0.34);
+}
+
+.cake-ctrl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.cake-ctrl-pill {
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 210, 138, 0.42);
+  background: rgba(17, 12, 8, 0.95);
   color: var(--ivory);
   font-family: var(--font-ar-body);
   font-size: 0.82rem;
   font-weight: 600;
   cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.52);
   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
 }
 
@@ -4359,10 +4386,10 @@ body.portal-open .mobile-journey-dock {
 }
 
 .cake-ctrl-pill.active {
-  background: linear-gradient(135deg, rgba(232, 194, 104, 0.26), rgba(178, 131, 48, 0.22));
+  background: rgba(28, 20, 12, 0.96);
   border-color: var(--gold-100);
   color: var(--gold-100);
-  box-shadow: 0 0 18px rgba(214, 171, 82, 0.28);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.56), 0 0 18px rgba(214, 171, 82, 0.3);
 }
 
 .cake-ctrl-pill.gold-accent {
@@ -4385,12 +4412,7 @@ body.portal-open .mobile-journey-dock {
   }
 
   .stage-3d-window.finale-3d-window {
-    height: clamp(240px, 38svh, 310px);
-  }
-
-  .cake-controls-bar {
-    margin-top: -14px;
-    margin-bottom: -10px;
+    height: clamp(295px, 44svh, 370px);
   }
 
   .cake-ctrl-pill {
@@ -4400,14 +4422,48 @@ body.portal-open .mobile-journey-dock {
 }
 
 @media (max-width: 640px) {
+  /* Guarantee ZERO mobile topbar clipping on 360px–390px screens! */
+  .topbar {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .brand-mark {
+    gap: 7px;
+  }
+
   .brand-monogram.hey-badge-shell {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .brand-ar {
+    font-size: 0.84rem;
+  }
+
+  .topbar-actions {
+    gap: 4px;
+  }
+
+  .icon-pill {
+    padding: 6px 8px;
+    font-size: 0.7rem;
+    gap: 4px;
+  }
+
+  .visitor-pill .pill-label {
+    max-width: 68px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #inspect-3d-btn .pill-label {
+    display: none;
   }
 
   .portal-seal-badge.hey-badge-shell {
-    width: 64px;
-    height: 64px;
+    width: 60px;
+    height: 60px;
   }
 
   .footer-monogram.hey-badge-shell {

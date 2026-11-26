@@ -11,9 +11,9 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=10';
-import { Atelier3DScene } from './scene3d.js?v=10';
-import { FamilyCloudVault } from './firebase-sync.js?v=10';
+import { SITE_CONFIG } from './config.js?v=11';
+import { Atelier3DScene } from './scene3d.js?v=11';
+import { FamilyCloudVault } from './firebase-sync.js?v=11';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -2013,7 +2013,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
       const spinning = scene3d.toggleCakeTurntable();
       cakeSpinBtn.classList.toggle('active', spinning);
       cakeSpinBtn.setAttribute('aria-pressed', String(spinning));
-      cakeSpinBtn.replaceChildren(el('span', '', spinning ? '↻ دوران 360° تلقائي' : '⏸ الدوران متوقف (اسحب للتدوير)'));
+      cakeSpinBtn.replaceChildren(el('span', '', spinning ? '↻ حركة استعراض تلقائية' : '⏸ الاستعراض متوقف (اسحب للتدوير)'));
     });
   }
 
@@ -2036,6 +2036,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
   // Finale Realistic Cake "1" & "9" Candles + Real Microphone Blow Integration
   const wishBtn = document.getElementById('wish-btn');
   const wishBtnAr = document.getElementById('finale-btn-ar');
+  const wishBtnEn = document.getElementById('finale-btn-en');
   const wishLetter = document.getElementById('wish-letter');
   const candlesStatus = document.getElementById('candles-status');
   const certBtn = document.getElementById('certificate-download-btn');
@@ -2053,6 +2054,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     wishLetter.classList.add('revealed');
     wishLetter.setAttribute('aria-hidden', 'false');
     wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAfterAr;
+    if (wishBtnEn) wishBtnEn.textContent = 'RELIGHT THE 1 & 9 CAKE CANDLES';
     setCandlesStatusText(FROZEN_CONFIG.finale.candlesBlownStatusAr, true);
   };
 
@@ -2060,6 +2062,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     candlesBlown = false;
     if (scene3d) scene3d.triggerWishCelebration(false);
     wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAr;
+    if (wishBtnEn) wishBtnEn.textContent = 'BLOW OUT THE 1 & 9 CAKE CANDLES';
     setCandlesStatusText(FROZEN_CONFIG.finale.candlesLitStatusAr, false);
   };
 
