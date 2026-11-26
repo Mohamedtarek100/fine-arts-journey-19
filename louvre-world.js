@@ -44,7 +44,7 @@ export const STORY_WAYPOINTS = [
     labelAr: 'شارع باريس وبرج إيفل',
     x: 0,
     z: 56,
-    catX: 0.4,
+    catX: -0.65,
     catZ: 51.5,
     tipAr: 'مياو! أهلاً في باريس الساحرة 🇫🇷✨ شوف برج إيفل الشاهق على شمالك والمباني الباريسية، واتبعني ناحية ساحة متحف اللوفر!',
   },
@@ -230,7 +230,7 @@ export class LouvreParisWorld3D {
 
     // 40-Bone Golden Persian Cat Rig (EXACT World-Space Rest Axes!)
     this.catRoot = new THREE.Group();
-    this.catPos = new THREE.Vector3(0.4, 0, 57.5);
+    this.catPos = new THREE.Vector3(-0.65, 0, 57.5);
     this.catYaw = Math.PI;
     this.catMixer = null;
     this.catBoneInfo = {}; // name -> { bone, restQuat, axisRight, axisUp, axisFwd, isStatic }
@@ -799,8 +799,9 @@ export class LouvreParisWorld3D {
   /* ==================== ARCHITECTURAL CURVED PARABOLIC EIFFEL TOWER (FILIGREE LATTICE + NIGHT SEARCHLIGHT!) ==================== */
   buildArchitecturalEiffelTower() {
     const tower = new THREE.Group();
-    // Framed majestically on the left Parisian skyline — FULL tower from arched base to golden spire visible!
-    tower.position.set(-31, 0, -4);
+    // Framed majestically on the left Parisian skyline — FULL tower from lower arches to top golden beacon visible cleanly beside Richelieu wing!
+    tower.position.set(-37, 0, -14);
+    tower.scale.setScalar(0.84);
 
     // Exact mathematical Eiffel Tower parabolic curve: r(y) sweeps gracefully from 6.8m base to 0.45m top gallery!
     const profile = [
@@ -1040,12 +1041,13 @@ export class LouvreParisWorld3D {
     const pediment = new THREE.Mesh(pedGeo, this.mats.marble);
     pediment.position.set(0, 13.95, 1.85);
 
-    // Grand Mansard Central Pavilion Roof + Gilded Cresting Crown (Pavillon de l'Horloge!)
-    const pavDome = new THREE.Mesh(new THREE.CylinderGeometry(3.8, 6.0, 4.8, 4), this.mats.mansard);
-    pavDome.rotation.y = Math.PI / 4;
-    pavDome.scale.set(1.42, 1, 0.65);
+    // Grand Symmetrical Mansard Central Pavilion Dome (Pavillon de l'Horloge!) — rotate geometry BEFORE scaling so zero shear!
+    const pavDomeGeo = new THREE.CylinderGeometry(3.4, 5.4, 4.8, 4);
+    pavDomeGeo.rotateY(Math.PI / 4);
+    const pavDome = new THREE.Mesh(pavDomeGeo, this.mats.mansard);
+    pavDome.scale.set(1.48, 1, 0.58);
     pavDome.position.set(0, 16.4, 0);
-    const pavCrown = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.25, 2.4), this.mats.goldGlow);
+    const pavCrown = new THREE.Mesh(new THREE.BoxGeometry(7.2, 0.25, 2.2), this.mats.goldGlow);
     pavCrown.position.set(0, 18.88, 0);
 
     // Gilded Entrance Archway Trim + Illuminated Bronze Museum Plaque
