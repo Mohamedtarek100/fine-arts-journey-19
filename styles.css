@@ -3625,3 +3625,367 @@ body.portal-open .mobile-journey-dock {
     align-items: stretch;
   }
 }
+
+
+/* =========================================================================
+   EDITION XIX ULTRA — OPEN MOBILE 3D STAGE WINDOWS, 6-ACT STORY & PRO TOOLS
+   ========================================================================= */
+
+.hide-sm {
+  display: inline;
+}
+
+.mood-pill {
+  border-color: rgba(238, 210, 138, 0.42);
+  color: var(--gold-200);
+}
+
+.story-arc-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 14px;
+  font-size: 0.72rem;
+  color: var(--ivory-soft);
+}
+
+.story-arc-stepper i {
+  font-style: normal;
+  opacity: 0.45;
+}
+
+.arc-pill {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: rgba(255, 245, 224, 0.04);
+  border: 1px solid rgba(214, 171, 82, 0.2);
+}
+
+.arc-pill.active {
+  background: rgba(232, 194, 104, 0.18);
+  border-color: var(--gold-200);
+  color: var(--gold-100);
+  font-weight: 700;
+}
+
+.act-kicker {
+  display: inline-block;
+  padding: 4px 14px;
+  margin-bottom: 10px;
+  border-radius: 999px;
+  background: rgba(232, 194, 104, 0.12);
+  border: 1px solid rgba(238, 210, 138, 0.36);
+  color: var(--gold-100);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Open 3D Stage Viewport Window (Hidden on Desktop where 3D sits beside the card;
+   Opened wide on Mobile so the 3D Sculpture shines 100% unobstructed ABOVE every Act!) */
+.stage-3d-window {
+  display: none;
+}
+
+/* Integrated Progress Module inside Act 03 (Thanaweya Amma) */
+.act-integrated-horizon {
+  margin-top: 22px;
+  padding: 18px;
+  border-radius: 16px;
+  background: rgba(14, 10, 7, 0.62);
+  border: 1px solid rgba(238, 210, 138, 0.38);
+}
+
+.act-horizon-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.act-horizon-head strong {
+  font-family: var(--font-en-display);
+  font-size: 1.65rem;
+  color: var(--gold-100);
+}
+
+/* Integrated Mini Gallery Strip inside Act 04 (Fine Arts) */
+.integrated-gallery-strip {
+  width: 100%;
+  max-width: 1240px;
+  margin: 28px auto 0;
+  padding: 20px;
+  border-radius: 20px;
+  background: var(--bg-glass);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--border-gold);
+}
+
+.mini-gallery-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.mini-gallery-head h3 {
+  font-family: var(--font-ar-display);
+  font-size: 1.35rem;
+  color: var(--gold-100);
+}
+
+.mini-gallery-head span {
+  font-size: 0.8rem;
+  color: var(--ivory-muted);
+}
+
+.mini-gallery-thumbs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mini-thumb-btn {
+  position: relative;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(238, 210, 138, 0.36);
+  background: rgba(16, 12, 9, 0.82);
+  cursor: pointer;
+  overflow: hidden;
+  text-align: right;
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  transition: transform 0.3s var(--ease-museum), border-color 0.3s ease;
+}
+
+.mini-thumb-btn:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-100);
+}
+
+.mini-thumb-btn img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 6px;
+}
+
+.mini-thumb-btn strong {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--gold-100);
+}
+
+.mini-thumb-btn small {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--ivory-soft);
+}
+
+/* ==================== PRO FINE-ARTS STUDIO UPGRADES ==================== */
+.pro-modes-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(214, 171, 82, 0.18);
+}
+
+.mode-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mode-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(214, 171, 82, 0.28);
+  background: rgba(255, 245, 224, 0.04);
+  color: var(--ivory-muted);
+  font-family: var(--font-ar-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.mode-pill:hover {
+  border-color: var(--gold-200);
+  color: var(--ivory);
+}
+
+.mode-pill.active,
+.tool-btn[aria-pressed="true"] {
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.28), rgba(178, 131, 48, 0.24));
+  border-color: var(--gold-100);
+  color: var(--gold-100);
+  box-shadow: 0 0 18px rgba(214, 171, 82, 0.25);
+}
+
+.guide-overlay-canvas {
+  position: absolute;
+  inset: 10px;
+  width: calc(100% - 20px);
+  height: calc(100% - 20px);
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.guide-overlay-canvas.visible {
+  opacity: 1;
+}
+
+/* ==================== REAL MICROPHONE CANDLE BLOW CONTROLS ==================== */
+.finale-actions-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.mic-blow-btn[aria-pressed="true"] {
+  border-color: var(--emerald-soft);
+  background: rgba(158, 209, 152, 0.16);
+  color: #dff7dc;
+}
+
+.mic-meter-wrap {
+  display: none;
+  width: min(100%, 340px);
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(14, 10, 7, 0.75);
+  border: 1px solid rgba(158, 209, 152, 0.42);
+}
+
+.mic-meter-wrap.active {
+  display: flex;
+}
+
+.mic-meter-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+}
+
+.mic-meter-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #82c97e, #ebd089, #fff5d6);
+  transition: width 0.06s linear;
+}
+
+.mic-meter-wrap small {
+  font-size: 0.76rem;
+  color: #d6f3d3;
+}
+
+/* ==================== MOBILE UNOBSTRUCTED 3D STAGE ARCHITECTURE ==================== */
+@media (max-width: 940px) {
+  .section {
+    padding: 24px 14px 48px;
+    min-height: auto;
+  }
+
+  .hero-section {
+    min-height: auto;
+    padding-top: 66px;
+    padding-bottom: 44px;
+    justify-content: flex-start;
+  }
+
+  /* THE KEY FIX: Dedicated Open 3D Viewport Window above EVERY Story Act on Mobile!
+     Zero card background, native vertical scroll preserved (`touch-action: pan-y`),
+     horizontal thumb swipe rotates the 3D sculpture right before your eyes! */
+  .stage-3d-window {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    height: clamp(235px, 36svh, 310px);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    position: relative;
+    pointer-events: auto;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .stage-3d-window.finale-3d-window {
+    height: clamp(220px, 34svh, 290px);
+  }
+
+  .stage-3d-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 13px;
+    border-radius: 999px;
+    background: rgba(14, 10, 7, 0.62);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(238, 210, 138, 0.38);
+    color: var(--gold-100);
+    font-size: 0.72rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Compact, airy, high-legibility mobile cards that NEVER bury the 3D world */
+  .hero-content,
+  .chapter-card,
+  .finale-card {
+    background: linear-gradient(165deg, rgba(18, 13, 9, 0.8) 0%, rgba(12, 9, 6, 0.74) 100%);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .story-arc-stepper {
+    display: none;
+  }
+
+  .mini-gallery-thumbs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .hide-sm {
+    display: none;
+  }
+
+  .mood-pill .pill-label {
+    display: none;
+  }
+
+  .pro-modes-bar {
+    justify-content: center;
+  }
+
+  .mode-group {
+    justify-content: center;
+  }
+
+  .mode-pill {
+    padding: 6px 11px;
+    font-size: 0.75rem;
+  }
+}

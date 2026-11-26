@@ -1,17 +1,19 @@
 /**
  * =========================================================================
- *  Main Application Logic — VIP 8-Member Family 3D Fine Arts Exhibition
- *  - Exclusive 8-Person Family Portal (Yomna, Essam, Heba, Youssef, Islam, Salwa, Nada, Mohamed)
- *  - Real-Time 3D Atmosphere Morphing per Family Member
- *  - Yomna's Private 7-Envelope Family Vault + Encrypted Gift Link Delivery (?gift=)
- *  - Narrative Chapter Bridges + Official Family 19th-Year Certificate Generator
- *  - 100% Zero-innerHTML OWASP Security Architecture
+ *  Main Application Logic — Edition XIX Ultra (6-Act Ordered 3D Exhibition)
+ *  - Exact Section-Locked 3D Camera Choreography + Mobile Touch-Spin 3D Windows
+ *  - Clean Chronological 6-Act Story Arc (Zero Repetition!)
+ *  - Pro Fine-Arts Studio: Calligraphy, 8-Way Symmetry, Charcoal, Watercolor + Perspective Grid
+ *  - Live 3D Museum Lighting Mood Switcher (Rembrandt, Van Gogh, Louvre, Florence)
+ *  - Real Microphone Blow-to-Extinguish for the 19 3D Birthday Candles
+ *  - Real-Time Firebase Cloud Firestore Sync + 8 VIP Family Personas
+ *  - Strict OWASP Zero-innerHTML Security Architecture
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=8';
-import { Atelier3DScene } from './scene3d.js?v=8';
-import { FamilyCloudVault } from './firebase-sync.js?v=8';
+import { SITE_CONFIG } from './config.js?v=9';
+import { Atelier3DScene } from './scene3d.js?v=9';
+import { FamilyCloudVault } from './firebase-sync.js?v=9';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -42,6 +44,20 @@ const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const ALLOWED_SENDER_IDS = new Set(
   FROZEN_CONFIG.reception.roles.filter((r) => !r.isHonoree).map((r) => r.id)
 );
+
+const STAGE_3D_LABELS = [
+  '❖ مجسم 3D حي: لوحة الطفولة وأقلام الباستيل والنجوم — اسحب للتدوير',
+  '❖ مجسم 3D حي: جوهرة النسبة الذهبية وباليتة الأتيليه — اسحب للتدوير',
+  '❖ مجسم 3D حي: الساعة الرملية الذهبية وقناديل تالتة ثانوي — اسحب للتدوير',
+  '❖ مجسم 3D حي: بوابة كلية الفنون الجميلة والتمثال الرخامي — اسحب للتدوير',
+];
+
+const LIGHTING_MOODS = [
+  { key: 'rembrandt', label: 'إضاءة: أتيليه الذهب' },
+  { key: 'vangogh', label: 'إضاءة: ليلة فان جوخ' },
+  { key: 'louvre', label: 'إضاءة: رخام اللوفر' },
+  { key: 'terracotta', label: 'إضاءة: غروب فلورنسا' },
+];
 
 function safeAssetUrl(path, fallback = './assets/art/chapter4-fine-arts.jpg') {
   if (typeof path !== 'string') return fallback;
@@ -75,7 +91,7 @@ function svgEl(tag, attrs = {}) {
   return node;
 }
 
-/* ==================== ENCRYPTED-STYLE URL GIFT PAYLOAD ENCODER / DECODER ==================== */
+/* ==================== URL GIFT TOKEN ENCODER / DECODER ==================== */
 function encodeGiftToken(senderId, message) {
   if (!ALLOWED_SENDER_IDS.has(senderId)) return '';
   const cleanMsg = sanitizeText(message, 220);
@@ -107,7 +123,7 @@ function decodeGiftToken(token) {
   }
 }
 
-/* ==================== SAFE FAMILY VAULT STORE (LOCAL PERSISTENCE) ==================== */
+/* ==================== FAMILY VAULT STORE ==================== */
 class FamilyVaultStore {
   constructor() {
     this.messages = this.load();
@@ -125,16 +141,12 @@ class FamilyVaultStore {
         if (entry && typeof entry.message === 'string') {
           const msg = sanitizeText(entry.message, 220);
           if (msg) {
-            clean[id] = {
-              message: msg,
-              timestamp: Number(entry.timestamp) || Date.now(),
-              custom: true,
-            };
+            clean[id] = { message: msg, timestamp: Number(entry.timestamp) || Date.now(), custom: true };
           }
         }
       }
     } catch {
-      // Ignore storage access errors in private browsing
+      // Ignore storage errors
     }
     return clean;
   }
@@ -143,30 +155,20 @@ class FamilyVaultStore {
     if (!ALLOWED_SENDER_IDS.has(senderId)) return false;
     const cleanMsg = sanitizeText(message, 220);
     if (!cleanMsg) return false;
-    this.messages[senderId] = {
-      message: cleanMsg,
-      timestamp: Date.now(),
-      custom: true,
-    };
+    this.messages[senderId] = { message: cleanMsg, timestamp: Date.now(), custom: true };
     try {
       window.localStorage.setItem(VAULT_STORAGE_KEY, JSON.stringify(this.messages));
     } catch {
-      // Fallback to in-memory vault
+      // Ignore fallback
     }
     return true;
   }
 
   getEntry(role) {
     if (this.messages[role.id]) {
-      return {
-        message: this.messages[role.id].message,
-        isCustom: true,
-      };
+      return { message: this.messages[role.id].message, isCustom: true };
     }
-    return {
-      message: role.defaultVaultMsg || '',
-      isCustom: false,
-    };
+    return { message: role.defaultVaultMsg || '', isCustom: false };
   }
 
   getCustomCount() {
@@ -174,7 +176,7 @@ class FamilyVaultStore {
   }
 }
 
-/* ==================== MOTION-GRAPHICS GOLDEN SPARKLE CURSOR TRAIL ==================== */
+/* ==================== GOLDEN SPARKLE CURSOR TRAIL (DESKTOP) ==================== */
 function initSparkleCursorTrail() {
   const canvas = document.getElementById('sparkle-canvas');
   const isTouchOnly = window.matchMedia('(pointer: coarse)').matches;
@@ -194,20 +196,18 @@ function initSparkleCursorTrail() {
     'pointermove',
     (e) => {
       const now = performance.now();
-      if (now - lastSpawn < 24) return;
+      if (now - lastSpawn < 26) return;
       lastSpawn = now;
-      for (let i = 0; i < 2; i++) {
-        particles.push({
-          x: e.clientX + (Math.random() - 0.5) * 8,
-          y: e.clientY + (Math.random() - 0.5) * 8,
-          vx: (Math.random() - 0.5) * 0.65,
-          vy: -0.35 - Math.random() * 0.7,
-          size: 1.3 + Math.random() * 2.4,
-          life: 1,
-          decay: 0.025 + Math.random() * 0.02,
-        });
-      }
-      if (particles.length > 65) particles.splice(0, particles.length - 65);
+      particles.push({
+        x: e.clientX + (Math.random() - 0.5) * 6,
+        y: e.clientY + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: -0.35 - Math.random() * 0.6,
+        size: 1.4 + Math.random() * 2.2,
+        life: 1,
+        decay: 0.028 + Math.random() * 0.02,
+      });
+      if (particles.length > 55) particles.shift();
     },
     { passive: true }
   );
@@ -229,10 +229,10 @@ function initSparkleCursorTrail() {
         continue;
       }
       ctx.save();
-      ctx.globalAlpha = p.life * 0.72;
+      ctx.globalAlpha = p.life * 0.7;
       ctx.fillStyle = '#f8e29e';
       ctx.shadowColor = '#e6bd5c';
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
       ctx.fill();
@@ -242,7 +242,7 @@ function initSparkleCursorTrail() {
   renderTrail();
 }
 
-/* ==================== AMBIENT ATELIER AUDIO (WEB AUDIO API) ==================== */
+/* ==================== AMBIENT ATELIER AUDIO ==================== */
 class AtelierAudio {
   constructor() {
     this.ctx = null;
@@ -336,7 +336,7 @@ class AtelierAudio {
         setTimeout(() => this.playTone(f, 3.0, 0.3), idx * 105);
       });
     } catch {
-      // Ignore if audio blocked
+      // Ignore if blocked
     }
   }
 
@@ -347,12 +347,12 @@ class AtelierAudio {
         setTimeout(() => this.playTone(f, 2.1, 0.24), idx * 80);
       });
     } catch {
-      // Ignore if audio blocked
+      // Ignore if blocked
     }
   }
 }
 
-/* ==================== SAFE SVG CRESTS FOR ALL 8 VIP FAMILY MEMBERS ==================== */
+/* ==================== SAFE SVG CRESTS ==================== */
 function createRoleCrestSvg(type) {
   const svg = svgEl('svg', {
     viewBox: '0 0 24 24',
@@ -403,7 +403,6 @@ function createRoleCrestSvg(type) {
       svgEl('path', { d: 'M12 7v11' })
     );
   } else {
-    // nib (Architectural Drafting Pen & Star for Mohamed)
     svg.append(
       svgEl('path', { d: 'M12 3l6 8-6 10-6-10 6-8Z' }),
       svgEl('circle', { cx: 12, cy: 11.5, r: 1.5 }),
@@ -424,10 +423,7 @@ function createGuideIconSvg(type) {
   });
 
   if (type === 'scroll') {
-    svg.append(
-      svgEl('rect', { x: 7, y: 3, width: 10, height: 18, rx: 5 }),
-      svgEl('line', { x1: 12, y1: 7, x2: 12, y2: 11 })
-    );
+    svg.append(svgEl('rect', { x: 7, y: 3, width: 10, height: 18, rx: 5 }), svgEl('line', { x1: 12, y1: 7, x2: 12, y2: 11 }));
   } else if (type === 'orbit') {
     svg.append(
       svgEl('circle', { cx: 12, cy: 12, r: 3 }),
@@ -452,22 +448,14 @@ function createGuideCard(step) {
   const card = el('article', 'guide-card');
   const num = el('span', 'guide-card-num', step.num);
   num.setAttribute('aria-hidden', 'true');
-
   const iconBox = el('div', 'guide-icon-box');
   iconBox.setAttribute('aria-hidden', 'true');
   iconBox.appendChild(createGuideIconSvg(step.icon));
-
-  card.append(
-    num,
-    iconBox,
-    el('h3', '', step.titleAr),
-    el('span', 'guide-en', step.titleEn),
-    el('p', '', step.descAr)
-  );
+  card.append(num, iconBox, el('h3', '', step.titleAr), el('span', 'guide-en', step.titleEn), el('p', '', step.descAr));
   return card;
 }
 
-/* ==================== LUXURY KEEPSAKE CARD & FAMILY CERTIFICATE CANVAS RENDERERS ==================== */
+/* ==================== KEEPSAKE CARD & FAMILY CERTIFICATE RENDERERS ==================== */
 function wrapCanvasText(ctx, text, maxWidth, maxLines = 5) {
   const words = text.split(/\s+/).filter(Boolean);
   const lines = [];
@@ -498,29 +486,12 @@ function drawGoldenSupportCard(canvas, { senderDisplay, accentHex, message }) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  const beam = ctx.createLinearGradient(0, 0, W, H);
-  beam.addColorStop(0, 'rgba(232, 194, 104, 0.14)');
-  beam.addColorStop(0.5, 'rgba(232, 194, 104, 0.02)');
-  beam.addColorStop(1, 'rgba(232, 194, 104, 0.1)');
-  ctx.fillStyle = beam;
-  ctx.fillRect(0, 0, W, H);
-
   ctx.strokeStyle = accent;
   ctx.lineWidth = 2.5;
   ctx.strokeRect(24, 24, W - 48, H - 48);
-
   ctx.strokeStyle = 'rgba(238, 210, 138, 0.32)';
   ctx.lineWidth = 1;
   ctx.strokeRect(36, 36, W - 72, H - 72);
-
-  for (let i = 0; i < 28; i++) {
-    const px = 55 + ((i * 173) % (W - 110));
-    const py = 55 + ((i * 97) % (H - 110));
-    ctx.fillStyle = i % 2 === 0 ? 'rgba(248, 224, 158, 0.45)' : 'rgba(255, 248, 232, 0.25)';
-    ctx.beginPath();
-    ctx.arc(px, py, (i % 3) + 1, 0, Math.PI * 2);
-    ctx.fill();
-  }
 
   ctx.textAlign = 'center';
   ctx.direction = 'ltr';
@@ -598,13 +569,6 @@ function downloadFamilyCertificatePng() {
   ctx.font = '700 62px Amiri, Georgia, serif';
   ctx.fillText(`الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 290);
 
-  ctx.strokeStyle = 'rgba(232, 194, 104, 0.55)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(W * 0.28, 326);
-  ctx.lineTo(W * 0.72, 326);
-  ctx.stroke();
-
   ctx.fillStyle = '#f8f1e4';
   ctx.font = '500 28px Cairo, sans-serif';
   ctx.fillText('تقديراً لموهبتها الفنية الراقية وإصرارها في سنة تالتة ثانوي الفاصلة', W / 2, 396);
@@ -626,13 +590,8 @@ function downloadFamilyCertificatePng() {
   ctx.font = '700 32px Amiri, Georgia, serif';
   ctx.fillText(FROZEN_CONFIG.familySignOffAr, W / 2, 688);
 
-  ctx.direction = 'ltr';
-  ctx.fillStyle = 'rgba(238, 210, 138, 0.55)';
-  ctx.font = '500 14px Cinzel, Georgia, serif';
-  ctx.fillText('OFFICIAL FAMILY KEEPSAKE  •  5 DECEMBER 2026  •  CHAPTER XIX', W / 2, 748);
-
   const link = document.createElement('a');
-  link.download = `Yomna-19th-Year-Family-Certificate.png`;
+  link.download = 'Yomna-19th-Year-Family-Certificate.png';
   link.href = c.toDataURL('image/png');
   link.click();
 }
@@ -646,23 +605,15 @@ function initBirthdayCountdown() {
   const renderTick = () => {
     const diff = targetMs - Date.now();
     if (diff <= 0) {
-      container.replaceChildren(
-        el('span', 'cd-live-celebration', '✦ اليوم 5 ديسمبر — كل عامٍ ويمنى بألف خير! ✦')
-      );
+      container.replaceChildren(el('span', 'cd-live-celebration', '✦ اليوم 5 ديسمبر — كل عامٍ ويمنى بألف خير! ✦'));
       return;
     }
-    const days = Math.floor(diff / 86400000);
-    const hours = Math.floor((diff % 86400000) / 3600000);
-    const mins = Math.floor((diff % 3600000) / 60000);
-    const secs = Math.floor((diff % 60000) / 1000);
-
     const units = [
-      { v: String(days).padStart(2, '0'), l: 'يوم' },
-      { v: String(hours).padStart(2, '0'), l: 'ساعة' },
-      { v: String(mins).padStart(2, '0'), l: 'دقيقة' },
-      { v: String(secs).padStart(2, '0'), l: 'ثانية' },
+      { v: String(Math.floor(diff / 86400000)).padStart(2, '0'), l: 'يوم' },
+      { v: String(Math.floor((diff % 86400000) / 3600000)).padStart(2, '0'), l: 'ساعة' },
+      { v: String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0'), l: 'دقيقة' },
+      { v: String(Math.floor((diff % 60000) / 1000)).padStart(2, '0'), l: 'ثانية' },
     ];
-
     container.replaceChildren(
       ...units.map((u) => {
         const box = el('div', 'cd-box');
@@ -671,9 +622,288 @@ function initBirthdayCountdown() {
       })
     );
   };
-
   renderTick();
   window.setInterval(renderTick, 1000);
+}
+
+/* ==================== BUILD COHESIVE ACTS 01..04 WITH OPEN MOBILE 3D WINDOWS ==================== */
+function createNarrativeBridge(text) {
+  const wrap = el('div', 'chapter-bridge reveal');
+  wrap.append(el('span', 'bridge-thread'), el('p', 'bridge-caption', `✦ ${text} ✦`), el('span', 'bridge-thread'));
+  return wrap;
+}
+
+function createStoryActSection(ch, idx, cfg, openLightbox) {
+  const isReverse = idx % 2 === 1;
+  const zoneNum = idx + 1; // Zones 1, 2, 3, 4!
+  const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
+  section.id = ch.id;
+  section.dataset.zone = String(zoneNum);
+  section.dataset.stage = `الفصل ${ch.number} • ${ch.titleAr}`;
+
+  // Open 3D Viewport Stage Window at top of Act on Mobile (NEVER covers 3D!)
+  const stageWin = el('div', 'stage-3d-window');
+  stageWin.dataset.spinStage = 'true';
+  const stagePill = el('div', 'stage-3d-pill');
+  stagePill.appendChild(el('span', '', STAGE_3D_LABELS[idx] || STAGE_3D_LABELS[0]));
+  stageWin.appendChild(stagePill);
+  section.appendChild(stageWin);
+
+  const grid = el('div', 'chapter-grid');
+
+  // Story Card
+  const card = el('article', 'chapter-card reveal');
+  const numBg = el('span', 'chapter-number-bg', ch.number);
+  numBg.setAttribute('aria-hidden', 'true');
+
+  const actNames = ['الفصل الأول من الستة', 'الفصل الثاني من الستة', 'الفصل الثالث من الستة', 'الفصل الرابع من الستة'];
+  card.append(
+    numBg,
+    el('span', 'act-kicker', actNames[idx] || ch.eraAr),
+    el('h2', 'chapter-title-ar', ch.titleAr),
+    el('p', 'chapter-title-en', ch.titleEn),
+    el('p', 'chapter-story', ch.storyAr),
+    el('blockquote', 'chapter-quote', ch.quoteAr)
+  );
+
+  // ACT 03 (Thanaweya): Integrate the 90% One-Step Progress Tracker + Wax-Sealed Encouragement Envelope!
+  if (ch.id === 'thanaweya') {
+    const hg = cfg.horizonGoal;
+    const horizonBox = el('div', 'act-integrated-horizon');
+    horizonBox.id = 'horizon-progress-shell';
+
+    const head = el('div', 'act-horizon-head');
+    head.append(
+      el('span', 'hp-label', hg.stepsRemainingLabel),
+      (() => {
+        const pctWrap = el('span', 'hp-percent');
+        const strong = el('strong', '', '0');
+        strong.id = 'horizon-counter';
+        strong.dataset.target = String(hg.progressPercent);
+        pctWrap.append(strong, document.createTextNode('% '), el('small', '', 'من طريق الحلم'));
+        return pctWrap;
+      })()
+    );
+
+    const track = el('div', 'hp-track');
+    const beam = el('div', 'hp-beam');
+    beam.id = 'horizon-beam';
+    beam.appendChild(el('span', 'hp-comet'));
+    track.appendChild(beam);
+
+    const nodes = el('div', 'hp-nodes');
+    hg.timelineNodes.forEach((n) => {
+      const icon = n.state === 'done' ? '✓' : n.state === 'current' ? '●' : '✦';
+      const nd = el('div', `hp-node ${n.state}`);
+      nd.append(el('span', '', icon), el('span', '', n.label));
+      nodes.appendChild(nd);
+    });
+
+    horizonBox.append(head, track, nodes);
+    card.appendChild(horizonBox);
+
+    if (ch.encouragementBodyAr) {
+      const envBox = el('div', 'envelope-box');
+      envBox.id = 'encouragement-envelope';
+      const envBtn = el('button', 'envelope-trigger');
+      envBtn.type = 'button';
+      envBtn.id = 'envelope-btn';
+      envBtn.setAttribute('aria-expanded', 'false');
+      envBtn.append(
+        el('span', '', `✦ ${ch.encouragementTitleAr} (اضغط لفتح الرسالة)`),
+        el('span', 'wax-seal-mini', 'XIX')
+      );
+      const envLetter = el('div', 'envelope-letter');
+      envLetter.appendChild(el('p', '', ch.encouragementBodyAr));
+      envBox.append(envBtn, envLetter);
+      card.appendChild(envBox);
+    }
+  }
+
+  // ACT 04 (Fine Arts): Integrate the 3 Concrete Goal Steps right inside the card!
+  if (ch.id === 'fine-arts') {
+    const stepsWrap = el('div', 'goal-milestones');
+    cfg.horizonGoal.goalStage.milestonesAr.forEach((m) => {
+      const pill = el('div', 'goal-step-pill');
+      pill.append(el('span', 'goal-step-code', m.code), el('span', '', m.label));
+      stepsWrap.appendChild(pill);
+    });
+    card.appendChild(stepsWrap);
+  }
+
+  // Art Column
+  const artCol = el('div', 'art-column reveal');
+  const safeImg = safeAssetUrl(ch.image);
+
+  const figure = el('figure', 'museum-frame js-tilt-frame');
+  const mat = el('div', 'museum-mat');
+  const img = document.createElement('img');
+  img.src = safeImg;
+  img.alt = ch.captionAr;
+  img.loading = 'lazy';
+  img.draggable = false;
+  img.referrerPolicy = 'no-referrer';
+  mat.appendChild(img);
+
+  const plaque = el('figcaption', 'frame-plaque');
+  plaque.append(el('span', 'plaque-en', ch.captionEn), el('span', 'plaque-ar', ch.captionAr));
+  figure.append(el('span', 'frame-year-pill', ch.yearTag), mat, plaque);
+  figure.addEventListener('click', () => openLightbox(safeImg, ch.captionEn, ch.titleAr, ch.captionAr));
+  artCol.appendChild(figure);
+
+  // ACT 04: Holographic Future Fine Arts Dream Pass
+  if (ch.id === 'fine-arts') {
+    const passWrap = el('div', 'dream-pass-wrap');
+    const pass = el('div', 'dream-pass');
+    pass.id = 'fine-arts-pass';
+
+    const passTop = el('div', 'pass-top');
+    const crest = el('div', 'pass-crest', '✦');
+    crest.setAttribute('aria-hidden', 'true');
+    const inst = el('div', 'pass-inst');
+    inst.append(
+      el('span', 'pass-inst-en', cfg.dreamPass.institutionEn),
+      el('strong', 'pass-inst-ar', cfg.dreamPass.institutionAr)
+    );
+    passTop.append(crest, inst);
+
+    const passBody = el('div', 'pass-body');
+    const leftCol = el('div');
+    leftCol.append(
+      el('span', 'pass-field-label', cfg.dreamPass.subtitleAr),
+      el('div', 'pass-name', cfg.artistName),
+      el('span', 'pass-status', `● ${cfg.dreamPass.statusAr}`)
+    );
+    const serialCol = el('div', 'pass-serial');
+    serialCol.append(el('div', '', cfg.dreamPass.batchAr), el('div', '', cfg.dreamPass.serialNo));
+    passBody.append(leftCol, serialCol);
+
+    pass.append(passTop, passBody);
+    passWrap.appendChild(pass);
+    artCol.appendChild(passWrap);
+  }
+
+  grid.append(card, artCol);
+  section.appendChild(grid);
+
+  // ACT 04 Bottom: Compact Curated Exhibition Lightbox Strip (replaces redundant separate gallery!)
+  if (ch.id === 'fine-arts' && cfg.gallery?.length) {
+    const strip = el('div', 'integrated-gallery-strip reveal');
+    const head = el('div', 'mini-gallery-head');
+    head.append(
+      el('h3', '', '🖼 أرشيف اللوحات الفنية الكامل'),
+      el('span', '', 'اضغط على أي لوحة لتأملها بالحجم الكامل')
+    );
+    const thumbs = el('div', 'mini-gallery-thumbs');
+    cfg.gallery.forEach((gItem) => {
+      const gSrc = safeAssetUrl(gItem.image);
+      const btn = el('button', 'mini-thumb-btn');
+      btn.type = 'button';
+      const tImg = document.createElement('img');
+      tImg.src = gSrc;
+      tImg.alt = gItem.titleAr;
+      tImg.loading = 'lazy';
+      tImg.draggable = false;
+      btn.append(tImg, el('strong', '', gItem.titleAr), el('small', '', gItem.year));
+      btn.addEventListener('click', () =>
+        openLightbox(gSrc, `${gItem.titleEn} • ${gItem.year}`, gItem.titleAr, `${gItem.mediumAr} — ${gItem.descriptionAr}`)
+      );
+      thumbs.appendChild(btn);
+    });
+    strip.append(head, thumbs);
+    section.appendChild(strip);
+  }
+
+  return section;
+}
+
+/* ==================== POPULATE ORDERED 6-ACT CONTENT ==================== */
+function renderContent(openLightbox) {
+  const cfg = FROZEN_CONFIG;
+
+  document.title = `رحلة ${cfg.artistName} | ${cfg.birthdayDateAr} — العام ${cfg.age}`;
+  document.getElementById('nav-date-en').textContent = cfg.birthdayDateEn;
+  document.getElementById('nav-title-ar').textContent = `رحلة ${cfg.artistName}`;
+
+  document.getElementById('hero-badge-ar').textContent = cfg.hero.badgeAr;
+  document.getElementById('hero-title-prefix').textContent = cfg.hero.titlePrefixAr;
+  document.getElementById('hero-artist-name').textContent = cfg.artistName;
+  document.getElementById('hero-subtitle-ar').textContent = cfg.hero.subtitleAr;
+  document.getElementById('hero-cta-en').textContent = cfg.hero.ctaEn;
+
+  document.getElementById('guide-modal-sub').textContent = cfg.guide.subtitleAr;
+  document.getElementById('guide-modal-grid').replaceChildren(...cfg.guide.steps.map(createGuideCard));
+
+  const actsRoot = document.getElementById('story-acts-container');
+  actsRoot.replaceChildren();
+
+  const bridges = [
+    cfg.chapterBridges.afterChildhood,
+    cfg.chapterBridges.afterPassion,
+    cfg.chapterBridges.afterThanaweya,
+    cfg.chapterBridges.afterFineArts,
+  ];
+
+  cfg.chapters.forEach((ch, idx) => {
+    actsRoot.appendChild(createStoryActSection(ch, idx, cfg, openLightbox));
+    if (bridges[idx]) {
+      actsRoot.appendChild(createNarrativeBridge(bridges[idx]));
+    }
+  });
+
+  document.getElementById('finale-eyebrow-en').textContent = cfg.finale.eyebrowEn;
+  document.getElementById('finale-age').textContent = String(cfg.age);
+  document.getElementById('finale-title-ar').textContent = `${cfg.finale.titleAr} يا ${cfg.artistName}`;
+  document.getElementById('finale-subtitle-ar').textContent = cfg.finale.subtitleAr;
+  document.getElementById('finale-btn-ar').textContent = cfg.finale.buttonAr;
+  document.getElementById('wish-heading-ar').textContent = cfg.finale.wishHeadingAr;
+  document.getElementById('wish-message-ar').textContent = cfg.finale.wishMessageAr;
+  document.getElementById('finale-family-names').textContent = cfg.familySignOffAr;
+  document.getElementById('finale-sig-ar').textContent = cfg.signatureAr;
+  document.getElementById('finale-sig-en').textContent = cfg.signatureEn;
+
+  document.getElementById('footer-owner-ar').textContent = cfg.copyright.ownerAr;
+  document.getElementById('footer-credit-ar').textContent = cfg.copyright.creditAr;
+  document.getElementById('footer-rights-ar').textContent = cfg.copyright.rightsAr;
+  document.getElementById('footer-rights-en').textContent = cfg.copyright.rightsEn;
+}
+
+/* ==================== LIGHTBOX CONTROLLER ==================== */
+function initLightboxController() {
+  const lightbox = document.getElementById('lightbox');
+  const lbImg = document.getElementById('lightbox-img');
+  const lbMeta = document.getElementById('lightbox-meta');
+  const lbTitle = document.getElementById('lightbox-title');
+  const lbDesc = document.getElementById('lightbox-desc');
+  const lbClose = document.getElementById('lightbox-close');
+
+  const openLightbox = (src, meta, title, desc) => {
+    lbImg.src = safeAssetUrl(src);
+    lbImg.alt = title;
+    lbMeta.textContent = meta;
+    lbTitle.textContent = title;
+    lbDesc.textContent = desc;
+    lightbox.classList.add('open');
+    lightbox.setAttribute('aria-hidden', 'false');
+  };
+
+  const closeLightbox = () => {
+    lightbox.classList.remove('open');
+    lightbox.setAttribute('aria-hidden', 'true');
+  };
+
+  lbClose.addEventListener('click', closeLightbox);
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
+  });
+  document.addEventListener('contextmenu', (e) => {
+    if (e.target instanceof HTMLImageElement) e.preventDefault();
+  });
+
+  return openLightbox;
 }
 
 /* ==================== YOMNA'S PRIVATE VAULT + REAL-TIME CLOUD SYNC ==================== */
@@ -702,7 +932,6 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
   const trackerWrap = document.getElementById('family-vault-tracker');
   const cloudStatusEl = document.getElementById('cloud-sync-status');
 
-  // Envelope Reader Modal elements
   const readerModal = document.getElementById('envelope-reader-modal');
   const readerClose = document.getElementById('reader-close-btn');
   const readerCrest = document.getElementById('reader-crest-icon');
@@ -772,10 +1001,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
     envelopesGrid.replaceChildren(
       ...familyRoles.map((role) => {
         const entry = vaultStore.getEntry(role);
-        const card = el(
-          'button',
-          `wax-envelope-card${entry.isCustom ? ' is-custom-delivered' : ''}`
-        );
+        const card = el('button', `wax-envelope-card${entry.isCustom ? ' is-custom-delivered' : ''}`);
         card.type = 'button';
         card.style.setProperty('--env-accent', role.accentHex);
 
@@ -796,7 +1022,6 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
           el('p', 'env-preview-snippet', entry.message),
           badge
         );
-
         card.addEventListener('click', () => openEnvelopeReader(role));
         return card;
       })
@@ -853,10 +1078,9 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
           '✅ وصلت رسالتك سحابياً في نفس اللحظة إلى صندوق يمنى الخاص على موبايلها! (محمية بختم الشمع ضد التلاعب)';
       } else if (cloudRes.reason === 'sealed_by_owner_device') {
         deliveryMsg.textContent =
-          '🔒 تم ختم رسالة هذا الفرد مسبقاً من جهازه لحمايتها من التلاعب — يمكنك إرسال رسالتك الجديدة ليمنى عبر رابط الواتساب بالأسفل!';
+          '🔒 تم ختم رسالة هذا الفرد مسبقاً من جهازه لحمايتها من التلاعب — يمكنك مشاركة رسالتك عبر رابط الواتساب بالأسفل!';
       } else {
-        deliveryMsg.textContent =
-          '✅ تم ختم رسالتك وحفظها بنجاح! أرسل الظرف ليمنى على واتساب لتصلها فوراً:';
+        deliveryMsg.textContent = '✅ تم ختم رسالتك وحفظها بنجاح! أرسل الظرف ليمنى على واتساب:';
       }
     }
 
@@ -872,7 +1096,6 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
     copyFeedback.textContent = '';
   });
 
-  // Subscribe to Real-Time Cloud Firestore updates across all phones!
   if (cloudVault) {
     cloudVault.subscribeAll(
       ({ senderId, message }) => {
@@ -884,9 +1107,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
           textarea.value = message;
           renderSenderPreview();
         }
-        if (prev && prev !== message && activeRole.isHonoree) {
-          audio.playEnvelopeChime();
-        }
+        if (prev && prev !== message && activeRole.isHonoree) audio.playEnvelopeChime();
       },
       (connected) => {
         if (!cloudStatusEl) return;
@@ -901,7 +1122,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
     if (!latestGiftUrl) return;
     try {
       await navigator.clipboard.writeText(latestGiftUrl);
-      copyFeedback.textContent = '✓ تم نسخ رابط الظرف المشفّر! ابعته ليمنى وهيظهر فوراً جوه صندوقها.';
+      copyFeedback.textContent = '✓ تم نسخ رابط الظرف المشفّر!';
     } catch {
       copyFeedback.textContent = latestGiftUrl;
     }
@@ -925,7 +1146,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
     if (role.isHonoree) {
       inboxPanel.classList.remove('panel-hidden');
       senderPanel.classList.add('panel-hidden');
-      vaultEyebrow.textContent = "YOMNA'S PRIVATE FAMILY VAULT • 7 WAX-SEALED WISHES";
+      vaultEyebrow.textContent = "ACT VI • YOMNA'S PRIVATE FAMILY VAULT";
       vaultTitle.replaceChildren(
         document.createTextNode('صندوق رسائل '),
         el('span', 'gold-shimmer', 'عائلتكِ الخاص بكِ يا يمنى')
@@ -936,13 +1157,13 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
     } else {
       inboxPanel.classList.add('panel-hidden');
       senderPanel.classList.remove('panel-hidden');
-      vaultEyebrow.textContent = "SEND DIRECTLY TO YOMNA'S PRIVATE VAULT";
+      vaultEyebrow.textContent = "ACT VI • SEND DIRECTLY TO YOMNA'S VAULT";
       vaultTitle.replaceChildren(
         document.createTextNode('أرسل تهنئتك إلى '),
         el('span', 'gold-shimmer', 'صندوق يمنى الخاص')
       );
       vaultSubtitle.textContent =
-        'اكتب كلمة تهنئة وتشجيع ليمنى في سنتها الفاصلة (تالتة ثانوي)، وبضغطة واحدة تُختم بالشمع الذهبي وتصل مباشرة إلى صندوقها الخاص مع إمكانية إرسال الظرف لها على واتساب';
+        'اكتب كلمة تهنئة وتشجيع ليمنى في سنتها الفاصلة (تالتة ثانوي)، وبضغطة واحدة تُختم بالشمع الذهبي وتصل سحابياً في نفس اللحظة إلى صندوقها على موبايلها';
 
       senderLabel.textContent = role.displayFullAr;
       const existing = vaultStore.getEntry(role);
@@ -1013,12 +1234,8 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
     if (scene3d) scene3d.setVisitorTheme(role.themeKey);
   };
 
-  // Build 8 Exclusive VIP Family Cards with Exact (Parenthesized Relation) Styling
   const roleButtons = cfg.roles.map((role, idx) => {
-    const btn = el(
-      'button',
-      `role-card${role.isHonoree ? ' is-honoree' : ''}${idx === 0 ? ' selected' : ''}`
-    );
+    const btn = el('button', `role-card${role.isHonoree ? ' is-honoree' : ''}${idx === 0 ? ' selected' : ''}`);
     btn.type = 'button';
     btn.setAttribute('role', 'radio');
     btn.setAttribute('aria-checked', String(idx === 0));
@@ -1052,7 +1269,6 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
     btn.addEventListener('pointerenter', (e) => {
       if (e.pointerType === 'mouse') applyThemeColors(role);
     });
-
     return btn;
   });
 
@@ -1068,10 +1284,8 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
 
   applyPersonaToMainSite(selectedRole);
 
-  const showPersonalizedLetter = () => {
-    const crestWrap = document.getElementById('letter-crest-icon');
-    crestWrap.replaceChildren(createRoleCrestSvg(selectedRole.icon));
-
+  continueBtn.addEventListener('click', () => {
+    document.getElementById('letter-crest-icon').replaceChildren(createRoleCrestSvg(selectedRole.icon));
     document.getElementById('letter-role-pill').textContent = selectedRole.badgeAr;
     document.getElementById('letter-tag-en').textContent = selectedRole.tagEn;
     document.getElementById('letter-title-ar').textContent = selectedRole.letterTitleAr;
@@ -1086,9 +1300,7 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
     stepLetter.classList.add('active');
     stepLetter.setAttribute('aria-hidden', 'false');
     portal.scrollTop = 0;
-  };
-
-  continueBtn.addEventListener('click', showPersonalizedLetter);
+  });
 
   backBtn.addEventListener('click', () => {
     stepLetter.classList.remove('active');
@@ -1104,14 +1316,11 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
     document.body.classList.remove('portal-open');
     audio.playWishChime();
 
-    // If opened via an incoming gift link and Yomna entered, jump smoothly to her Vault & open the envelope!
     if (incomingGift && selectedRole.isHonoree) {
       const senderRole = cfg.roles.find((r) => r.id === incomingGift.senderId);
       const vaultSec = document.getElementById('yomna-vault');
       if (vaultSec) vaultSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      if (senderRole) {
-        window.setTimeout(() => vaultExperience.openEnvelopeReader(senderRole), 650);
-      }
+      if (senderRole) window.setTimeout(() => vaultExperience.openEnvelopeReader(senderRole), 650);
       incomingGift = null;
     } else {
       window.scrollTo({ top: 0, behavior: 'instant' });
@@ -1132,491 +1341,20 @@ function initReceptionPortal(scene3d, audio, vaultExperience, incomingGift) {
   }
 }
 
-/* ==================== NARRATIVE BRIDGE + SAFE CHAPTER BUILDER ==================== */
-function createNarrativeBridge(text) {
-  const wrap = el('div', 'chapter-bridge reveal');
-  wrap.setAttribute('aria-hidden', 'false');
-  wrap.append(el('span', 'bridge-thread'), el('p', 'bridge-caption', `✦ ${text} ✦`), el('span', 'bridge-thread'));
-  return wrap;
-}
-
-function createChapterSection(ch, idx, cfg) {
-  const isReverse = idx % 2 === 1;
-  const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
-  section.id = ch.id;
-  section.dataset.stage = ch.eraAr;
-
-  const grid = el('div', 'chapter-grid');
-
-  const card = el('article', 'chapter-card reveal');
-  const numBg = el('span', 'chapter-number-bg', ch.number);
-  numBg.setAttribute('aria-hidden', 'true');
-
-  card.append(
-    numBg,
-    el('p', 'chapter-era', `✦ ${ch.eraAr}`),
-    el('h2', 'chapter-title-ar', ch.titleAr),
-    el('p', 'chapter-title-en', ch.titleEn),
-    el('p', 'chapter-story', ch.storyAr),
-    el('blockquote', 'chapter-quote', ch.quoteAr)
-  );
-
-  if (ch.id === 'thanaweya' && ch.encouragementBodyAr) {
-    const envBox = el('div', 'envelope-box');
-    envBox.id = 'encouragement-envelope';
-
-    const envBtn = el('button', 'envelope-trigger');
-    envBtn.type = 'button';
-    envBtn.id = 'envelope-btn';
-    envBtn.setAttribute('aria-expanded', 'false');
-    envBtn.append(
-      el('span', '', `✦ ${ch.encouragementTitleAr} (اضغط لفتح الرسالة)`),
-      el('span', 'wax-seal-mini', 'XIX')
-    );
-
-    const envLetter = el('div', 'envelope-letter');
-    envLetter.appendChild(el('p', '', ch.encouragementBodyAr));
-
-    envBox.append(envBtn, envLetter);
-    card.appendChild(envBox);
-  }
-
-  const artCol = el('div', 'art-column reveal');
-  const safeImg = safeAssetUrl(ch.image);
-
-  const figure = el('figure', 'museum-frame js-tilt-frame');
-  figure.dataset.lightboxImg = safeImg;
-  figure.dataset.lightboxTitle = ch.titleAr;
-  figure.dataset.lightboxMeta = ch.captionEn;
-  figure.dataset.lightboxDesc = ch.captionAr;
-
-  const mat = el('div', 'museum-mat');
-  const img = document.createElement('img');
-  img.src = safeImg;
-  img.alt = ch.captionAr;
-  img.loading = 'lazy';
-  img.draggable = false;
-  img.referrerPolicy = 'no-referrer';
-  mat.appendChild(img);
-
-  const plaque = el('figcaption', 'frame-plaque');
-  plaque.append(el('span', 'plaque-en', ch.captionEn), el('span', 'plaque-ar', ch.captionAr));
-
-  figure.append(el('span', 'frame-year-pill', ch.yearTag), mat, plaque);
-  artCol.appendChild(figure);
-
-  if (ch.id === 'fine-arts') {
-    const passWrap = el('div', 'dream-pass-wrap');
-    const pass = el('div', 'dream-pass');
-    pass.id = 'fine-arts-pass';
-
-    const passTop = el('div', 'pass-top');
-    const crest = el('div', 'pass-crest', '✦');
-    crest.setAttribute('aria-hidden', 'true');
-    const inst = el('div', 'pass-inst');
-    inst.append(
-      el('span', 'pass-inst-en', cfg.dreamPass.institutionEn),
-      el('strong', 'pass-inst-ar', cfg.dreamPass.institutionAr)
-    );
-    passTop.append(crest, inst);
-
-    const passBody = el('div', 'pass-body');
-    const leftCol = el('div');
-    leftCol.append(
-      el('span', 'pass-field-label', cfg.dreamPass.subtitleAr),
-      el('div', 'pass-name', cfg.artistName),
-      el('span', 'pass-status', `● ${cfg.dreamPass.statusAr}`)
-    );
-
-    const serialCol = el('div', 'pass-serial');
-    serialCol.append(el('div', '', cfg.dreamPass.batchAr), el('div', '', cfg.dreamPass.serialNo));
-
-    passBody.append(leftCol, serialCol);
-    pass.append(passTop, passBody);
-    passWrap.appendChild(pass);
-    artCol.appendChild(passWrap);
-  }
-
-  grid.append(card, artCol);
-  section.appendChild(grid);
-  return section;
-}
-
-/* ==================== POPULATE PAGE FROM FROZEN CONFIG ==================== */
-function renderContent() {
-  const cfg = FROZEN_CONFIG;
-
-  document.title = `رحلة ${cfg.artistName} | ${cfg.birthdayDateAr} — العام ${cfg.age}`;
-  document.getElementById('nav-date-en').textContent = cfg.birthdayDateEn;
-  document.getElementById('nav-title-ar').textContent = `رحلة ${cfg.artistName}`;
-
-  document.getElementById('hero-eyebrow-en').textContent = cfg.hero.eyebrowEn;
-  document.getElementById('hero-badge-ar').textContent = cfg.hero.badgeAr;
-  document.getElementById('hero-title-prefix').textContent = cfg.hero.titlePrefixAr;
-  document.getElementById('hero-artist-name').textContent = cfg.artistName;
-  document.getElementById('hero-subtitle-ar').textContent = cfg.hero.subtitleAr;
-  document.getElementById('hero-cta-ar').textContent = cfg.hero.ctaAr;
-  document.getElementById('hero-cta-en').textContent = cfg.hero.ctaEn;
-  document.getElementById('hero-guide-btn-ar').textContent = cfg.hero.guideBtnAr;
-
-  document.getElementById('guide-eyebrow-en').textContent = cfg.guide.eyebrowEn;
-  document.getElementById('guide-title-ar').textContent = cfg.guide.titleAr;
-  document.getElementById('guide-subtitle-ar').textContent = cfg.guide.subtitleAr;
-
-  const stripGrid = document.getElementById('guide-cards-grid');
-  const modalGrid = document.getElementById('guide-modal-grid');
-  stripGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
-  modalGrid.replaceChildren(...cfg.guide.steps.map(createGuideCard));
-
-  const firstRoot = document.getElementById('chapters-first-container');
-  const secondRoot = document.getElementById('chapters-second-container');
-  firstRoot.replaceChildren();
-  secondRoot.replaceChildren();
-
-  cfg.chapters.forEach((ch, idx) => {
-    const sec = createChapterSection(ch, idx, cfg);
-    if (idx < 3) {
-      firstRoot.appendChild(sec);
-      if (idx === 0) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterChildhood));
-      if (idx === 1) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterPassion));
-      if (idx === 2) firstRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterThanaweya));
-    } else {
-      secondRoot.appendChild(sec);
-      secondRoot.appendChild(createNarrativeBridge(cfg.chapterBridges.afterFineArts));
-    }
-  });
-
-  const hg = cfg.horizonGoal;
-  document.getElementById('horizon-eyebrow-en').textContent = hg.eyebrowEn;
-  document.getElementById('horizon-title-ar').textContent = hg.titleAr;
-  document.getElementById('horizon-subtitle-ar').textContent = hg.subtitleAr;
-  document.getElementById('horizon-steps-label').textContent = hg.stepsRemainingLabel;
-  document.getElementById('horizon-counter').dataset.target = String(hg.progressPercent);
-
-  const nodesWrap = document.getElementById('horizon-nodes');
-  nodesWrap.replaceChildren(
-    ...hg.timelineNodes.map((n) => {
-      const icon = n.state === 'done' ? '✓' : n.state === 'current' ? '●' : '✦';
-      const node = el('div', `hp-node ${n.state}`);
-      node.append(el('span', '', icon), el('span', '', n.label));
-      return node;
-    })
-  );
-
-  document.getElementById('now-badge-ar').textContent = hg.currentStage.badgeAr;
-  document.getElementById('now-badge-en').textContent = hg.currentStage.badgeEn;
-  document.getElementById('now-title-ar').textContent = hg.currentStage.titleAr;
-  document.getElementById('now-age-tag').textContent = hg.currentStage.ageTagAr;
-  document.getElementById('now-desc-ar').textContent = hg.currentStage.descAr;
-
-  const nowHighlights = document.getElementById('now-highlights');
-  nowHighlights.replaceChildren(...hg.currentStage.highlightsAr.map((item) => el('li', '', item)));
-
-  document.getElementById('goal-badge-ar').textContent = hg.goalStage.badgeAr;
-  document.getElementById('goal-badge-en').textContent = hg.goalStage.badgeEn;
-  document.getElementById('goal-title-ar').textContent = hg.goalStage.titleAr;
-  document.getElementById('goal-title-en').textContent = hg.goalStage.titleEn;
-  document.getElementById('goal-desc-ar').textContent = hg.goalStage.descAr;
-
-  const milestonesWrap = document.getElementById('goal-milestones');
-  milestonesWrap.replaceChildren(
-    ...hg.goalStage.milestonesAr.map((m) => {
-      const pill = el('div', 'goal-step-pill');
-      pill.append(el('span', 'goal-step-code', m.code), el('span', '', m.label));
-      return pill;
-    })
-  );
-
-  document.getElementById('finale-eyebrow-en').textContent = cfg.finale.eyebrowEn;
-  document.getElementById('finale-age').textContent = String(cfg.age);
-  document.getElementById('finale-title-ar').textContent = `${cfg.finale.titleAr} يا ${cfg.artistName}`;
-  document.getElementById('finale-subtitle-ar').textContent = cfg.finale.subtitleAr;
-  document.getElementById('finale-btn-ar').textContent = cfg.finale.buttonAr;
-  document.getElementById('wish-heading-ar').textContent = cfg.finale.wishHeadingAr;
-  document.getElementById('wish-message-ar').textContent = cfg.finale.wishMessageAr;
-  document.getElementById('finale-family-names').textContent = cfg.familySignOffAr;
-  document.getElementById('finale-sig-ar').textContent = cfg.signatureAr;
-  document.getElementById('finale-sig-en').textContent = cfg.signatureEn;
-
-  document.getElementById('footer-owner-ar').textContent = cfg.copyright.ownerAr;
-  document.getElementById('footer-credit-ar').textContent = cfg.copyright.creditAr;
-  document.getElementById('footer-rights-ar').textContent = cfg.copyright.rightsAr;
-  document.getElementById('footer-rights-en').textContent = cfg.copyright.rightsEn;
-}
-
-/* ==================== VISITOR GUIDE MODAL ==================== */
-function initGuideModal() {
-  const modal = document.getElementById('guide-modal');
-  const openBtns = [
-    document.getElementById('guide-open-btn'),
-    document.getElementById('hero-guide-btn'),
-    document.getElementById('footer-guide-btn'),
-  ].filter(Boolean);
-  const closeBtn = document.getElementById('guide-modal-close');
-  const startBtn = document.getElementById('guide-modal-start');
-
-  const openModal = () => {
-    modal.classList.add('open');
-    modal.setAttribute('aria-hidden', 'false');
-  };
-
-  const closeModal = () => {
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden', 'true');
-  };
-
-  openBtns.forEach((b) => b.addEventListener('click', openModal));
-  closeBtn.addEventListener('click', closeModal);
-  startBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
-  });
-}
-
-/* ==================== HORIZON MOTION-GRAPHICS COUNTER & BEAM ==================== */
-function initHorizonMotionGraphics() {
-  const shell = document.getElementById('horizon-progress-shell');
-  const beam = document.getElementById('horizon-beam');
-  const counterEl = document.getElementById('horizon-counter');
-  if (!shell || !beam || !counterEl) return;
-
-  let animated = false;
-  const targetVal = Number(counterEl.dataset.target || 90);
-
-  const triggerAnimation = () => {
-    if (animated) return;
-    animated = true;
-    beam.style.width = `${targetVal}%`;
-    const start = performance.now();
-    const duration = 1500;
-    const step = (now) => {
-      const p = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - p, 3);
-      counterEl.textContent = String(Math.round(eased * targetVal));
-      if (p < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
-  };
-
-  const obs = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) triggerAnimation();
-      });
-    },
-    { threshold: 0.01, rootMargin: '80px 0px 80px 0px' }
-  );
-  obs.observe(shell);
-
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!animated && shell.getBoundingClientRect().top <= window.innerHeight + 60) {
-        triggerAnimation();
-      }
-    },
-    { passive: true }
-  );
-}
-
-/* ==================== 3D TILT INTERACTIONS (DESKTOP MOUSE ONLY) ==================== */
-function initTiltEffects() {
-  const frames = document.querySelectorAll('.js-tilt-frame, #fine-arts-pass');
-  frames.forEach((elNode) => {
-    elNode.addEventListener('pointermove', (e) => {
-      if (e.pointerType !== 'mouse') return;
-      const rect = elNode.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width;
-      const y = (e.clientY - rect.top) / rect.height;
-      const rotX = (0.5 - y) * 8;
-      const rotY = (x - 0.5) * 10;
-      elNode.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(2)}deg) rotateY(${rotY.toFixed(2)}deg)`;
-      elNode.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
-      elNode.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
-    });
-
-    elNode.addEventListener('pointerleave', () => {
-      elNode.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-    });
-  });
-}
-
-/* ==================== ENCOURAGEMENT ENVELOPE ==================== */
-function initEnvelope() {
-  const box = document.getElementById('encouragement-envelope');
-  const btn = document.getElementById('envelope-btn');
-  if (!box || !btn) return;
-  btn.addEventListener('click', () => {
-    const isOpen = box.classList.toggle('open');
-    btn.setAttribute('aria-expanded', String(isOpen));
-  });
-}
-
-/* ==================== INTERACTIVE 3D GALLERY & LIGHTBOX ==================== */
-function initGalleryAndLightbox() {
-  const items = FROZEN_CONFIG.gallery;
-  const viewport = document.getElementById('gallery-viewport');
-  const dotsWrap = document.getElementById('gallery-dots');
-  const plaqueMeta = document.getElementById('plaque-meta');
-  const plaqueTitle = document.getElementById('plaque-title');
-  const plaqueDesc = document.getElementById('plaque-desc');
-
-  const lightbox = document.getElementById('lightbox');
-  const lbImg = document.getElementById('lightbox-img');
-  const lbMeta = document.getElementById('lightbox-meta');
-  const lbTitle = document.getElementById('lightbox-title');
-  const lbDesc = document.getElementById('lightbox-desc');
-  const lbClose = document.getElementById('lightbox-close');
-
-  const openLightbox = (src, meta, title, desc) => {
-    lbImg.src = safeAssetUrl(src);
-    lbImg.alt = title;
-    lbMeta.textContent = meta;
-    lbTitle.textContent = title;
-    lbDesc.textContent = desc;
-    lightbox.classList.add('open');
-    lightbox.setAttribute('aria-hidden', 'false');
-  };
-
-  const closeLightbox = () => {
-    lightbox.classList.remove('open');
-    lightbox.setAttribute('aria-hidden', 'true');
-  };
-
-  lbClose.addEventListener('click', closeLightbox);
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) closeLightbox();
-  });
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && lightbox.classList.contains('open')) closeLightbox();
-  });
-
-  document.addEventListener('contextmenu', (e) => {
-    if (e.target instanceof HTMLImageElement) e.preventDefault();
-  });
-
-  document.querySelectorAll('.museum-frame').forEach((frame) => {
-    frame.addEventListener('click', () => {
-      openLightbox(
-        frame.dataset.lightboxImg,
-        frame.dataset.lightboxMeta,
-        frame.dataset.lightboxTitle,
-        frame.dataset.lightboxDesc
-      );
-    });
-  });
-
-  if (!items.length) return;
-  let current = 0;
-
-  viewport.replaceChildren();
-  dotsWrap.replaceChildren();
-
-  const slideEls = items.map((item, i) => {
-    const safeImg = safeAssetUrl(item.image);
-    const slide = el('div', 'gallery-slide');
-    const inner = el('div', 'gallery-slide-inner');
-    const img = document.createElement('img');
-    img.src = safeImg;
-    img.alt = item.titleAr;
-    img.loading = 'lazy';
-    img.draggable = false;
-    img.referrerPolicy = 'no-referrer';
-
-    inner.append(img, el('span', 'gallery-zoom-hint', '✦ اضغط لتكبير اللوحة'));
-    slide.appendChild(inner);
-
-    slide.addEventListener('click', () => {
-      if (i === current) {
-        openLightbox(
-          safeImg,
-          `${item.titleEn} • ${item.year}`,
-          item.titleAr,
-          `${item.mediumAr} — ${item.descriptionAr}`
-        );
-      } else {
-        current = i;
-        updateSlides();
-      }
-    });
-    viewport.appendChild(slide);
-
-    const dot = el('button', 'gallery-dot');
-    dot.type = 'button';
-    dot.setAttribute('aria-label', item.titleAr);
-    dot.addEventListener('click', () => {
-      current = i;
-      updateSlides();
-    });
-    dotsWrap.appendChild(dot);
-
-    return slide;
-  });
-
-  const dotEls = Array.from(dotsWrap.children);
-
-  function updateSlides() {
-    const total = items.length;
-    const prevIdx = (current - 1 + total) % total;
-    const nextIdx = (current + 1) % total;
-
-    slideEls.forEach((slideNode, idx) => {
-      slideNode.classList.remove('is-active', 'is-prev', 'is-next', 'is-hidden');
-      if (idx === current) slideNode.classList.add('is-active');
-      else if (idx === prevIdx) slideNode.classList.add('is-prev');
-      else if (idx === nextIdx) slideNode.classList.add('is-next');
-      else slideNode.classList.add('is-hidden');
-    });
-
-    dotEls.forEach((d, idx) => d.classList.toggle('active', idx === current));
-
-    const item = items[current];
-    plaqueMeta.textContent = `${item.titleEn.toUpperCase()}  •  ${item.year}  •  ${item.mediumAr}`;
-    plaqueTitle.textContent = item.titleAr;
-    plaqueDesc.textContent = item.descriptionAr;
-  }
-
-  const goPrev = () => {
-    current = (current - 1 + items.length) % items.length;
-    updateSlides();
-  };
-  const goNext = () => {
-    current = (current + 1) % items.length;
-    updateSlides();
-  };
-
-  document.getElementById('gallery-prev').addEventListener('click', goPrev);
-  document.getElementById('gallery-next').addEventListener('click', goNext);
-
-  viewport.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') goPrev();
-    if (e.key === 'ArrowLeft') goNext();
-  });
-
-  let startX = 0;
-  viewport.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; }, { passive: true });
-  viewport.addEventListener('touchend', (e) => {
-    const dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 40) (dx > 0 ? goPrev() : goNext());
-  });
-
-  updateSlides();
-}
-
-/* ==================== INTERACTIVE ATELIER SKETCH CANVAS ==================== */
-function initAtelierSketchCanvas() {
+/* ==================== PRO TOOL #1: FINE-ARTS & SYMMETRY STUDIO ==================== */
+function initProFineArtsStudio() {
   const canvas = document.getElementById('sketch-canvas');
+  const guideCanvas = document.getElementById('guide-overlay-canvas');
   const hint = document.getElementById('canvas-hint');
   if (!canvas) return;
-  const ctx = canvas.getContext('2d');
 
-  let activeColor = '#e5c16c';
-  let brushSize = 5;
+  const ctx = canvas.getContext('2d');
+  let activeColor = '#e8c268';
+  let brushSize = 6;
+  let brushMode = 'calligraphy'; // 'calligraphy' | 'symmetry' | 'charcoal' | 'watercolor'
   let drawing = false;
   let lastPt = null;
+  let lastTime = 0;
   const history = [];
 
   function drawCanvasBackground() {
@@ -1624,20 +1362,62 @@ function initAtelierSketchCanvas() {
       canvas.width * 0.5, canvas.height * 0.45, 30,
       canvas.width * 0.5, canvas.height * 0.5, canvas.width * 0.65
     );
-    grad.addColorStop(0, '#261d16');
-    grad.addColorStop(1, '#140f0b');
+    grad.addColorStop(0, '#251c15');
+    grad.addColorStop(1, '#130e0a');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = 'rgba(229, 193, 108, 0.16)';
+    ctx.strokeStyle = 'rgba(232, 194, 104, 0.2)';
     ctx.lineWidth = 1.5;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-    ctx.fillStyle = 'rgba(229, 193, 108, 0.28)';
+    ctx.fillStyle = 'rgba(232, 194, 104, 0.28)';
     ctx.font = '14px Cinzel, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('5 DECEMBER  •  CHAPTER XIX  •  FINE ARTS DREAM KEEPSAKE', canvas.width / 2, canvas.height - 32);
+    ctx.fillText('5 DECEMBER  •  ACT V  •  FINE ARTS ATELIER KEEPSAKE', canvas.width / 2, canvas.height - 30);
   }
+
+  // Draw 1-Point Architectural Perspective + Golden Ratio Grid on Overlay Canvas
+  function renderPerspectiveOverlay() {
+    if (!guideCanvas) return;
+    const gctx = guideCanvas.getContext('2d');
+    const W = guideCanvas.width;
+    const H = guideCanvas.height;
+    const cx = W / 2;
+    const cy = H / 2;
+
+    gctx.clearRect(0, 0, W, H);
+    gctx.strokeStyle = 'rgba(232, 194, 104, 0.28)';
+    gctx.lineWidth = 1;
+
+    // Horizon & Vertical Axis
+    gctx.beginPath();
+    gctx.moveTo(20, cy);
+    gctx.lineTo(W - 20, cy);
+    gctx.moveTo(cx, 20);
+    gctx.lineTo(cx, H - 20);
+    gctx.stroke();
+
+    // 1-Point Vanishing Rays (Fine Arts Aptitude Perspective!)
+    gctx.setLineDash([5, 6]);
+    for (let a = 0; a < 12; a++) {
+      const angle = (a / 12) * Math.PI * 2;
+      gctx.beginPath();
+      gctx.moveTo(cx, cy);
+      gctx.lineTo(cx + Math.cos(angle) * W, cy + Math.sin(angle) * H);
+      gctx.stroke();
+    }
+
+    // Concentric Golden Proportion Circles
+    [70, 145, 220].forEach((r) => {
+      gctx.beginPath();
+      gctx.arc(cx, cy, r, 0, Math.PI * 2);
+      gctx.stroke();
+    });
+    gctx.setLineDash([]);
+  }
+
+  renderPerspectiveOverlay();
 
   function saveSnapshot() {
     if (history.length > 25) history.shift();
@@ -1655,35 +1435,130 @@ function initAtelierSketchCanvas() {
     };
   }
 
+  function strokeSegment(p1, p2, dynamicWidth) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    if (brushMode === 'charcoal') {
+      // Multi-strand textured academic charcoal shading!
+      ctx.strokeStyle = activeColor;
+      ctx.globalAlpha = 0.36;
+      ctx.lineWidth = Math.max(1.2, brushSize * 0.42);
+      for (let s = 0; s < 5; s++) {
+        const ox = (Math.random() - 0.5) * brushSize * 1.3;
+        const oy = (Math.random() - 0.5) * brushSize * 1.3;
+        ctx.beginPath();
+        ctx.moveTo(p1.x + ox, p1.y + oy);
+        ctx.lineTo(p2.x + ox, p2.y + oy);
+        ctx.stroke();
+      }
+    } else if (brushMode === 'watercolor') {
+      ctx.strokeStyle = activeColor;
+      ctx.globalAlpha = 0.16;
+      ctx.lineWidth = brushSize * 2.6;
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    } else if (brushMode === 'symmetry') {
+      // 8-Axis Radial Fine-Arts Symmetry Ornament Engine!
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      const x1 = p1.x - cx;
+      const y1 = p1.y - cy;
+      const x2 = p2.x - cx;
+      const y2 = p2.y - cy;
+
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = Math.max(1.5, brushSize * 0.72);
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = 8;
+
+      const slices = 8;
+      for (let i = 0; i < slices; i++) {
+        const theta = (i / slices) * Math.PI * 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(theta);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        // Mirror reflection for true kaleidoscope arabesque!
+        ctx.scale(1, -1);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+      }
+    } else {
+      // 24K Gold Calligraphy (velocity-sensitive stroke width!)
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = dynamicWidth;
+      ctx.shadowColor = activeColor;
+      ctx.shadowBlur = activeColor === '#e8c268' ? 10 : 4;
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     canvas.setPointerCapture(e.pointerId);
     drawing = true;
     hint.classList.add('hidden');
     lastPt = getPos(e);
+    lastTime = performance.now();
     saveSnapshot();
   });
 
   canvas.addEventListener('pointermove', (e) => {
     if (!drawing || !lastPt) return;
     const pt = getPos(e);
-    ctx.save();
-    ctx.strokeStyle = activeColor;
-    ctx.lineWidth = brushSize;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.shadowColor = activeColor;
-    ctx.shadowBlur = activeColor === '#e5c16c' ? 10 : 4;
-    ctx.beginPath();
-    ctx.moveTo(lastPt.x, lastPt.y);
-    ctx.lineTo(pt.x, pt.y);
-    ctx.stroke();
-    ctx.restore();
+    const now = performance.now();
+    const dt = Math.max(8, now - lastTime);
+    const dist = Math.hypot(pt.x - lastPt.x, pt.y - lastPt.y);
+    const speed = dist / dt;
+    const dynWidth = Math.max(brushSize * 0.4, brushSize * (1.35 - Math.min(0.85, speed * 0.32)));
+
+    strokeSegment(lastPt, pt, dynWidth);
     lastPt = pt;
+    lastTime = now;
   });
 
-  const endDraw = () => { drawing = false; lastPt = null; };
+  const endDraw = () => {
+    drawing = false;
+    lastPt = null;
+  };
   canvas.addEventListener('pointerup', endDraw);
   canvas.addEventListener('pointercancel', endDraw);
+
+  // Brush Mode Selector
+  document.querySelectorAll('.mode-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-pill').forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      brushMode = btn.dataset.brush || 'calligraphy';
+    });
+  });
+
+  // Perspective Grid Toggle
+  const perspBtn = document.getElementById('toggle-perspective-btn');
+  if (perspBtn && guideCanvas) {
+    let showGrid = false;
+    perspBtn.addEventListener('click', () => {
+      showGrid = !showGrid;
+      perspBtn.setAttribute('aria-pressed', String(showGrid));
+      guideCanvas.classList.toggle('visible', showGrid);
+    });
+  }
 
   document.querySelectorAll('.swatch').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -1695,13 +1570,13 @@ function initAtelierSketchCanvas() {
 
   document.getElementById('brush-size').addEventListener('input', (e) => {
     const val = Number(e.target.value);
-    if (Number.isFinite(val) && val >= 2 && val <= 20) brushSize = val;
+    if (Number.isFinite(val) && val >= 2 && val <= 22) brushSize = val;
   });
 
   document.getElementById('canvas-gold-dust').addEventListener('click', () => {
     hint.classList.add('hidden');
     saveSnapshot();
-    for (let i = 0; i < 24; i++) {
+    for (let i = 0; i < 28; i++) {
       const x = 40 + Math.random() * (canvas.width - 80);
       const y = 40 + Math.random() * (canvas.height - 90);
       const r = 1.2 + Math.random() * 3.5;
@@ -1728,14 +1603,235 @@ function initAtelierSketchCanvas() {
 
   document.getElementById('canvas-save').addEventListener('click', () => {
     const link = document.createElement('a');
-    link.download = `Atelier-19th-Year-${Date.now()}.png`;
+    link.download = `Yomna-Fine-Arts-Studio-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
 }
 
-/* ==================== SCROLL REVEALS, RAIL, MOBILE DOCK, 3D INSPECT & FINALE ==================== */
-function initScrollAndNavigation(scene3d, audio) {
+/* ==================== PRO TOOL #3: REAL MICROPHONE BLOW-OUT 19 CANDLES ==================== */
+function initMicBlowDetector(scene3d, onBlowSuccess) {
+  const micBtn = document.getElementById('mic-blow-btn');
+  const micLabel = document.getElementById('mic-blow-label');
+  const meterWrap = document.getElementById('mic-meter-wrap');
+  const meterFill = document.getElementById('mic-meter-fill');
+  const meterHint = document.getElementById('mic-meter-hint');
+  if (!micBtn || !navigator.mediaDevices?.getUserMedia) {
+    if (micBtn) micBtn.style.display = 'none';
+    return { stopMic: () => {} };
+  }
+
+  let stream = null;
+  let audioCtx = null;
+  let rafId = 0;
+  let active = false;
+  let charge = 0;
+
+  const stopMic = () => {
+    active = false;
+    charge = 0;
+    if (rafId) cancelAnimationFrame(rafId);
+    if (stream) {
+      stream.getTracks().forEach((t) => t.stop());
+      stream = null;
+    }
+    if (audioCtx) {
+      audioCtx.close().catch(() => {});
+      audioCtx = null;
+    }
+    if (scene3d) scene3d.setCandleWind(0);
+    micBtn.setAttribute('aria-pressed', 'false');
+    micLabel.textContent = 'أو انفخي في المايكروفون لإطفاء الشموع واقعياً!';
+    meterWrap.classList.remove('active');
+    meterWrap.setAttribute('aria-hidden', 'true');
+    if (meterFill) meterFill.style.width = '0%';
+  };
+
+  micBtn.addEventListener('click', async () => {
+    if (active) {
+      stopMic();
+      return;
+    }
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
+      });
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioCtx();
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 256;
+      source.connect(analyser);
+
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      active = true;
+      charge = 0;
+      micBtn.setAttribute('aria-pressed', 'true');
+      micLabel.textContent = 'المايكروفون جاهز — انفخي الآن نحو الشاشة 💨 (إلغاء)';
+      meterWrap.classList.add('active');
+      meterWrap.setAttribute('aria-hidden', 'false');
+
+      const sampleLoop = () => {
+        if (!active) return;
+        analyser.getByteFrequencyData(data);
+        // Low-frequency wind energy (bins 1..18) responds strongly to human breath blowing!
+        let sum = 0;
+        for (let i = 1; i <= 18; i++) sum += data[i];
+        const avg = sum / 18;
+        const level = Math.min(1, Math.max(0, (avg - 36) / 95));
+
+        if (scene3d) scene3d.setCandleWind(level);
+
+        if (level > 0.32) {
+          charge = Math.min(100, charge + level * 5.2);
+        } else {
+          charge = Math.max(0, charge - 1.4);
+        }
+
+        if (meterFill) meterFill.style.width = `${charge.toFixed(0)}%`;
+
+        if (charge >= 100) {
+          stopMic();
+          onBlowSuccess();
+          return;
+        }
+        rafId = requestAnimationFrame(sampleLoop);
+      };
+      sampleLoop();
+    } catch {
+      stopMic();
+      if (meterHint) {
+        meterWrap.classList.add('active');
+        meterHint.textContent = 'تعذّر الوصول للمايكروفون — يمكنكِ إطفاء الشموع بالزر الذهبي أعلاه ✨';
+      }
+    }
+  });
+
+  return { stopMic };
+}
+
+/* ==================== VISITOR GUIDE, ENVELOPE, TILT & HORIZON ==================== */
+function initGuideModal() {
+  const modal = document.getElementById('guide-modal');
+  const openBtns = [
+    document.getElementById('guide-open-btn'),
+    document.getElementById('hero-guide-btn'),
+    document.getElementById('footer-guide-btn'),
+  ].filter(Boolean);
+  const closeBtn = document.getElementById('guide-modal-close');
+  const startBtn = document.getElementById('guide-modal-start');
+
+  const openModal = () => {
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+  };
+  const closeModal = () => {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+  };
+
+  openBtns.forEach((b) => b.addEventListener('click', openModal));
+  closeBtn.addEventListener('click', closeModal);
+  startBtn.addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) closeModal();
+  });
+}
+
+function initHorizonMotionGraphics() {
+  const shell = document.getElementById('horizon-progress-shell');
+  const beam = document.getElementById('horizon-beam');
+  const counterEl = document.getElementById('horizon-counter');
+  if (!shell || !beam || !counterEl) return;
+
+  let animated = false;
+  const targetVal = Number(counterEl.dataset.target || 90);
+
+  const triggerAnimation = () => {
+    if (animated) return;
+    animated = true;
+    beam.style.width = `${targetVal}%`;
+    const start = performance.now();
+    const duration = 1400;
+    const step = (now) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      counterEl.textContent = String(Math.round(eased * targetVal));
+      if (p < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  };
+
+  const obs = new IntersectionObserver(
+    (entries) => entries.forEach((entry) => entry.isIntersecting && triggerAnimation()),
+    { threshold: 0.01, rootMargin: '80px 0px 80px 0px' }
+  );
+  obs.observe(shell);
+
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!animated && shell.getBoundingClientRect().top <= window.innerHeight + 60) triggerAnimation();
+    },
+    { passive: true }
+  );
+}
+
+function initTiltAndTouchSpinWindows(scene3d) {
+  document.querySelectorAll('.js-tilt-frame, #fine-arts-pass').forEach((elNode) => {
+    elNode.addEventListener('pointermove', (e) => {
+      if (e.pointerType !== 'mouse') return;
+      const rect = elNode.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width;
+      const y = (e.clientY - rect.top) / rect.height;
+      elNode.style.transform = `perspective(1000px) rotateX(${((0.5 - y) * 8).toFixed(2)}deg) rotateY(${((x - 0.5) * 10).toFixed(2)}deg)`;
+      elNode.style.setProperty('--mx', `${(x * 100).toFixed(1)}%`);
+      elNode.style.setProperty('--my', `${(y * 100).toFixed(1)}%`);
+    });
+    elNode.addEventListener('pointerleave', () => {
+      elNode.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
+    });
+  });
+
+  // Horizontal touch/mouse spin directly inside any Open Mobile 3D Stage Window!
+  document.querySelectorAll('[data-spin-stage="true"]').forEach((win) => {
+    let lastX = null;
+    win.addEventListener('pointerdown', (e) => {
+      lastX = e.clientX;
+    });
+    win.addEventListener(
+      'pointermove',
+      (e) => {
+        if (lastX === null || !scene3d) return;
+        const dx = e.clientX - lastX;
+        lastX = e.clientX;
+        scene3d.nudgeSpin(dx * 0.011);
+      },
+      { passive: true }
+    );
+    const clearSpin = () => {
+      lastX = null;
+    };
+    win.addEventListener('pointerup', clearSpin);
+    win.addEventListener('pointercancel', clearSpin);
+  });
+}
+
+function initEnvelope() {
+  const box = document.getElementById('encouragement-envelope');
+  const btn = document.getElementById('envelope-btn');
+  if (!box || !btn) return;
+  btn.addEventListener('click', () => {
+    const isOpen = box.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(isOpen));
+  });
+}
+
+/* ==================== SECTION-LOCKED 3D SCROLL, MOOD SWITCHER & FINALE ==================== */
+function initScrollNavigationAndFinale(scene3d, audio) {
   const topbar = document.getElementById('topbar');
   const progressBar = document.getElementById('scroll-progress-fill');
   const hudLabel = document.getElementById('hud-stage-label');
@@ -1761,7 +1857,8 @@ function initScrollAndNavigation(scene3d, audio) {
     if (hudLabel && sec?.dataset.stage) hudLabel.textContent = sec.dataset.stage;
   };
 
-  const checkRevealsAndActiveSection = () => {
+  // Compute EXACT continuous 3D Zone Float [0..5] locked to DOM section positions!
+  const updateSceneZoneAndReveals = () => {
     const vh = window.innerHeight || 800;
     for (const node of reveals) {
       if (!node.classList.contains('visible')) {
@@ -1770,33 +1867,50 @@ function initScrollAndNavigation(scene3d, audio) {
       }
     }
 
-    const focalY = vh * 0.4;
-    let currentId = sections[0]?.id || 'hero';
-    for (const sec of sections) {
-      const rect = sec.getBoundingClientRect();
-      if (rect.top <= focalY) currentId = sec.id;
+    const focalY = vh * 0.38;
+    let activeSec = sections[0];
+    let nextSec = null;
+
+    for (let i = 0; i < sections.length; i++) {
+      const rect = sections[i].getBoundingClientRect();
+      if (rect.top <= focalY) {
+        activeSec = sections[i];
+        nextSec = sections[i + 1] || null;
+      }
     }
-    setActiveStage(currentId);
+
+    if (activeSec) {
+      setActiveStage(activeSec.id);
+      if (scene3d) {
+        const zCur = Number(activeSec.dataset.zone || 0);
+        if (nextSec) {
+          const zNext = Number(nextSec.dataset.zone ?? zCur);
+          const curRect = activeSec.getBoundingClientRect();
+          const span = Math.max(1, curRect.height);
+          const localFrac = Math.max(0, Math.min(1, (focalY - curRect.top) / span));
+          // Smoothly transition toward next section's 3D zone in the last 35% of current section
+          const blend = Math.max(0, (localFrac - 0.65) / 0.35);
+          scene3d.setZoneProgress(zCur + (zNext - zCur) * blend);
+        } else {
+          scene3d.setZoneProgress(zCur);
+        }
+      }
+    }
   };
 
   const onScroll = () => {
     const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
     const progress = window.scrollY / maxScroll;
-    if (scene3d) scene3d.setScrollProgress(progress);
     if (progressBar) progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
     topbar.classList.toggle('scrolled', window.scrollY > 40);
-    checkRevealsAndActiveSection();
+    updateSceneZoneAndReveals();
   };
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', checkRevealsAndActiveSection, { passive: true });
+  window.addEventListener('resize', updateSceneZoneAndReveals, { passive: true });
 
   const revealObs = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) entry.target.classList.add('visible');
-      });
-    },
+    (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')),
     { threshold: 0, rootMargin: '120px 0px 120px 0px' }
   );
   reveals.forEach((node) => revealObs.observe(node));
@@ -1811,6 +1925,20 @@ function initScrollAndNavigation(scene3d, audio) {
   railDots.forEach((dot) => dot.addEventListener('click', () => scrollToTarget(dot.dataset.target)));
   dockChips.forEach((chip) => chip.addEventListener('click', () => scrollToTarget(chip.dataset.target)));
 
+  // Pro Tool #2: Live 3D Museum Lighting Mood Switcher!
+  const moodBtn = document.getElementById('mood-cycle-btn');
+  const moodLabel = document.getElementById('mood-pill-label');
+  let moodIdx = 0;
+  if (moodBtn && scene3d) {
+    moodBtn.addEventListener('click', () => {
+      moodIdx = (moodIdx + 1) % LIGHTING_MOODS.length;
+      const m = LIGHTING_MOODS[moodIdx];
+      scene3d.setLightingMood(m.key);
+      if (moodLabel) moodLabel.textContent = m.label;
+    });
+  }
+
+  // Full-Screen 3D Inspect Mode
   const inspectBtn = document.getElementById('inspect-3d-btn');
   const exitInspectBtn = document.getElementById('exit-inspect-btn');
   const inspectBanner = document.getElementById('inspect-banner');
@@ -1831,8 +1959,8 @@ function initScrollAndNavigation(scene3d, audio) {
   });
 
   document.getElementById('enter-exhibition-btn').addEventListener('click', () => {
-    const nextSec = document.getElementById('guide-strip') || document.getElementById('childhood');
-    if (nextSec) nextSec.scrollIntoView({ behavior: 'smooth' });
+    const firstAct = document.getElementById('childhood');
+    if (firstAct) firstAct.scrollIntoView({ behavior: 'smooth' });
   });
 
   const audioBtn = document.getElementById('audio-toggle');
@@ -1842,6 +1970,7 @@ function initScrollAndNavigation(scene3d, audio) {
     audioBtn.setAttribute('aria-pressed', String(isPlaying));
   });
 
+  // Finale 19 Candles + Real Microphone Blow Integration!
   const wishBtn = document.getElementById('wish-btn');
   const wishBtnAr = document.getElementById('finale-btn-ar');
   const wishLetter = document.getElementById('wish-letter');
@@ -1854,35 +1983,42 @@ function initScrollAndNavigation(scene3d, audio) {
     candlesStatus.replaceChildren(el('span', 'flame-dot'), el('span', '', msg));
   };
 
-  wishBtn.addEventListener('click', () => {
-    candlesBlown = !candlesBlown;
-    if (scene3d) scene3d.triggerWishCelebration(candlesBlown);
+  const extinguishCandles = () => {
+    candlesBlown = true;
+    if (scene3d) scene3d.triggerWishCelebration(true);
+    audio.playWishChime();
+    wishLetter.classList.add('revealed');
+    wishLetter.setAttribute('aria-hidden', 'false');
+    wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAfterAr;
+    setCandlesStatusText('تحققت الأمنية بإذن الله — أُطلقت شرارات العام التاسع عشر ✦', true);
+  };
 
-    if (candlesBlown) {
-      audio.playWishChime();
-      wishLetter.classList.add('revealed');
-      wishLetter.setAttribute('aria-hidden', 'false');
-      wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAfterAr;
-      setCandlesStatusText('تحققت الأمنية بإذن الله — أُطلقت شرارات العام التاسع عشر ✦', true);
-    } else {
-      wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAr;
-      setCandlesStatusText('19 شمعة ذهبية مضيئة في الخلفية ثلاثية الأبعاد', false);
-    }
+  const relightCandles = () => {
+    candlesBlown = false;
+    if (scene3d) scene3d.triggerWishCelebration(false);
+    wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAr;
+    setCandlesStatusText('19 شمعة ذهبية مضيئة في المسرح الـ 3D أعلاه', false);
+  };
+
+  const micDetector = initMicBlowDetector(scene3d, extinguishCandles);
+
+  wishBtn.addEventListener('click', () => {
+    micDetector.stopMic();
+    if (!candlesBlown) extinguishCandles();
+    else relightCandles();
   });
 
-  if (certBtn) {
-    certBtn.addEventListener('click', downloadFamilyCertificatePng);
-  }
+  if (certBtn) certBtn.addEventListener('click', downloadFamilyCertificatePng);
 }
 
 /* ==================== BOOTSTRAP ==================== */
 function bootstrap() {
-  renderContent();
+  const openLightbox = initLightboxController();
+  renderContent(openLightbox);
 
   const vaultStore = new FamilyVaultStore();
   let incomingGift = null;
 
-  // Safely process incoming ?gift= envelope delivery link (strictly validated + cleaned from URL!)
   try {
     const params = new URLSearchParams(window.location.search);
     const giftParam = params.get('gift');
@@ -1897,7 +2033,7 @@ function bootstrap() {
       window.history.replaceState({}, document.title, cleanUrl);
     }
   } catch {
-    // Ignore malformed URL params safely
+    // Ignore malformed params
   }
 
   let scene3d = null;
@@ -1917,11 +2053,10 @@ function bootstrap() {
   initSparkleCursorTrail();
   initGuideModal();
   initHorizonMotionGraphics();
-  initTiltEffects();
+  initTiltAndTouchSpinWindows(scene3d);
   initEnvelope();
-  initGalleryAndLightbox();
-  initAtelierSketchCanvas();
-  initScrollAndNavigation(scene3d, audio);
+  initProFineArtsStudio();
+  initScrollNavigationAndFinale(scene3d, audio);
 
   window.setTimeout(() => {
     const preloader = document.getElementById('preloader');

@@ -1,10 +1,11 @@
 /**
  * =========================================================================
- *  Three.js Cinema-Grade 3D Fine Arts Atelier & Motion-Graphics World
- *  Fully Responsive for BOTH Desktop Widescreen AND Mobile Portrait!
- *  - Dynamic portrait FOV & horizontal layout compression so ALL 3D models
- *    stay centered and framed on narrow mobile screens
- *  - Native touch scroll preserved; full touch 3D-orbit enabled in 3D Inspect mode
+ *  Three.js Ultra 3D Fine Arts Atelier Engine (v9 — Section-Locked & Mobile-Stage)
+ *  - Exact Zone Waypoint Camera Locking (3D sculpture ALWAYS matches active story Act!)
+ *  - Dedicated Mobile Upper-Stage Framing (3D renders cleanly ABOVE story cards, never covered!)
+ *  - Horizontal Touch Spin (`pan-y` friendly) + Desktop Drag Orbit
+ *  - 4 Museum Masterpiece Lighting Moods + 8 Family Persona Auras
+ *  - Real-Time Microphone Wind Physics on the 19 Birthday Candles
  * =========================================================================
  */
 
@@ -14,39 +15,64 @@ function isSafeLocalTexturePath(path) {
   return typeof path === 'string' && /^\.\/assets\/[a-zA-Z0-9._/-]+$/.test(path) && !path.includes('..');
 }
 
+// Exact Z coordinates of our 6 sculpted 3D Diorama Stages
+const ZONE_STAGES = [
+  { id: 'prologue', z: 1.5, camDist: 6.8, mobileDist: 7.4, y: 0.15 },   // 0: Easel, Palette & Brushes
+  { id: 'childhood', z: -13.0, camDist: 6.6, mobileDist: 7.2, y: 0.1 }, // 1: Childhood Frame, Pencils & Origami Stars
+  { id: 'passion', z: -27.0, camDist: 6.6, mobileDist: 7.2, y: 0.15 },  // 2: Sacred Golden Geometry & Floating Atelier
+  { id: 'thanaweya', z: -41.0, camDist: 7.0, mobileDist: 7.6, y: 0.1 }, // 3: 3D Hourglass, Bridge & 18 Rising Lanterns
+  { id: 'fine-arts', z: -56.0, camDist: 7.8, mobileDist: 8.6, y: 0.2 }, // 4: Grand Fine Arts Archway, Columns & Sculpture
+  { id: 'finale', z: -72.0, camDist: 7.2, mobileDist: 8.2, y: 0.05 },   // 5: 19 Floating Golden Candles Crown
+];
+
 export class Atelier3DScene {
   constructor(canvas, config) {
     this.canvas = canvas;
     this.config = config;
-    this.scrollProgress = 0;
-    this.smoothScroll = 0;
+
+    // Continuous zone index [0 .. 5] synced directly to DOM sections!
+    this.targetZoneFloat = 0;
+    this.smoothZoneFloat = 0;
+
     this.pointer = { x: 0, y: 0 };
     this.smoothPointer = { x: 0, y: 0 };
 
-    // Orbit drag state (Mouse anytime; Touch when in 3D Inspect Mode)
     this.inspectMode = false;
     this.isDragging = false;
     this.dragStart = { x: 0, y: 0 };
-    this.orbitTarget = { x: 0, y: 0 };
-    this.orbitCurrent = { x: 0, y: 0 };
+    this.spinAngleTarget = 0;
+    this.spinAngleCurrent = 0;
+    this.orbitYTarget = 0;
+    this.orbitYCurrent = 0;
 
     this.candlesLit = true;
+    this.candleWind = 0; // 0..1 from real microphone blow!
     this.wishBurstTime = -1;
     this.disposed = false;
     this.isHidden = false;
     this.isMobile = window.innerWidth < 900;
 
-    // Live 8-Member VIP Family 3D Theme Palettes (morphs lighting & aura smoothly!)
+    // 8 Family Persona Auras + 4 Museum Masterpiece Lighting Moods
     this.themePresets = {
-      yomna:   { key: 0xffd288, rim: 0xdca454, fog: 0x110c09, dust: 0xfbe3a4 },
-      essam:   { key: 0xffd17a, rim: 0x4b74a8, fog: 0x0d1018, dust: 0xe6c87d },
-      heba:    { key: 0xffe0c4, rim: 0xd98f7c, fog: 0x160e0e, dust: 0xf9d8c7 },
-      youssef: { key: 0xffe0a8, rim: 0x5c94c9, fog: 0x0b121b, dust: 0xcfe4fa },
-      islam:   { key: 0xffdfad, rim: 0x4fa89b, fog: 0x0a1514, dust: 0xc4f2ea },
-      salwa:   { key: 0xffd9b0, rim: 0xd18a5c, fog: 0x16100b, dust: 0xf6d5b8 },
-      nada:    { key: 0xffe2c6, rim: 0xa67bc4, fog: 0x130e17, dust: 0xe8d4f7 },
-      mohamed: { key: 0xf8d994, rim: 0x6ea074, fog: 0x0d1410, dust: 0xdcf0d8 },
+      yomna:   { key: 0xffd68a, rim: 0xe0a854, fog: 0x120d09 },
+      essam:   { key: 0xffd480, rim: 0x5280b8, fog: 0x0c1018 },
+      heba:    { key: 0xffe2c8, rim: 0xe09480, fog: 0x160e0e },
+      youssef: { key: 0xffe2ad, rim: 0x609cd4, fog: 0x0b121c },
+      islam:   { key: 0xffe0b2, rim: 0x54b4a6, fog: 0x0a1514 },
+      salwa:   { key: 0xffdcb5, rim: 0xd89062, fog: 0x16100b },
+      nada:    { key: 0xffe4ca, rim: 0xb082d0, fog: 0x130e18 },
+      mohamed: { key: 0xfadca0, rim: 0x74aa7a, fog: 0x0d1410 },
     };
+
+    this.moodOverrides = {
+      rembrandt:  null, // Uses active family persona warm atelier lighting
+      vangogh:    { key: 0xffd468, rim: 0x3b6ee8, fog: 0x091126 },
+      louvre:     { key: 0xfff5e4, rim: 0xc9b896, fog: 0x151310 },
+      terracotta: { key: 0xffb878, rim: 0xd45d3f, fog: 0x1a0e0a },
+    };
+
+    this.activePersonaKey = 'yomna';
+    this.activeMoodKey = 'rembrandt';
     this.targetTheme = this.themePresets.yomna;
     this.curKeyColor = new THREE.Color(this.targetTheme.key);
     this.curRimBase = new THREE.Color(this.targetTheme.rim);
@@ -54,11 +80,11 @@ export class Atelier3DScene {
 
     this.clock = new THREE.Clock();
     this.animatedObjects = [];
+    this.zoneGroups = [];
     this.lanterns = [];
     this.candles = [];
     this.flames = [];
     this.goldLeafData = [];
-    this.responsiveGroups = [];
 
     this.init();
   }
@@ -70,19 +96,17 @@ export class Atelier3DScene {
       alpha: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.isMobile ? 1.75 : 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.isMobile ? 1.85 : 2));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.18;
+    this.renderer.toneMappingExposure = 1.28;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x110c09, this.isMobile ? 0.026 : 0.032);
+    this.scene.fog = new THREE.FogExp2(0x120d09, 0.022);
 
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
-    const fov = aspect < 0.85 ? 64 : aspect < 1.1 ? 54 : 46;
-    this.camera = new THREE.PerspectiveCamera(fov, aspect, 0.1, 175);
-    this.camera.position.set(0.6, 0.4, 8.6);
+    this.camera = new THREE.PerspectiveCamera(aspect < 0.85 ? 58 : 46, aspect, 0.1, 160);
 
     this.glowTexture = this.createRadialGlowTexture();
     this.beamTexture = this.createLightBeamTexture();
@@ -90,45 +114,53 @@ export class Atelier3DScene {
 
     this.materials = {
       gold: new THREE.MeshStandardMaterial({
-        color: 0xe8c268,
+        color: 0xf0c96e,
         metalness: 0.86,
-        roughness: 0.22,
-      }),
-      goldGlow: new THREE.MeshStandardMaterial({
-        color: 0xfce6a6,
-        emissive: 0xdca53d,
-        emissiveIntensity: 0.9,
-        metalness: 0.62,
         roughness: 0.2,
       }),
+      goldGlow: new THREE.MeshStandardMaterial({
+        color: 0xfff0b8,
+        emissive: 0xe2a83b,
+        emissiveIntensity: 0.95,
+        metalness: 0.65,
+        roughness: 0.18,
+      }),
       antiqueBrass: new THREE.MeshStandardMaterial({
-        color: 0xb88937,
+        color: 0xc2923c,
         metalness: 0.78,
-        roughness: 0.32,
+        roughness: 0.3,
       }),
       wood: new THREE.MeshStandardMaterial({
-        color: 0x563622,
+        color: 0x633e27,
         metalness: 0.08,
-        roughness: 0.62,
+        roughness: 0.58,
       }),
       darkWood: new THREE.MeshStandardMaterial({
-        color: 0x331f13,
+        color: 0x3b2315,
         metalness: 0.06,
-        roughness: 0.7,
+        roughness: 0.68,
       }),
       marble: new THREE.MeshPhysicalMaterial({
-        color: 0xf6eee3,
+        color: 0xf8f1e7,
         metalness: 0.04,
-        roughness: 0.25,
-        clearcoat: 0.4,
-        clearcoatRoughness: 0.22,
+        roughness: 0.22,
+        clearcoat: 0.45,
+        clearcoatRoughness: 0.2,
+      }),
+      glassGold: new THREE.MeshPhysicalMaterial({
+        color: 0xffe5a3,
+        transparent: true,
+        opacity: 0.42,
+        roughness: 0.12,
+        metalness: 0.1,
+        clearcoat: 0.9,
       }),
       candleWax: new THREE.MeshStandardMaterial({
-        color: 0xf8eedb,
-        roughness: 0.5,
+        color: 0xfaf0de,
+        roughness: 0.48,
         metalness: 0.02,
-        emissive: 0x452809,
-        emissiveIntensity: 0.3,
+        emissive: 0x4d2c0a,
+        emissiveIntensity: 0.34,
       }),
     };
 
@@ -137,13 +169,12 @@ export class Atelier3DScene {
     this.buildFloatingGoldLeafFlakes();
     this.buildJourneyLightRibbon();
 
-    this.buildHeroEaselZone();
-    this.buildChildhoodZone();
-    this.buildArtPassionZone();
-    this.buildThanaweyaLanternZone();
-    this.buildOneStepBridgeZone();
-    this.buildFineArtsSanctuaryZone();
-    this.buildFinaleCandlesZone();
+    this.buildZone0Prologue();
+    this.buildZone1Childhood();
+    this.buildZone2Passion();
+    this.buildZone3Thanaweya();
+    this.buildZone4FineArts();
+    this.buildZone5FinaleCandles();
     this.buildCelebrationBurstSystem();
 
     this.applyResponsiveLayout();
@@ -154,14 +185,42 @@ export class Atelier3DScene {
   setInspectMode(enabled) {
     this.inspectMode = Boolean(enabled);
     if (!enabled) {
-      this.orbitTarget.x = 0;
-      this.orbitTarget.y = 0;
+      this.orbitYTarget = 0;
     }
   }
 
+  nudgeSpin(deltaRad) {
+    this.spinAngleTarget = Math.max(-1.35, Math.min(1.35, this.spinAngleTarget + deltaRad));
+  }
+
+  resetSpin() {
+    this.spinAngleTarget = 0;
+    this.orbitYTarget = 0;
+  }
+
   setVisitorTheme(themeKey) {
-    const preset = this.themePresets[themeKey] || this.themePresets.yomna;
-    this.targetTheme = preset;
+    if (this.themePresets[themeKey]) {
+      this.activePersonaKey = themeKey;
+    }
+    this.refreshTargetTheme();
+  }
+
+  setLightingMood(moodKey) {
+    this.activeMoodKey = moodKey in this.moodOverrides ? moodKey : 'rembrandt';
+    this.refreshTargetTheme();
+  }
+
+  refreshTargetTheme() {
+    const override = this.moodOverrides[this.activeMoodKey];
+    this.targetTheme = override || this.themePresets[this.activePersonaKey] || this.themePresets.yomna;
+  }
+
+  setCandleWind(level) {
+    this.candleWind = Math.max(0, Math.min(1, Number(level) || 0));
+  }
+
+  setZoneProgress(zoneFloat) {
+    this.targetZoneFloat = Math.max(0, Math.min(ZONE_STAGES.length - 1, zoneFloat));
   }
 
   createRadialGlowTexture() {
@@ -171,9 +230,9 @@ export class Atelier3DScene {
     c.height = size;
     const ctx = c.getContext('2d');
     const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-    g.addColorStop(0, 'rgba(255, 250, 232, 1)');
-    g.addColorStop(0.28, 'rgba(244, 206, 120, 0.84)');
-    g.addColorStop(0.62, 'rgba(205, 145, 58, 0.24)');
+    g.addColorStop(0, 'rgba(255, 252, 238, 1)');
+    g.addColorStop(0.3, 'rgba(246, 210, 124, 0.86)');
+    g.addColorStop(0.65, 'rgba(210, 150, 60, 0.26)');
     g.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
@@ -188,9 +247,9 @@ export class Atelier3DScene {
     c.height = 256;
     const ctx = c.getContext('2d');
     const g = ctx.createLinearGradient(0, 0, 0, 256);
-    g.addColorStop(0, 'rgba(255, 234, 170, 0.44)');
-    g.addColorStop(0.55, 'rgba(235, 188, 96, 0.14)');
-    g.addColorStop(1, 'rgba(235, 188, 96, 0)');
+    g.addColorStop(0, 'rgba(255, 238, 180, 0.48)');
+    g.addColorStop(0.55, 'rgba(240, 194, 102, 0.16)');
+    g.addColorStop(1, 'rgba(240, 194, 102, 0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 128, 256);
     const tex = new THREE.CanvasTexture(c);
@@ -207,37 +266,39 @@ export class Atelier3DScene {
   }
 
   setupLights() {
-    this.ambientLight = new THREE.AmbientLight(0xffe8c6, 0.74);
+    this.ambientLight = new THREE.AmbientLight(0xffebd0, 0.88);
     this.scene.add(this.ambientLight);
 
-    this.hemiLight = new THREE.HemisphereLight(0xfff3dc, 0x261810, 0.62);
+    this.hemiLight = new THREE.HemisphereLight(0xfff6e5, 0x2c1c12, 0.75);
     this.scene.add(this.hemiLight);
 
-    this.keyLight = new THREE.PointLight(0xffd288, 38, 42, 1.4);
-    this.keyLight.position.set(3.5, 4.2, 6.5);
+    // Bright Sculptural Key Light right on active 3D stage
+    this.keyLight = new THREE.PointLight(0xffd68a, 46, 42, 1.35);
     this.scene.add(this.keyLight);
 
-    this.rimLight = new THREE.PointLight(0xd8a056, 22, 42, 1.5);
-    this.rimLight.position.set(-5.5, 2.5, 2.5);
+    this.rimLight = new THREE.PointLight(0xe0a854, 28, 42, 1.45);
     this.scene.add(this.rimLight);
+
+    // Front fill spotlight so dark wood/gold details gleam crisply on mobile screens
+    this.frontFillLight = new THREE.PointLight(0xfff0d4, 18, 28, 1.4);
+    this.scene.add(this.frontFillLight);
   }
 
-  /* ==================== PERSISTENT GOLDEN DUST FIELD ==================== */
   buildGoldenDustField() {
-    const count = this.isMobile ? 420 : 760;
+    const count = this.isMobile ? 460 : 780;
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     const palette = [
-      new THREE.Color(0xfae3a4),
-      new THREE.Color(0xdcb056),
-      new THREE.Color(0xfff7e8),
-      new THREE.Color(0xd2835b),
+      new THREE.Color(0xfce6a8),
+      new THREE.Color(0xe2b659),
+      new THREE.Color(0xfff9ec),
+      new THREE.Color(0xd8885e),
     ];
 
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * (this.isMobile ? 16 : 30);
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 16;
-      positions[i * 3 + 2] = 14 - Math.random() * 108;
+      positions[i * 3] = (Math.random() - 0.5) * (this.isMobile ? 15 : 28);
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
+      positions[i * 3 + 2] = 10 - Math.random() * 92;
 
       const col = palette[i % palette.length];
       colors[i * 3] = col.r;
@@ -250,11 +311,11 @@ export class Atelier3DScene {
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const mat = new THREE.PointsMaterial({
-      size: this.isMobile ? 0.25 : 0.22,
+      size: this.isMobile ? 0.26 : 0.22,
       map: this.glowTexture,
       vertexColors: true,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.84,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -263,14 +324,13 @@ export class Atelier3DScene {
     this.scene.add(this.dustField);
   }
 
-  /* ==================== FLOATING METALLIC GOLD-LEAF FLAKES ==================== */
   buildFloatingGoldLeafFlakes() {
-    const count = this.isMobile ? 48 : 90;
+    const count = this.isMobile ? 52 : 90;
     const flakeGeo = new THREE.PlaneGeometry(0.14, 0.14);
     const flakeMat = new THREE.MeshStandardMaterial({
-      color: 0xf2cd74,
+      color: 0xf5d27a,
       metalness: 0.92,
-      roughness: 0.18,
+      roughness: 0.16,
       side: THREE.DoubleSide,
     });
 
@@ -279,43 +339,40 @@ export class Atelier3DScene {
 
     for (let i = 0; i < count; i++) {
       this.goldLeafData.push({
-        x: (Math.random() - 0.5) * (this.isMobile ? 9 : 16),
-        y: (Math.random() - 0.5) * 9,
-        z: 8 - Math.random() * 94,
+        x: (Math.random() - 0.5) * (this.isMobile ? 8.5 : 15),
+        y: (Math.random() - 0.5) * 8,
+        z: 6 - Math.random() * 84,
         rotX: Math.random() * Math.PI,
         rotY: Math.random() * Math.PI,
         rotZ: Math.random() * Math.PI,
-        speed: 0.4 + Math.random() * 0.9,
-        scale: 0.5 + Math.random() * 1.1,
+        speed: 0.4 + Math.random() * 0.85,
+        scale: 0.55 + Math.random() * 1.05,
       });
     }
 
     this.scene.add(this.goldLeafMesh);
   }
 
-  /* ==================== CONTINUOUS 3D GOLDEN MOTION-GRAPHIC RIBBON ==================== */
   buildJourneyLightRibbon() {
-    const xAmp = this.isMobile ? 0.85 : 2.4;
+    const xAmp = this.isMobile ? 0.75 : 2.1;
     this.journeyCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(-xAmp * 0.85, -1.1, 3.2),
-      new THREE.Vector3(xAmp, -0.75, -9.0),
-      new THREE.Vector3(-xAmp, 0.2, -21.5),
-      new THREE.Vector3(xAmp * 0.9, -0.45, -34.0),
-      new THREE.Vector3(0.0, -0.25, -45.5),
-      new THREE.Vector3(0.0, -0.1, -57.5),
-      new THREE.Vector3(-xAmp * 0.7, -0.6, -69.0),
-      new THREE.Vector3(0.0, -0.35, -81.0),
+      new THREE.Vector3(-xAmp * 0.7, -0.9, ZONE_STAGES[0].z),
+      new THREE.Vector3(xAmp, -0.5, ZONE_STAGES[1].z),
+      new THREE.Vector3(-xAmp, 0.25, ZONE_STAGES[2].z),
+      new THREE.Vector3(xAmp * 0.8, -0.35, ZONE_STAGES[3].z),
+      new THREE.Vector3(0.0, -0.15, ZONE_STAGES[4].z),
+      new THREE.Vector3(0.0, -0.3, ZONE_STAGES[5].z),
     ]);
 
-    const tubeGeo = new THREE.TubeGeometry(this.journeyCurve, 220, 0.036, 8, false);
+    const tubeGeo = new THREE.TubeGeometry(this.journeyCurve, 220, 0.038, 8, false);
     const tubeMat = new THREE.MeshStandardMaterial({
-      color: 0xf4cf76,
-      emissive: 0xc98b2c,
-      emissiveIntensity: 0.78,
+      color: 0xf7d47c,
+      emissive: 0xd19230,
+      emissiveIntensity: 0.85,
       metalness: 0.85,
-      roughness: 0.22,
+      roughness: 0.2,
       transparent: true,
-      opacity: 0.76,
+      opacity: 0.8,
     });
 
     this.ribbonMesh = new THREE.Mesh(tubeGeo, tubeMat);
@@ -324,99 +381,472 @@ export class Atelier3DScene {
     this.cometGroup = new THREE.Group();
     const cometCore = new THREE.Mesh(
       new THREE.SphereGeometry(0.15, 16, 16),
-      new THREE.MeshBasicMaterial({ color: 0xfff3cb })
+      new THREE.MeshBasicMaterial({ color: 0xfff6d6 })
     );
     const cometGlow = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: this.glowTexture,
-        color: 0xffd271,
+        color: 0xffd678,
         transparent: true,
         opacity: 0.96,
         blending: THREE.AdditiveBlending,
       })
     );
-    cometGlow.scale.set(2.0, 2.0, 1);
+    cometGlow.scale.set(2.1, 2.1, 1);
     this.cometGroup.add(cometCore, cometGlow);
     this.scene.add(this.cometGroup);
   }
 
-  /* ==================== ZONE 0: HERO WOODEN EASEL & PALETTE ==================== */
-  buildHeroEaselZone() {
-    const group = new THREE.Group();
+  /* ==================== ZONE 0: PROLOGUE — EASEL, PALETTE & BRUSHES ==================== */
+  buildZone0Prologue() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[0].y, ZONE_STAGES[0].z);
+
+    const rig = new THREE.Group();
 
     const easel = new THREE.Group();
-    const legGeo = new THREE.BoxGeometry(0.11, 4.3, 0.11);
+    const legGeo = new THREE.BoxGeometry(0.11, 4.1, 0.11);
 
     const leftLeg = new THREE.Mesh(legGeo, this.materials.wood);
-    leftLeg.position.set(-0.72, -0.35, 0);
-    leftLeg.rotation.z = -0.14;
-    leftLeg.rotation.x = -0.09;
-    easel.add(leftLeg);
+    leftLeg.position.set(-0.7, -0.3, 0);
+    leftLeg.rotation.set(-0.09, 0, -0.14);
 
     const rightLeg = new THREE.Mesh(legGeo, this.materials.wood);
-    rightLeg.position.set(0.72, -0.35, 0);
-    rightLeg.rotation.z = 0.14;
-    rightLeg.rotation.x = -0.09;
-    easel.add(rightLeg);
+    rightLeg.position.set(0.7, -0.3, 0);
+    rightLeg.rotation.set(-0.09, 0, 0.14);
 
-    const backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.2, 0.1), this.materials.darkWood);
-    backLeg.position.set(0, -0.45, -1.05);
+    const backLeg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 4.0, 0.1), this.materials.darkWood);
+    backLeg.position.set(0, -0.4, -1.0);
     backLeg.rotation.x = 0.34;
-    easel.add(backLeg);
 
-    const mast = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.7, 0.1), this.materials.darkWood);
-    mast.position.set(0, 0.1, -0.15);
+    const mast = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.6, 0.1), this.materials.darkWood);
+    mast.position.set(0, 0.12, -0.15);
     mast.rotation.x = -0.09;
-    easel.add(mast);
 
-    const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.35, 0.1, 0.24), this.materials.wood);
-    shelf.position.set(0, -0.78, 0.16);
+    const shelf = new THREE.Mesh(new THREE.BoxGeometry(2.3, 0.11, 0.26), this.materials.gold);
+    shelf.position.set(0, -0.74, 0.17);
     shelf.rotation.x = -0.09;
-    easel.add(shelf);
 
     const artPath = this.config.chapters?.[3]?.image || './assets/art/chapter4-fine-arts.jpg';
-    const framedCanvas = this.createFramedPainting(2.15, 1.62, artPath);
-    framedCanvas.position.set(0, 0.18, 0.14);
+    const framedCanvas = this.createFramedPainting(2.1, 1.58, artPath);
+    framedCanvas.position.set(0, 0.2, 0.14);
     framedCanvas.rotation.x = -0.09;
-    easel.add(framedCanvas);
 
-    const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.12, 0.2), this.materials.gold);
-    clamp.position.set(0, 1.07, 0.04);
-    easel.add(clamp);
+    const clamp = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.13, 0.2), this.materials.goldGlow);
+    clamp.position.set(0, 1.08, 0.05);
 
-    group.add(easel);
+    easel.add(leftLeg, rightLeg, backLeg, mast, shelf, framedCanvas, clamp);
+    rig.add(easel);
 
     const palette = this.createArtistPalette();
-    palette.position.set(1.42, -0.52, 0.9);
+    palette.position.set(1.38, -0.48, 0.9);
     palette.rotation.set(0.45, -0.5, 0.22);
-    group.add(palette);
-    this.animatedObjects.push({ mesh: palette, baseY: -0.52, speed: 1.15, amp: 0.14, rotY: 0.28 });
+    rig.add(palette);
+    this.animatedObjects.push({ mesh: palette, baseY: -0.48, speed: 1.2, amp: 0.14, rotY: 0.3 });
 
-    const brush1 = this.createPaintbrush(0xd9804c);
-    brush1.position.set(-1.42, 0.72, 0.75);
-    brush1.rotation.set(0.3, 0.2, -0.65);
-    group.add(brush1);
-    this.animatedObjects.push({ mesh: brush1, baseY: 0.72, speed: 1.4, amp: 0.16, rotZ: 0.18 });
+    const brush1 = this.createPaintbrush(0xe0844f);
+    brush1.position.set(-1.38, 0.72, 0.75);
+    brush1.rotation.set(0.3, 0.2, -0.62);
+    rig.add(brush1);
+    this.animatedObjects.push({ mesh: brush1, baseY: 0.72, speed: 1.4, amp: 0.15, rotZ: 0.18 });
 
-    const brush2 = this.createPaintbrush(0x4b749f);
-    brush2.position.set(1.32, 0.95, 0.35);
-    brush2.rotation.set(-0.25, 0.4, 0.52);
-    group.add(brush2);
-    this.animatedObjects.push({ mesh: brush2, baseY: 0.95, speed: 1.05, amp: 0.13, rotZ: -0.15 });
+    const brush2 = this.createPaintbrush(0x4d79a8);
+    brush2.position.set(1.28, 0.92, 0.38);
+    brush2.rotation.set(-0.25, 0.4, 0.5);
+    rig.add(brush2);
+    this.animatedObjects.push({ mesh: brush2, baseY: 0.92, speed: 1.05, amp: 0.13, rotZ: -0.15 });
 
-    const halo1 = new THREE.Mesh(new THREE.TorusGeometry(2.32, 0.018, 16, 128), this.materials.gold);
-    halo1.position.set(0, 0.15, -0.3);
+    const halo1 = new THREE.Mesh(new THREE.TorusGeometry(2.25, 0.02, 16, 128), this.materials.goldGlow);
+    halo1.position.set(0, 0.18, -0.25);
     halo1.rotation.set(0.35, 0.2, 0);
-    group.add(halo1);
 
-    const halo2 = new THREE.Mesh(new THREE.TorusGeometry(2.68, 0.01, 12, 128), this.materials.antiqueBrass);
-    halo2.position.set(0, 0.15, -0.35);
+    const halo2 = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.012, 12, 128), this.materials.gold);
+    halo2.position.set(0, 0.18, -0.3);
     halo2.rotation.set(-0.42, 0.55, 0.2);
-    group.add(halo2);
 
-    this.heroGroup = group;
+    rig.add(halo1, halo2);
+    stage.add(rig);
+
+    this.heroRig = rig;
     this.heroHalos = [halo1, halo2];
-    this.scene.add(group);
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: -2.2, mobileScale: 0.72 });
+    this.scene.add(stage);
+  }
+
+  /* ==================== ZONE 1: CHILDHOOD — CENTERED DIORAMA ==================== */
+  buildZone1Childhood() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[1].y, ZONE_STAGES[1].z);
+    const rig = new THREE.Group();
+
+    const artPath = this.config.chapters?.[0]?.image || './assets/art/chapter1-childhood.jpg';
+    const frame = this.createFramedPainting(2.05, 1.54, artPath);
+    frame.rotation.y = -0.18;
+    rig.add(frame);
+    this.animatedObjects.push({ mesh: frame, baseY: 0, speed: 0.95, amp: 0.12 });
+
+    // Orbiting Colored Pencils & Golden Origami Stars tightly framing the canvas (visible on mobile!)
+    const pastelColors = [0xf0c05a, 0xd97854, 0x6f98bd, 0x86ad7e, 0xe095a4, 0xe8b468];
+    pastelColors.forEach((hex, idx) => {
+      const pencil = new THREE.Group();
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.05, 1.1, 6),
+        new THREE.MeshStandardMaterial({ color: hex, roughness: 0.4 })
+      );
+      const tip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.05, 0.2, 6),
+        new THREE.MeshStandardMaterial({ color: 0xf0dab5, roughness: 0.65 })
+      );
+      tip.position.y = 0.65;
+      pencil.add(shaft, tip);
+
+      const angle = (idx / pastelColors.length) * Math.PI * 2;
+      pencil.position.set(Math.cos(angle) * 1.65, Math.sin(angle) * 1.15, 0.55 + (idx % 2) * 0.35);
+      pencil.rotation.set(0.35 + idx * 0.2, idx * 0.4, 0.55);
+      rig.add(pencil);
+      this.animatedObjects.push({
+        mesh: pencil,
+        baseY: pencil.position.y,
+        speed: 1.1 + idx * 0.14,
+        amp: 0.14,
+        rotY: 0.4,
+      });
+    });
+
+    // Floating Golden Origami Paper Stars
+    const starGeo = new THREE.OctahedronGeometry(0.18, 0);
+    for (let i = 0; i < 5; i++) {
+      const star = new THREE.Mesh(starGeo, this.materials.goldGlow);
+      const a = (i / 5) * Math.PI * 2 + 0.4;
+      star.position.set(Math.cos(a) * 1.35, Math.sin(a) * 0.95, 0.85);
+      rig.add(star);
+      this.animatedObjects.push({ mesh: star, baseY: star.position.y, speed: 1.4 + i * 0.2, amp: 0.12, rotY: 0.8 });
+    }
+
+    stage.add(rig);
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: 2.0, mobileScale: 0.78 });
+    this.scene.add(stage);
+  }
+
+  /* ==================== ZONE 2: PASSION — SACRED ART GEOMETRY & PALETTE ==================== */
+  buildZone2Passion() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[2].y, ZONE_STAGES[2].z);
+    const rig = new THREE.Group();
+
+    const icoWire = new THREE.Mesh(
+      new THREE.IcosahedronGeometry(1.42, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xf2cd74,
+        emissive: 0x9c6e1e,
+        emissiveIntensity: 0.35,
+        metalness: 0.9,
+        roughness: 0.18,
+        wireframe: true,
+      })
+    );
+    const innerGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.72, 0), this.materials.marble);
+    const orbitRing1 = new THREE.Mesh(new THREE.TorusGeometry(1.92, 0.022, 14, 96), this.materials.goldGlow);
+    orbitRing1.rotation.x = 1.12;
+    const orbitRing2 = new THREE.Mesh(new THREE.TorusGeometry(2.18, 0.014, 12, 96), this.materials.gold);
+    orbitRing2.rotation.y = 0.85;
+
+    rig.add(icoWire, innerGem, orbitRing1, orbitRing2);
+    this.passionSculpture = { icoWire, innerGem, orbitRing1, orbitRing2 };
+
+    const palette2 = this.createArtistPalette();
+    palette2.position.set(1.25, -0.65, 0.95);
+    palette2.rotation.set(0.35, -0.45, -0.15);
+    rig.add(palette2);
+    this.animatedObjects.push({ mesh: palette2, baseY: -0.65, speed: 1.1, amp: 0.15, rotY: -0.3 });
+
+    const brush = this.createPaintbrush(0xd96b43);
+    brush.position.set(-1.25, 0.55, 0.9);
+    brush.rotation.set(0.25, 0.3, -0.55);
+    rig.add(brush);
+    this.animatedObjects.push({ mesh: brush, baseY: 0.55, speed: 1.3, amp: 0.14, rotZ: 0.2 });
+
+    stage.add(rig);
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: -2.0, mobileScale: 0.76 });
+    this.scene.add(stage);
+  }
+
+  /* ==================== ZONE 3: THANAWEYA — 3D GOLDEN HOURGLASS, BRIDGE & LANTERNS ==================== */
+  buildZone3Thanaweya() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[3].y, ZONE_STAGES[3].z);
+    const rig = new THREE.Group();
+
+    // Sculpted 3D Golden Hourglass of the Decisive Year (السنة الفاصلة)
+    const hourglass = new THREE.Group();
+    const topBulb = new THREE.Mesh(new THREE.ConeGeometry(0.68, 1.05, 24), this.materials.glassGold);
+    topBulb.position.y = 0.55;
+    topBulb.rotation.x = Math.PI;
+    const botBulb = new THREE.Mesh(new THREE.ConeGeometry(0.68, 1.05, 24), this.materials.glassGold);
+    botBulb.position.y = -0.55;
+
+    const topCap = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.82, 0.1, 28), this.materials.goldGlow);
+    topCap.position.y = 1.1;
+    const botCap = topCap.clone();
+    botCap.position.y = -1.1;
+
+    const waistRing = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.035, 12, 32), this.materials.goldGlow);
+    waistRing.rotation.x = Math.PI / 2;
+
+    // 3 Golden pillars framing hourglass
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 2.2, 12), this.materials.gold);
+      rod.position.set(Math.cos(a) * 0.74, 0, Math.sin(a) * 0.74);
+      hourglass.add(rod);
+    }
+
+    const compassHalo = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.02, 12, 96), this.materials.gold);
+    hourglass.add(topBulb, botBulb, topCap, botCap, waistRing, compassHalo);
+    rig.add(hourglass);
+    this.thanaweyaHourglass = { group: hourglass, compassHalo };
+
+    // 16 Rising Golden Hope Lanterns tightly framing the hourglass
+    const orbGeo = new THREE.SphereGeometry(0.16, 14, 14);
+    const haloMat = new THREE.SpriteMaterial({
+      map: this.glowTexture,
+      color: 0xffd47e,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending,
+    });
+
+    for (let i = 0; i < 16; i++) {
+      const lantern = new THREE.Group();
+      const core = new THREE.Mesh(
+        orbGeo,
+        new THREE.MeshStandardMaterial({
+          color: 0xffe8b3,
+          emissive: 0xffb84d,
+          emissiveIntensity: 1.6,
+          roughness: 0.2,
+        })
+      );
+      const glow = new THREE.Sprite(haloMat);
+      glow.scale.set(1.2, 1.2, 1);
+      lantern.add(core, glow);
+
+      const angle = (i / 16) * Math.PI * 2;
+      const rad = 1.35 + (i % 3) * 0.65;
+      const x = Math.cos(angle) * rad;
+      const y = (Math.random() - 0.5) * 3.6;
+      const z = Math.sin(angle) * 1.4 - 0.4;
+      lantern.position.set(x, y, z);
+      lantern.scale.setScalar(0.65 + (i % 3) * 0.22);
+
+      rig.add(lantern);
+      this.lanterns.push({
+        mesh: lantern,
+        baseX: x,
+        speedY: 0.32 + (i % 4) * 0.1,
+        phase: i * 0.8,
+      });
+    }
+
+    stage.add(rig);
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: 2.0, mobileScale: 0.78 });
+    this.scene.add(stage);
+  }
+
+  /* ==================== ZONE 4: FINE ARTS — GRAND ARCHWAY & SCULPTURE ==================== */
+  buildZone4FineArts() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[4].y - 0.25, ZONE_STAGES[4].z);
+    const rig = new THREE.Group();
+
+    const buildColumn = (x, z, h = 3.8) => {
+      const col = new THREE.Group();
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, h, 18), this.materials.marble);
+      const base = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.24, 0.76), this.materials.marble);
+      base.position.y = -h / 2 - 0.12;
+      const baseGold = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.34, 0.1, 24), this.materials.goldGlow);
+      baseGold.position.y = -h / 2 + 0.05;
+      const capital = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.22, 0.76), this.materials.marble);
+      capital.position.y = h / 2 + 0.1;
+      const capGold = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.24, 0.12, 24), this.materials.goldGlow);
+      capGold.position.y = h / 2 - 0.05;
+
+      col.add(shaft, base, baseGold, capital, capGold);
+      col.position.set(x, -0.1, z);
+      return col;
+    };
+
+    rig.add(buildColumn(-1.85, 0));
+    rig.add(buildColumn(1.85, 0));
+
+    // Classical Neoclassical Triumphal Arch
+    const archCurve = new THREE.Mesh(
+      new THREE.TorusGeometry(1.85, 0.17, 16, 64, Math.PI),
+      this.materials.marble
+    );
+    archCurve.position.set(0, 1.82, 0);
+
+    const archGoldTrim = new THREE.Mesh(
+      new THREE.TorusGeometry(1.68, 0.045, 12, 64, Math.PI),
+      this.materials.goldGlow
+    );
+    archGoldTrim.position.set(0, 1.82, 0.08);
+    rig.add(archCurve, archGoldTrim);
+
+    // Volumetric Sunbeams
+    const beamMat = new THREE.MeshBasicMaterial({
+      map: this.beamTexture,
+      transparent: true,
+      opacity: 0.5,
+      blending: THREE.AdditiveBlending,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    });
+    for (let i = -1; i <= 1; i++) {
+      const beam = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 5.4), beamMat);
+      beam.position.set(i * 0.75, 0.6, -0.5);
+      beam.rotation.z = -0.18 + i * 0.06;
+      rig.add(beam);
+    }
+
+    // Central Classical Marble Sculpture + Golden Halo
+    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.52, 0.66, 1.1, 24), this.materials.marble);
+    plinth.position.y = -1.45;
+    const plinthRing = new THREE.Mesh(new THREE.TorusGeometry(0.54, 0.03, 12, 48), this.materials.goldGlow);
+    plinthRing.rotation.x = Math.PI / 2;
+    plinthRing.position.y = -0.9;
+
+    const sculpture = new THREE.Mesh(
+      new THREE.TorusKnotGeometry(0.62, 0.18, 112, 20, 2, 3),
+      this.materials.marble
+    );
+    sculpture.position.y = 0.15;
+
+    const goldCrown = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.022, 12, 96), this.materials.goldGlow);
+    goldCrown.position.y = 0.15;
+
+    rig.add(plinth, plinthRing, sculpture, goldCrown);
+    this.fineArtsSculpture = { sculpture, goldCrown };
+
+    stage.add(rig);
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: -2.1, mobileScale: 0.74 });
+    this.scene.add(stage);
+  }
+
+  /* ==================== ZONE 5: FINALE — 19 GOLDEN BIRTHDAY CANDLES CROWN ==================== */
+  buildZone5FinaleCandles() {
+    const stage = new THREE.Group();
+    stage.position.set(0, ZONE_STAGES[5].y, ZONE_STAGES[5].z);
+    const rig = new THREE.Group();
+
+    const candleGeo = new THREE.CylinderGeometry(0.068, 0.078, 0.68, 14);
+    const holderGeo = new THREE.CylinderGeometry(0.12, 0.065, 0.08, 14);
+    const flameGeo = new THREE.ConeGeometry(0.055, 0.24, 12);
+    const flameMat = new THREE.MeshBasicMaterial({ color: 0xffea9f });
+    const glowMat = new THREE.SpriteMaterial({
+      map: this.glowTexture,
+      color: 0xffc85c,
+      transparent: true,
+      opacity: 0.94,
+      blending: THREE.AdditiveBlending,
+    });
+
+    // Central Golden Halo Ring uniting the 19 Candles
+    const crownBase = new THREE.Mesh(new THREE.TorusGeometry(2.15, 0.025, 14, 96), this.materials.goldGlow);
+    crownBase.rotation.x = Math.PI / 2 - 0.22;
+    crownBase.position.y = -0.55;
+    rig.add(crownBase);
+
+    const totalCandles = 19;
+    for (let i = 0; i < totalCandles; i++) {
+      const candleUnit = new THREE.Group();
+      const wax = new THREE.Mesh(candleGeo, this.materials.candleWax);
+      const holder = new THREE.Mesh(holderGeo, this.materials.gold);
+      holder.position.y = -0.36;
+
+      const flameGroup = new THREE.Group();
+      flameGroup.position.y = 0.46;
+      const flameMesh = new THREE.Mesh(flameGeo, flameMat);
+      const flameGlow = new THREE.Sprite(glowMat.clone());
+      flameGlow.scale.set(0.92, 0.92, 1);
+
+      flameGroup.add(flameMesh, flameGlow);
+      candleUnit.add(wax, holder, flameGroup);
+
+      // Compact two-tier circular chandelier crown so ALL 19 candles stay 100% visible on mobile!
+      const angle = (i / totalCandles) * Math.PI * 2;
+      const radius = i % 2 === 0 ? 2.15 : 1.45;
+      const x = Math.cos(angle) * radius;
+      const z = Math.sin(angle) * radius * 0.72;
+      const y = (i % 2 === 0 ? -0.25 : 0.42) + Math.sin(i * 0.9) * 0.15;
+
+      candleUnit.position.set(x, y, z);
+      rig.add(candleUnit);
+
+      this.candles.push({ group: candleUnit, baseY: y, phase: i * 0.65 });
+      this.flames.push({ group: flameGroup, glow: flameGlow, phase: i * 1.1 });
+    }
+
+    this.finaleLight = new THREE.PointLight(0xffcf78, 34, 26, 1.4);
+    this.finaleLight.position.set(0, 1.2, ZONE_STAGES[5].z + 1.5);
+    this.scene.add(this.finaleLight);
+
+    stage.add(rig);
+    this.finaleRig = rig;
+    this.zoneGroups.push({ stage, rig, desktopOffsetX: 0, mobileScale: 0.78 });
+    this.scene.add(stage);
+  }
+
+  buildCelebrationBurstSystem() {
+    const count = this.isMobile ? 240 : 380;
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    this.burstVelocities = [];
+
+    const palette = [
+      new THREE.Color(0xffeaa8),
+      new THREE.Color(0xf4c058),
+      new THREE.Color(0xffffff),
+      new THREE.Color(0xdc7e56),
+      new THREE.Color(0x9ec098),
+    ];
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = 0;
+      positions[i * 3 + 1] = 0;
+      positions[i * 3 + 2] = ZONE_STAGES[5].z;
+
+      const c = palette[i % palette.length];
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const speed = 2.6 + Math.random() * 5.4;
+      this.burstVelocities.push({
+        x: Math.sin(phi) * Math.cos(theta) * speed,
+        y: Math.abs(Math.cos(phi)) * speed * 0.92 + 1.2,
+        z: Math.sin(phi) * Math.sin(theta) * speed,
+      });
+    }
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+    const mat = new THREE.PointsMaterial({
+      size: 0.36,
+      map: this.glowTexture,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+
+    this.burstPoints = new THREE.Points(geo, mat);
+    this.scene.add(this.burstPoints);
   }
 
   createFramedPainting(width, height, imagePath) {
@@ -442,7 +872,7 @@ export class Atelier3DScene {
     const artTex = this.loadArtTexture(imagePath);
     const canvasMat = new THREE.MeshStandardMaterial({
       map: artTex,
-      roughness: 0.62,
+      roughness: 0.56,
       metalness: 0.04,
     });
     const painting = new THREE.Mesh(new THREE.PlaneGeometry(width, height), canvasMat);
@@ -476,21 +906,21 @@ export class Atelier3DScene {
     group.add(new THREE.Mesh(extrude, this.materials.wood));
 
     const paints = [
-      { color: 0xd06d47, x: -0.52, y: 0.44 },
-      { color: 0xe6b94c, x: -0.1, y: 0.62 },
-      { color: 0x3b638f, x: 0.36, y: 0.48 },
-      { color: 0x6f8f69, x: 0.62, y: 0.12 },
-      { color: 0xb64253, x: 0.52, y: -0.28 },
-      { color: 0xf7efe0, x: 0.14, y: -0.44 },
+      { color: 0xd87048, x: -0.52, y: 0.44 },
+      { color: 0xf0c252, x: -0.1, y: 0.62 },
+      { color: 0x4270a3, x: 0.36, y: 0.48 },
+      { color: 0x74986e, x: 0.62, y: 0.12 },
+      { color: 0xc2485a, x: 0.52, y: -0.28 },
+      { color: 0xfaf3e6, x: 0.14, y: -0.44 },
     ];
 
     const dabGeo = new THREE.SphereGeometry(0.12, 16, 12);
     paints.forEach((p) => {
       const mat = new THREE.MeshPhysicalMaterial({
         color: p.color,
-        roughness: 0.2,
-        clearcoat: 0.85,
-        clearcoatRoughness: 0.15,
+        roughness: 0.18,
+        clearcoat: 0.88,
+        clearcoatRoughness: 0.14,
       });
       const dab = new THREE.Mesh(dabGeo, mat);
       dab.scale.set(1.15, 0.88, 0.45);
@@ -498,7 +928,7 @@ export class Atelier3DScene {
       group.add(dab);
     });
 
-    group.scale.setScalar(0.75);
+    group.scale.setScalar(0.76);
     return group;
   }
 
@@ -510,418 +940,52 @@ export class Atelier3DScene {
     ferrule.position.y = 0.42;
     const bristles = new THREE.Mesh(
       new THREE.ConeGeometry(0.044, 0.26, 16),
-      new THREE.MeshStandardMaterial({ color: tipColor, roughness: 0.5 })
+      new THREE.MeshStandardMaterial({ color: tipColor, roughness: 0.48 })
     );
     bristles.position.y = 0.65;
     brush.add(handle, ferrule, bristles);
     return brush;
   }
 
-  /* ==================== ZONE 1: CHILDHOOD FLOATING MEMORIES ==================== */
-  buildChildhoodZone() {
-    const group = new THREE.Group();
-    group.position.set(0, 0, -10.5);
-
-    const artPath = this.config.chapters?.[0]?.image || './assets/art/chapter1-childhood.jpg';
-    const frame = this.createFramedPainting(2.1, 1.58, artPath);
-    frame.position.set(2.9, 0.4, -1.2);
-    frame.rotation.y = -0.38;
-    group.add(frame);
-    this.animatedObjects.push({ mesh: frame, baseY: 0.4, speed: 0.9, amp: 0.18 });
-
-    const pastelColors = [0xe8b959, 0xd47654, 0x7094b8, 0x83a67b, 0xd992a0];
-    pastelColors.forEach((hex, idx) => {
-      const pencil = new THREE.Group();
-      const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.045, 0.045, 1.15, 6),
-        new THREE.MeshStandardMaterial({ color: hex, roughness: 0.45 })
-      );
-      const cone = new THREE.Mesh(
-        new THREE.ConeGeometry(0.045, 0.18, 6),
-        new THREE.MeshStandardMaterial({ color: 0xe6cfa8, roughness: 0.7 })
-      );
-      cone.position.y = 0.66;
-      pencil.add(shaft, cone);
-
-      const angle = (idx / pastelColors.length) * Math.PI * 2;
-      pencil.position.set(
-        -2.5 + Math.cos(angle) * 1.25,
-        -0.3 + Math.sin(angle) * 1.0,
-        (idx - 2) * 0.7
-      );
-      pencil.rotation.set(0.4 + idx * 0.2, idx * 0.5, 0.6);
-      group.add(pencil);
-      this.animatedObjects.push({
-        mesh: pencil,
-        baseY: pencil.position.y,
-        speed: 1.0 + idx * 0.15,
-        amp: 0.16,
-        rotY: 0.35,
-      });
-    });
-
-    this.responsiveGroups.push({ group, mobileScale: 0.58 });
-    this.scene.add(group);
-  }
-
-  /* ==================== ZONE 2: ART PASSION & GOLDEN GEOMETRY ==================== */
-  buildArtPassionZone() {
-    const group = new THREE.Group();
-    group.position.set(0, 0, -22.5);
-
-    const geomCore = new THREE.Group();
-    geomCore.position.set(-2.6, 0.15, -0.8);
-
-    const icoWire = new THREE.Mesh(
-      new THREE.IcosahedronGeometry(1.48, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0xe8c36e,
-        metalness: 0.9,
-        roughness: 0.2,
-        wireframe: true,
-      })
-    );
-    const innerGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.68, 0), this.materials.marble);
-    const orbitRing = new THREE.Mesh(new THREE.TorusGeometry(2.05, 0.018, 12, 96), this.materials.gold);
-    orbitRing.rotation.x = 1.15;
-    geomCore.add(icoWire, innerGem, orbitRing);
-
-    group.add(geomCore);
-    this.passionSculpture = { group: geomCore, icoWire, innerGem, orbitRing };
-
-    const palette2 = this.createArtistPalette();
-    palette2.position.set(2.9, -0.25, -1.6);
-    palette2.rotation.set(0.25, -0.6, -0.2);
-    group.add(palette2);
-    this.animatedObjects.push({ mesh: palette2, baseY: -0.25, speed: 1.0, amp: 0.18, rotY: -0.25 });
-
-    this.responsiveGroups.push({ group, mobileScale: 0.58 });
-    this.scene.add(group);
-  }
-
-  /* ==================== ZONE 3: THANAWEYA AMMA HOPE LANTERNS ==================== */
-  buildThanaweyaLanternZone() {
-    const group = new THREE.Group();
-    group.position.set(0, 0, -34.5);
-
-    const orbGeo = new THREE.SphereGeometry(0.22, 16, 16);
-    const haloMat = new THREE.SpriteMaterial({
-      map: this.glowTexture,
-      color: 0xffcf77,
-      transparent: true,
-      opacity: 0.85,
-      blending: THREE.AdditiveBlending,
-    });
-
-    for (let i = 0; i < 18; i++) {
-      const lantern = new THREE.Group();
-      const core = new THREE.Mesh(
-        orbGeo,
-        new THREE.MeshStandardMaterial({
-          color: 0xffe4a8,
-          emissive: 0xffb347,
-          emissiveIntensity: 1.5,
-          roughness: 0.2,
-        })
-      );
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.014, 8, 32), this.materials.gold);
-      ring.rotation.x = Math.PI / 2;
-      const glow = new THREE.Sprite(haloMat);
-      glow.scale.set(1.45, 1.45, 1);
-
-      lantern.add(core, ring, glow);
-
-      const side = i % 2 === 0 ? -1 : 1;
-      const x = side * (1.5 + Math.random() * 3.4);
-      const y = (Math.random() - 0.5) * 6.0;
-      const z = (Math.random() - 0.5) * 8;
-      lantern.position.set(x, y, z);
-      lantern.scale.setScalar(0.65 + Math.random() * 0.62);
-
-      group.add(lantern);
-      this.lanterns.push({
-        mesh: lantern,
-        baseX: x,
-        speedY: 0.28 + Math.random() * 0.35,
-        phase: Math.random() * Math.PI * 2,
-      });
-    }
-
-    this.responsiveGroups.push({ group, mobileScale: 0.62 });
-    this.scene.add(group);
-  }
-
-  /* ==================== ZONE 4: ONE-STEP GOLDEN BRIDGE ==================== */
-  buildOneStepBridgeZone() {
-    const group = new THREE.Group();
-    group.position.set(0, -0.2, -46);
-
-    this.bridgeSteps = [];
-    for (let i = 0; i < 6; i++) {
-      const stepGroup = new THREE.Group();
-      const disc = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.95 - i * 0.04, 1.05 - i * 0.04, 0.08, 32),
-        this.materials.marble
-      );
-      const rim = new THREE.Mesh(
-        new THREE.TorusGeometry(0.98 - i * 0.04, 0.024, 10, 48),
-        this.materials.goldGlow
-      );
-      rim.rotation.x = Math.PI / 2;
-      rim.position.y = 0.04;
-      stepGroup.add(disc, rim);
-      stepGroup.position.set(0, -2.0 + i * 0.14, 3.4 - i * 1.45);
-      group.add(stepGroup);
-      this.bridgeSteps.push({ mesh: stepGroup, baseY: stepGroup.position.y, phase: i * 0.7 });
-    }
-
-    const compassOuter = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.022, 12, 128), this.materials.gold);
-    const compassInner = new THREE.Mesh(new THREE.TorusGeometry(2.55, 0.014, 12, 128), this.materials.antiqueBrass);
-    compassOuter.position.set(0, 0.4, -1.5);
-    compassInner.position.set(0, 0.4, -1.5);
-    group.add(compassOuter, compassInner);
-    this.bridgeCompass = { outer: compassOuter, inner: compassInner };
-
-    this.responsiveGroups.push({ group, mobileScale: 0.68 });
-    this.scene.add(group);
-  }
-
-  /* ==================== ZONE 5: GRAND NEOCLASSICAL FINE ARTS ARCHWAY ==================== */
-  buildFineArtsSanctuaryZone() {
-    const group = new THREE.Group();
-    group.position.set(0, -0.45, -58.5);
-
-    const buildColumn = (x, z, h = 5.6) => {
-      const col = new THREE.Group();
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.37, h, 18), this.materials.marble);
-      const base = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.36, 1.1), this.materials.marble);
-      base.position.y = -h / 2 - 0.18;
-      const baseGold = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.48, 0.15, 24), this.materials.gold);
-      baseGold.position.y = -h / 2 + 0.08;
-      const capital = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.3, 1.08), this.materials.marble);
-      capital.position.y = h / 2 + 0.14;
-      const capGold = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.34, 0.18, 24), this.materials.gold);
-      capGold.position.y = h / 2 - 0.08;
-
-      col.add(shaft, base, baseGold, capital, capGold);
-      col.position.set(x, 0, z);
-      return col;
-    };
-
-    group.add(buildColumn(-3.2, -1.2));
-    group.add(buildColumn(3.2, -1.2));
-    group.add(buildColumn(-4.8, -4.6));
-    group.add(buildColumn(4.8, -4.6));
-
-    const archCurve = new THREE.Mesh(
-      new THREE.TorusGeometry(3.2, 0.24, 16, 64, Math.PI),
-      this.materials.marble
-    );
-    archCurve.position.set(0, 2.85, -1.2);
-    const archGoldTrim = new THREE.Mesh(
-      new THREE.TorusGeometry(2.96, 0.05, 12, 64, Math.PI),
-      this.materials.goldGlow
-    );
-    archGoldTrim.position.set(0, 2.85, -1.05);
-    group.add(archCurve, archGoldTrim);
-
-    const beamMat = new THREE.MeshBasicMaterial({
-      map: this.beamTexture,
-      transparent: true,
-      opacity: 0.48,
-      blending: THREE.AdditiveBlending,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    for (let i = -1; i <= 1; i++) {
-      const beam = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 8.8), beamMat);
-      beam.position.set(i * 1.35, 1.4, -2.6);
-      beam.rotation.z = -0.22 + i * 0.06;
-      beam.rotation.y = i * 0.15;
-      group.add(beam);
-    }
-
-    const pedestalGroup = new THREE.Group();
-    pedestalGroup.position.set(0, -0.35, -3.4);
-
-    const plinth = new THREE.Mesh(new THREE.CylinderGeometry(0.75, 0.94, 1.9, 24), this.materials.marble);
-    plinth.position.y = -1.65;
-    const plinthRing = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.038, 14, 48), this.materials.gold);
-    plinthRing.rotation.x = Math.PI / 2;
-    plinthRing.position.y = -0.68;
-
-    const sculpture = new THREE.Mesh(
-      new THREE.TorusKnotGeometry(0.84, 0.24, 112, 20, 2, 3),
-      this.materials.marble
-    );
-    sculpture.position.y = 0.65;
-
-    const goldCrown = new THREE.Mesh(new THREE.TorusGeometry(1.62, 0.02, 12, 96), this.materials.goldGlow);
-    goldCrown.position.y = 0.65;
-
-    pedestalGroup.add(plinth, plinthRing, sculpture, goldCrown);
-    group.add(pedestalGroup);
-    this.fineArtsSculpture = { sculpture, goldCrown };
-
-    this.responsiveGroups.push({ group, mobileScale: 0.64 });
-    this.scene.add(group);
-  }
-
-  /* ==================== ZONE 7: FINALE — 19 FLOATING GOLDEN CANDLES ==================== */
-  buildFinaleCandlesZone() {
-    const group = new THREE.Group();
-    group.position.set(0, 0, -82);
-
-    const candleGeo = new THREE.CylinderGeometry(0.075, 0.085, 0.72, 14);
-    const holderGeo = new THREE.CylinderGeometry(0.13, 0.07, 0.08, 14);
-    const flameGeo = new THREE.ConeGeometry(0.055, 0.22, 12);
-    const flameMat = new THREE.MeshBasicMaterial({ color: 0xffe699 });
-    const glowMat = new THREE.SpriteMaterial({
-      map: this.glowTexture,
-      color: 0xffc65c,
-      transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending,
-    });
-
-    const totalCandles = 19;
-    for (let i = 0; i < totalCandles; i++) {
-      const candleUnit = new THREE.Group();
-      const wax = new THREE.Mesh(candleGeo, this.materials.candleWax);
-      const holder = new THREE.Mesh(holderGeo, this.materials.gold);
-      holder.position.y = -0.38;
-
-      const flameGroup = new THREE.Group();
-      flameGroup.position.y = 0.48;
-      const flameMesh = new THREE.Mesh(flameGeo, flameMat);
-      const flameGlow = new THREE.Sprite(glowMat.clone());
-      flameGlow.scale.set(0.95, 0.95, 1);
-
-      flameGroup.add(flameMesh, flameGlow);
-      candleUnit.add(wax, holder, flameGroup);
-
-      const t = i / (totalCandles - 1);
-      const angle = (t - 0.5) * Math.PI * 1.45;
-      const radius = 3.7 + (i % 3) * 0.55;
-      const x = Math.sin(angle) * radius;
-      const z = -Math.cos(angle) * radius + 1.2;
-      const y = -1.5 + Math.sin(t * Math.PI) * 2.4 + ((i % 2) * 0.5 - 0.25);
-
-      candleUnit.position.set(x, y, z);
-      group.add(candleUnit);
-
-      this.candles.push({ group: candleUnit, baseY: y, phase: i * 0.65 });
-      this.flames.push({ group: flameGroup, glow: flameGlow, phase: i * 1.1 });
-    }
-
-    this.finaleLight = new THREE.PointLight(0xffcb74, 30, 26, 1.5);
-    this.finaleLight.position.set(0, 1.5, -81);
-    this.scene.add(this.finaleLight);
-
-    this.responsiveGroups.push({ group, mobileScale: 0.66 });
-    this.scene.add(group);
-  }
-
-  /* ==================== CELEBRATION 3D GOLDEN BURST ==================== */
-  buildCelebrationBurstSystem() {
-    const count = this.isMobile ? 220 : 380;
-    const positions = new Float32Array(count * 3);
-    const colors = new Float32Array(count * 3);
-    this.burstVelocities = [];
-
-    const palette = [
-      new THREE.Color(0xffe7a0),
-      new THREE.Color(0xf2bd55),
-      new THREE.Color(0xffffff),
-      new THREE.Color(0xd97a54),
-      new THREE.Color(0x9cb896),
-    ];
-
-    for (let i = 0; i < count; i++) {
-      positions[i * 3] = 0;
-      positions[i * 3 + 1] = 0;
-      positions[i * 3 + 2] = -81;
-
-      const c = palette[i % palette.length];
-      colors[i * 3] = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
-
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const speed = 2.6 + Math.random() * 5.6;
-      this.burstVelocities.push({
-        x: Math.sin(phi) * Math.cos(theta) * speed,
-        y: Math.abs(Math.cos(phi)) * speed * 0.92 + 1.2,
-        z: Math.sin(phi) * Math.sin(theta) * speed,
-      });
-    }
-
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-    const mat = new THREE.PointsMaterial({
-      size: 0.36,
-      map: this.glowTexture,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-    });
-
-    this.burstPoints = new THREE.Points(geo, mat);
-    this.scene.add(this.burstPoints);
-  }
-
-  /* ==================== DYNAMIC DESKTOP / MOBILE RESPONSIVE FRAMING ==================== */
+  /* ==================== RESPONSIVE FRAMING (MOBILE UPPER-STAGE vs DESKTOP SIDE-STAGE) ==================== */
   applyResponsiveLayout() {
     const w = window.innerWidth;
     const h = Math.max(1, window.innerHeight);
     const aspect = w / h;
-    this.isMobile = w < 900;
+    this.isMobile = w < 940;
     const isPortrait = aspect < 0.9;
 
     this.camera.aspect = aspect;
-    this.camera.fov = isPortrait ? 64 : aspect < 1.15 ? 54 : 46;
+    this.camera.fov = isPortrait ? 58 : aspect < 1.15 ? 52 : 46;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
 
-    if (this.heroGroup) {
+    for (const zEntry of this.zoneGroups) {
       if (this.isMobile) {
-        // Centered & elevated into the mobile top 3D showcase window!
-        this.heroGroup.position.set(0, isPortrait ? 1.55 : 0.75, 1.3);
-        this.heroGroup.scale.setScalar(isPortrait ? 0.62 : 0.74);
+        // Dead-center horizontally so it sits cleanly inside every Mobile 3D Stage Window!
+        zEntry.stage.position.x = 0;
+        zEntry.rig.scale.setScalar(isPortrait ? zEntry.mobileScale : 0.86);
       } else {
-        this.heroGroup.position.set(-2.45, -0.15, 1.6);
-        this.heroGroup.scale.setScalar(1);
+        zEntry.stage.position.x = zEntry.desktopOffsetX;
+        zEntry.rig.scale.setScalar(1);
       }
-    }
-
-    for (const entry of this.responsiveGroups) {
-      const s = isPortrait ? entry.mobileScale : this.isMobile ? 0.8 : 1;
-      entry.group.scale.set(s, s, 1);
     }
   }
 
   triggerWishCelebration(blowOut = true) {
     this.candlesLit = !blowOut;
+    this.candleWind = 0;
     if (blowOut) {
       this.wishBurstTime = 0;
       const pos = this.burstPoints.geometry.attributes.position.array;
       for (let i = 0; i < this.burstVelocities.length; i++) {
         pos[i * 3] = (Math.random() - 0.5) * 1.4;
-        pos[i * 3 + 1] = -0.2 + (Math.random() - 0.5) * 0.8;
-        pos[i * 3 + 2] = -81 + (Math.random() - 0.5) * 1.2;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 0.8;
+        pos[i * 3 + 2] = ZONE_STAGES[5].z + (Math.random() - 0.5) * 1.2;
       }
       this.burstPoints.geometry.attributes.position.needsUpdate = true;
       this.burstPoints.material.opacity = 1;
     }
-  }
-
-  setScrollProgress(progress) {
-    this.scrollProgress = Math.max(0, Math.min(1, progress));
   }
 
   bindEvents() {
@@ -936,15 +1000,15 @@ export class Atelier3DScene {
         if (this.isDragging) {
           const dx = (e.clientX - this.dragStart.x) / window.innerWidth;
           const dy = (e.clientY - this.dragStart.y) / window.innerHeight;
-          this.orbitTarget.x = Math.max(-2.6, Math.min(2.6, dx * 4.8));
-          this.orbitTarget.y = Math.max(-1.4, Math.min(1.4, -dy * 2.8));
+          this.spinAngleTarget = Math.max(-1.4, Math.min(1.4, dx * 3.6));
+          if (this.inspectMode || e.pointerType === 'mouse') {
+            this.orbitYTarget = Math.max(-1.1, Math.min(1.1, -dy * 2.4));
+          }
         }
       },
       { passive: true }
     );
 
-    // Preserve native smooth vertical touch scrolling on mobile!
-    // Allow drag-to-orbit on desktop mouse anytime, OR on mobile touch inside 3D Inspect Mode.
     this.canvas.addEventListener('pointerdown', (e) => {
       if (e.pointerType === 'touch' && !this.inspectMode) return;
       this.isDragging = true;
@@ -954,8 +1018,8 @@ export class Atelier3DScene {
 
     const endDrag = () => {
       this.isDragging = false;
-      this.orbitTarget.x = 0;
-      this.orbitTarget.y = 0;
+      this.spinAngleTarget *= 0.35;
+      this.orbitYTarget = 0;
     };
     window.addEventListener('pointerup', endDrag);
     window.addEventListener('pointercancel', endDrag);
@@ -973,54 +1037,79 @@ export class Atelier3DScene {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const t = this.clock.getElapsedTime();
 
-    this.smoothScroll += (this.scrollProgress - this.smoothScroll) * 0.075;
+    this.smoothZoneFloat += (this.targetZoneFloat - this.smoothZoneFloat) * 0.08;
     this.smoothPointer.x += (this.pointer.x - this.smoothPointer.x) * 0.06;
     this.smoothPointer.y += (this.pointer.y - this.smoothPointer.y) * 0.06;
-    this.orbitCurrent.x += (this.orbitTarget.x - this.orbitCurrent.x) * 0.08;
-    this.orbitCurrent.y += (this.orbitTarget.y - this.orbitCurrent.y) * 0.08;
+    this.spinAngleCurrent += (this.spinAngleTarget - this.spinAngleCurrent) * 0.09;
+    this.orbitYCurrent += (this.orbitYTarget - this.orbitYCurrent) * 0.08;
 
-    const zPullBack = this.isMobile ? 1.8 : 0;
-    const targetZ = 8.6 + zPullBack - this.smoothScroll * 84.4;
-    const curveSway = Math.sin(this.smoothScroll * Math.PI * 3.2) * (this.isMobile ? 0.35 : 0.95);
-    const autoMobileParallax = this.isMobile && !this.inspectMode ? Math.sin(t * 0.45) * 0.28 : 0;
+    // Exact interpolation between active Story Zone Waypoints!
+    const idxLow = Math.max(0, Math.min(ZONE_STAGES.length - 1, Math.floor(this.smoothZoneFloat)));
+    const idxHigh = Math.max(0, Math.min(ZONE_STAGES.length - 1, idxLow + 1));
+    const frac = this.smoothZoneFloat - idxLow;
+    const smoothFrac = frac * frac * (3 - 2 * frac);
 
-    const targetX = curveSway + this.smoothPointer.x * 0.6 + autoMobileParallax + this.orbitCurrent.x;
-    const targetY =
-      0.38 + Math.cos(this.smoothScroll * Math.PI * 2.2) * 0.22 + this.smoothPointer.y * 0.32 + this.orbitCurrent.y;
+    const sA = ZONE_STAGES[idxLow];
+    const sB = ZONE_STAGES[idxHigh];
 
-    this.camera.position.set(targetX, targetY, targetZ);
-    this.camera.lookAt(
-      this.smoothPointer.x * 0.25 - this.orbitCurrent.x * 0.22,
-      0.08 + this.smoothPointer.y * 0.16,
-      targetZ - 9.2
+    const stageZ = THREE.MathUtils.lerp(sA.z, sB.z, smoothFrac);
+    const stageY = THREE.MathUtils.lerp(sA.y, sB.y, smoothFrac);
+    const dist = THREE.MathUtils.lerp(
+      this.isMobile ? sA.mobileDist : sA.camDist,
+      this.isMobile ? sB.mobileDist : sB.camDist,
+      smoothFrac
     );
-    this.camera.rotation.z += -curveSway * 0.014;
 
+    const autoSway = this.isMobile && !this.inspectMode ? Math.sin(t * 0.55) * 0.22 : 0;
+    const camX = this.smoothPointer.x * 0.55 + autoSway;
+    const camY = stageY + (this.isMobile && !this.inspectMode ? 0.15 : 0.28) + this.smoothPointer.y * 0.28 + this.orbitYCurrent;
+    const camZ = stageZ + dist;
+
+    this.camera.position.set(camX, camY, camZ);
+
+    // KEY MOBILE BREAKTHROUGH: Look slightly lower (`-0.68`) on mobile so the 3D Sculpture
+    // projects into the OPEN UPPER STAGE WINDOW of the phone screen, completely above the text card!
+    const mobileUpperShift = this.isMobile && !this.inspectMode ? -0.68 : 0.05;
+    this.camera.lookAt(
+      this.smoothPointer.x * 0.2,
+      stageY + mobileUpperShift + this.smoothPointer.y * 0.14,
+      stageZ
+    );
+
+    // Apply user spin angle smoothly to all 3D stage rigs!
+    for (let i = 0; i < this.zoneGroups.length; i++) {
+      const zg = this.zoneGroups[i];
+      const baseIdle = Math.sin(t * 0.45 + i) * 0.09;
+      zg.rig.rotation.y = baseIdle + this.spinAngleCurrent + this.smoothPointer.x * 0.16;
+    }
+
+    // Move Golden Comet along the 3D Ribbon synced to zone progress
     if (this.journeyCurve && this.cometGroup) {
-      const cometT = Math.min(0.995, Math.max(0.01, this.smoothScroll * 0.96 + 0.03));
-      const pt = this.journeyCurve.getPointAt(cometT);
-      this.cometGroup.position.copy(pt);
+      const normProgress = this.smoothZoneFloat / (ZONE_STAGES.length - 1);
+      const cometT = Math.min(0.995, Math.max(0.005, normProgress));
+      this.cometGroup.position.copy(this.journeyCurve.getPointAt(cometT));
       this.cometGroup.scale.setScalar(1.0 + Math.sin(t * 5.2) * 0.18);
     }
 
-    this.keyLight.position.set(targetX + 3.4, targetY + 4.0, targetZ - 2.6);
-    this.rimLight.position.set(targetX - 5.0, targetY + 2.0, targetZ - 6.8);
+    // Dynamic Studio Lighting right on the active sculpture!
+    this.keyLight.position.set(camX + 3.0, stageY + 3.6, stageZ + 4.2);
+    this.rimLight.position.set(camX - 4.2, stageY + 2.0, stageZ - 2.5);
+    this.frontFillLight.position.set(camX, stageY + 1.2, stageZ + 5.2);
 
-    const twilightFactor = Math.exp(-Math.pow((this.smoothScroll - 0.42) / 0.12, 2));
-    const fineArtsGlow = Math.exp(-Math.pow((this.smoothScroll - 0.66) / 0.14, 2));
+    const twilightFactor = Math.exp(-Math.pow(this.smoothZoneFloat - 3.0, 2) / 0.55);
+    const fineArtsGlow = Math.exp(-Math.pow(this.smoothZoneFloat - 4.0, 2) / 0.55);
 
-    // Smoothly morph base 3D lighting & atmosphere to match selected Visitor Persona
-    this.curKeyColor.lerp(new THREE.Color(this.targetTheme.key), 0.05);
-    this.curRimBase.lerp(new THREE.Color(this.targetTheme.rim), 0.05);
-    this.curFogBase.lerp(new THREE.Color(this.targetTheme.fog), 0.05);
+    this.curKeyColor.lerp(new THREE.Color(this.targetTheme.key), 0.06);
+    this.curRimBase.lerp(new THREE.Color(this.targetTheme.rim), 0.06);
+    this.curFogBase.lerp(new THREE.Color(this.targetTheme.fog), 0.06);
 
     this.keyLight.color.copy(this.curKeyColor);
-    const twilightRim = new THREE.Color(0x4b74b8);
-    this.rimLight.color.copy(this.curRimBase).lerp(twilightRim, twilightFactor * 0.75);
-    this.keyLight.intensity = 38 + fineArtsGlow * 16;
+    const twilightRim = new THREE.Color(0x4b78c4);
+    this.rimLight.color.copy(this.curRimBase).lerp(twilightRim, twilightFactor * 0.65);
+    this.keyLight.intensity = 46 + fineArtsGlow * 16;
 
-    const twilightFog = new THREE.Color(0x0c1222);
-    this.scene.fog.color.copy(this.curFogBase).lerp(twilightFog, twilightFactor * 0.65);
+    const twilightFog = new THREE.Color(0x0b1120);
+    this.scene.fog.color.copy(this.curFogBase).lerp(twilightFog, twilightFactor * 0.6);
 
     if (this.goldLeafMesh) {
       for (let i = 0; i < this.goldLeafData.length; i++) {
@@ -1042,11 +1131,9 @@ export class Atelier3DScene {
       this.goldLeafMesh.instanceMatrix.needsUpdate = true;
     }
 
-    if (this.heroGroup) {
-      const baseRotY = this.isMobile ? 0.08 : 0.34;
-      this.heroGroup.rotation.y = baseRotY + Math.sin(t * 0.48) * 0.12 + this.smoothPointer.x * 0.14;
-      this.heroHalos[0].rotation.z = t * 0.18;
-      this.heroHalos[1].rotation.z = -t * 0.12;
+    if (this.heroHalos) {
+      this.heroHalos[0].rotation.z = t * 0.2;
+      this.heroHalos[1].rotation.z = -t * 0.14;
       this.heroHalos[1].rotation.x = -0.42 + Math.sin(t * 0.35) * 0.12;
     }
 
@@ -1057,51 +1144,57 @@ export class Atelier3DScene {
     }
 
     if (this.passionSculpture) {
-      this.passionSculpture.icoWire.rotation.y = t * 0.25;
-      this.passionSculpture.icoWire.rotation.x = t * 0.14;
-      this.passionSculpture.innerGem.rotation.y = -t * 0.42;
-      this.passionSculpture.orbitRing.rotation.z = t * 0.3;
+      this.passionSculpture.icoWire.rotation.y = t * 0.3;
+      this.passionSculpture.icoWire.rotation.x = t * 0.16;
+      this.passionSculpture.innerGem.rotation.y = -t * 0.45;
+      this.passionSculpture.orbitRing1.rotation.z = t * 0.32;
+      this.passionSculpture.orbitRing2.rotation.x = t * 0.24;
+    }
+
+    if (this.thanaweyaHourglass) {
+      this.thanaweyaHourglass.group.rotation.y = t * 0.25;
+      this.thanaweyaHourglass.compassHalo.rotation.x = 0.8 + Math.sin(t * 0.4) * 0.35;
+      this.thanaweyaHourglass.compassHalo.rotation.y = -t * 0.35;
     }
 
     for (const l of this.lanterns) {
       l.mesh.position.y += l.speedY * dt;
-      l.mesh.position.x = l.baseX + Math.sin(t * 0.8 + l.phase) * 0.22;
-      if (l.mesh.position.y > 4.2) l.mesh.position.y = -3.8;
-    }
-
-    if (this.bridgeSteps) {
-      for (const s of this.bridgeSteps) {
-        s.mesh.position.y = s.baseY + Math.sin(t * 1.4 + s.phase) * 0.09;
-      }
-      this.bridgeCompass.outer.rotation.z = t * 0.15;
-      this.bridgeCompass.outer.rotation.y = Math.sin(t * 0.3) * 0.25;
-      this.bridgeCompass.inner.rotation.z = -t * 0.22;
-      this.bridgeCompass.inner.rotation.x = 0.45 + Math.cos(t * 0.35) * 0.2;
+      l.mesh.position.x = l.baseX + Math.sin(t * 0.85 + l.phase) * 0.18;
+      if (l.mesh.position.y > 2.4) l.mesh.position.y = -2.2;
     }
 
     if (this.fineArtsSculpture) {
-      this.fineArtsSculpture.sculpture.rotation.y = t * 0.28;
-      this.fineArtsSculpture.sculpture.rotation.x = Math.sin(t * 0.35) * 0.15;
+      this.fineArtsSculpture.sculpture.rotation.y = t * 0.32;
+      this.fineArtsSculpture.sculpture.rotation.x = Math.sin(t * 0.35) * 0.16;
       this.fineArtsSculpture.goldCrown.rotation.x = 0.6 + Math.sin(t * 0.4) * 0.3;
-      this.fineArtsSculpture.goldCrown.rotation.y = -t * 0.32;
+      this.fineArtsSculpture.goldCrown.rotation.y = -t * 0.35;
     }
 
+    // 19 Birthday Candles + Real-Time Microphone Wind Flicker Physics!
+    if (this.finaleRig && this.candlesLit) {
+      this.finaleRig.rotation.y += dt * 0.14;
+    }
+    const windJitter = this.candleWind * 0.42;
     for (let i = 0; i < this.candles.length; i++) {
       const c = this.candles[i];
-      c.group.position.y = c.baseY + Math.sin(t * 1.1 + c.phase) * 0.14;
+      c.group.position.y = c.baseY + Math.sin(t * 1.15 + c.phase) * 0.12;
 
       const f = this.flames[i];
-      const targetScale = this.candlesLit ? 0.92 + Math.sin(t * 9.5 + f.phase) * 0.14 : 0.001;
-      f.group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.12);
+      const flickerSpeed = 9.5 + this.candleWind * 28;
+      const targetScale = this.candlesLit
+        ? Math.max(0.2, 0.94 - this.candleWind * 0.35 + Math.sin(t * flickerSpeed + f.phase) * (0.14 + windJitter))
+        : 0.001;
+      f.group.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.16);
+      f.group.rotation.z = this.candlesLit ? Math.sin(t * 22 + i) * windJitter : 0;
       f.glow.material.opacity = THREE.MathUtils.lerp(
         f.glow.material.opacity,
-        this.candlesLit ? 0.88 + Math.sin(t * 7 + f.phase) * 0.12 : 0,
-        0.1
+        this.candlesLit ? 0.9 + Math.sin(t * 7 + f.phase) * 0.1 : 0,
+        0.12
       );
     }
 
     if (this.finaleLight) {
-      const targetIntensity = this.candlesLit ? 30 + Math.sin(t * 6) * 2.5 : 10;
+      const targetIntensity = this.candlesLit ? 34 + Math.sin(t * 6) * 3 : 10;
       this.finaleLight.intensity += (targetIntensity - this.finaleLight.intensity) * 0.08;
     }
 
@@ -1121,7 +1214,7 @@ export class Atelier3DScene {
 
     if (this.dustField) {
       this.dustField.rotation.z = Math.sin(t * 0.05) * 0.04;
-      this.dustField.position.y = Math.sin(t * 0.18) * 0.25;
+      this.dustField.position.y = Math.sin(t * 0.18) * 0.22;
     }
 
     this.renderer.render(this.scene, this.camera);
