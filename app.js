@@ -11,10 +11,10 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=13';
-import { Atelier3DScene } from './scene3d.js?v=13';
-import { FamilyCloudVault } from './firebase-sync.js?v=13';
-import { CatMentor3D } from './cat-mentor.js?v=13';
+import { SITE_CONFIG } from './config.js?v=14';
+import { Atelier3DScene } from './scene3d.js?v=14';
+import { FamilyCloudVault } from './firebase-sync.js?v=14';
+import { CatMentor3D } from './cat-mentor.js?v=14';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -1945,6 +1945,7 @@ function initCatMentorController(audio) {
     run: 'تجري معك 💨',
     play: 'تلعب بالخيط 🧶',
     groom: 'تنظّف نفسها 👅',
+    stretch: 'تتمطّى بدلع 🧘',
     pet: 'سعيدة وتخرخر 💛',
   };
 
@@ -2020,9 +2021,13 @@ function initCatMentorController(audio) {
         audio.playCatMeow();
         speak(pickLine('play'), true);
       } else if (act === 'groom') {
-        if (cat3d) cat3d.setState('groom', 5.8);
+        if (cat3d) cat3d.setState('groom', 6.2);
         audio.playCatPurr();
         speak(pickLine('groom'), true);
+      } else if (act === 'stretch') {
+        if (cat3d) cat3d.setState('stretch', 4.6);
+        audio.playCatPurr();
+        speak(pickLine('stretch'), true);
       } else if (act === 'tip') {
         if (cat3d) cat3d.setState('guide', 7.0);
         const tip = cfg.sectionTips?.[currentSection] || cfg.sectionTips.hero;
