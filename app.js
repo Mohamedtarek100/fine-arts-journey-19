@@ -11,10 +11,9 @@
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=15';
-import { Atelier3DScene } from './scene3d.js?v=15';
-import { FamilyCloudVault } from './firebase-sync.js?v=15';
-import { CatMentor3D } from './cat-mentor.js?v=15';
+import { SITE_CONFIG } from './config.js?v=16';
+import { Atelier3DScene } from './scene3d.js?v=16';
+import { FamilyCloudVault } from './firebase-sync.js?v=16';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -1917,23 +1916,31 @@ function initEnvelope() {
   });
 }
 
-/* ==================== 3D FLUFFY SHIRAZI CAT MENTOR CONTROLLER ==================== */
-function initCatMentorController(audio) {
+/* ==================== IN-WORLD 40-BONE 3D PERSIAN CAT MENTOR HUD, DRAG, LASER & CINEMA TOUR ==================== */
+function initCatMentorController(scene3d, audio) {
   const cfg = FROZEN_CONFIG.catMentor;
-  const canvas = document.getElementById('cat-mentor-canvas');
-  const mover = document.getElementById('cat-mentor-mover');
+  const hud = document.getElementById('cat-mentor-hud');
+  const reopenPill = document.getElementById('cat-hud-reopen-pill');
   const bubble = document.getElementById('cat-speech-bubble');
   const nameEl = document.getElementById('cat-mentor-name');
   const stateBadge = document.getElementById('cat-state-badge');
   const textEl = document.getElementById('cat-bubble-text');
   const closeBubbleBtn = document.getElementById('cat-bubble-close');
-  const petHitbox = document.getElementById('cat-pet-hitbox');
+  const voiceBtn = document.getElementById('cat-voice-btn');
   const toggleBtn = document.getElementById('cat-toggle-btn');
+  const dragModeBtn = document.getElementById('cat-drag-mode-btn');
+  const laserModeBtn = document.getElementById('cat-laser-mode-btn');
+  const cinemaBtn = document.getElementById('cat-cinema-btn');
+  const modeBanner = document.getElementById('cat-mode-banner');
+  const modeBannerText = document.getElementById('cat-mode-banner-text');
+  const resetPathBtn = document.getElementById('cat-reset-path-btn');
+  const modeDoneBtn = document.getElementById('cat-mode-done-btn');
 
-  if (!canvas || !mover || !cfg) {
+  if (!hud || !cfg) {
     return {
       onPersonaEntered: () => {},
       onSectionChanged: () => {},
+      onCatEvent: () => {},
       onUserScroll: () => {},
     };
   }
@@ -1941,38 +1948,48 @@ function initCatMentorController(audio) {
   if (nameEl) nameEl.textContent = cfg.nameAr;
 
   const STATE_LABELS = {
-    guide: 'مرشدتك معك 🐾',
-    run: 'تجري معك 💨',
+    guide: 'معك في الـ 3D 🐾',
+    walk: 'تمشي في الـ 3D ✨',
     play: 'تلعب بالخيط 🧶',
     groom: 'تنظّف نفسها 👅',
-    stretch: 'تتمطّى بدلع 🧘',
     pet: 'سعيدة وتخرخر 💛',
+    laser: 'تطارد الليزر 🔴',
   };
 
-  let cat3d = null;
+  const cat3d = scene3d?.catMentor || null;
   let currentSection = 'hero';
-  let bubbleManuallyFolded = false;
   let catVisible = true;
-  let bubbleAutoHideTimer = null;
+  let voiceEnabled = false;
+  let dragMode = false;
+  let laserMode = false;
+  let cinemaRafId = 0;
+  let cinemaActive = false;
 
-  const setBubbleOpen = (isOpen) => {
-    if (!bubble) return;
-    bubble.classList.toggle('open', Boolean(isOpen));
+  const setFolded = (folded) => {
+    hud.classList.toggle('folded', Boolean(folded));
+    if (bubble) bubble.classList.toggle('open', !folded);
   };
 
-  const speak = (message, forceOpen = true, autoFoldMs = 0) => {
+  const speakArabicVoice = (msg) => {
+    if (!voiceEnabled || !('speechSynthesis' in window) || !msg) return;
+    try {
+      window.speechSynthesis.cancel();
+      const clean = msg.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}✦★❖⊞]/gu, '').trim();
+      const utt = new SpeechSynthesisUtterance(clean);
+      utt.lang = 'ar-EG';
+      utt.rate = 1.02;
+      utt.pitch = 1.08;
+      window.speechSynthesis.speak(utt);
+    } catch {
+      // Ignore speech synthesis fallback
+    }
+  };
+
+  const speak = (message, openHud = true) => {
     if (!textEl || !message) return;
     textEl.textContent = message;
-    if (forceOpen && !bubbleManuallyFolded) setBubbleOpen(true);
-    if (bubbleAutoHideTimer) {
-      clearTimeout(bubbleAutoHideTimer);
-      bubbleAutoHideTimer = null;
-    }
-    if (autoFoldMs > 0) {
-      bubbleAutoHideTimer = window.setTimeout(() => {
-        if (window.innerWidth <= 980) setBubbleOpen(false);
-      }, autoFoldMs);
-    }
+    if (openHud) setFolded(false);
+    speakArabicVoice(message);
   };
 
   const pickLine = (key) => {
@@ -1981,55 +1998,157 @@ function initCatMentorController(audio) {
     return arr[Math.floor(Math.random() * arr.length)];
   };
 
-  try {
-    cat3d = new CatMentor3D(canvas, mover, (nextState) => {
-      if (stateBadge) stateBadge.textContent = STATE_LABELS[nextState] || STATE_LABELS.guide;
+  const stopCinemaTour = () => {
+    if (!cinemaActive) return;
+    cinemaActive = false;
+    if (cinemaRafId) cancelAnimationFrame(cinemaRafId);
+    cinemaRafId = 0;
+    if (cinemaBtn) {
+      cinemaBtn.setAttribute('aria-pressed', 'false');
+      cinemaBtn.textContent = '▶ جولة سينمائية';
+    }
+  };
+
+  const startCinemaTour = () => {
+    if (cinemaActive) {
+      stopCinemaTour();
+      return;
+    }
+    exitInteractiveModes();
+    cinemaActive = true;
+    if (cinemaBtn) {
+      cinemaBtn.setAttribute('aria-pressed', 'true');
+      cinemaBtn.textContent = '⏸ إيقاف الجولة';
+    }
+    speak(pickLine('cinema'), true);
+
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    if (window.scrollY > maxScroll - 80) window.scrollTo({ top: 0, behavior: 'instant' });
+
+    let lastTs = performance.now();
+    const stepScroll = (ts) => {
+      if (!cinemaActive) return;
+      const dt = Math.min(0.05, (ts - lastTs) / 1000);
+      lastTs = ts;
+      const maxS = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const nextY = window.scrollY + dt * 138;
+      window.scrollTo(0, nextY);
+      if (nextY >= maxS - 4) {
+        stopCinemaTour();
+        return;
+      }
+      cinemaRafId = requestAnimationFrame(stepScroll);
+    };
+    cinemaRafId = requestAnimationFrame(stepScroll);
+  };
+
+  window.addEventListener('wheel', stopCinemaTour, { passive: true });
+  window.addEventListener('touchstart', stopCinemaTour, { passive: true });
+
+  const updateModeBanner = () => {
+    const active = dragMode || laserMode;
+    document.body.classList.toggle('cat-place-mode', dragMode);
+    document.body.classList.toggle('cat-laser-mode', laserMode);
+    if (dragModeBtn) dragModeBtn.setAttribute('aria-pressed', String(dragMode));
+    if (laserModeBtn) laserModeBtn.setAttribute('aria-pressed', String(laserMode));
+
+    if (modeBanner) {
+      modeBanner.classList.toggle('visible', active);
+      modeBanner.setAttribute('aria-hidden', String(!active));
+    }
+    if (modeBannerText) {
+      modeBannerText.textContent = dragMode
+        ? '✋ اسحب القطة أو اضغط في أي مكان لتثبيتها داخل عالم الـ 3D!'
+        : '🔴 حرّك الماوس أو إصبعك في أي مكان لتجري القطة خلف الليزر الذهبي في الـ 3D!';
+    }
+  };
+
+  const exitInteractiveModes = () => {
+    dragMode = false;
+    laserMode = false;
+    if (cat3d) {
+      cat3d.setDragMode(false);
+      cat3d.setLaserMode(false);
+    }
+    updateModeBanner();
+  };
+
+  if (closeBubbleBtn) closeBubbleBtn.addEventListener('click', () => setFolded(true));
+  if (reopenPill) reopenPill.addEventListener('click', () => setFolded(false));
+
+  if (voiceBtn) {
+    voiceBtn.addEventListener('click', () => {
+      voiceEnabled = !voiceEnabled;
+      voiceBtn.setAttribute('aria-pressed', String(voiceEnabled));
+      voiceBtn.textContent = voiceEnabled ? '🔊' : '🔇';
+      if (voiceEnabled && textEl?.textContent) speakArabicVoice(textEl.textContent);
+      else if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     });
-  } catch (err) {
-    console.warn('Cat Mentor 3D fallback:', err);
   }
 
-  if (closeBubbleBtn) {
-    closeBubbleBtn.addEventListener('click', () => {
-      bubbleManuallyFolded = true;
-      setBubbleOpen(false);
+  if (resetPathBtn) {
+    resetPathBtn.addEventListener('click', () => {
+      exitInteractiveModes();
+      if (cat3d) cat3d.resetToJourneyPath();
+      if (stateBadge) stateBadge.textContent = STATE_LABELS.guide;
+      speak('رجعت لمسار الرحلة الـ 3D معاك! 🐾✨', true);
     });
   }
 
-  // Click directly on the 3D Cat -> Pets her, purrs, sparkles & shows bubble!
-  if (petHitbox) {
-    petHitbox.addEventListener('click', () => {
-      bubbleManuallyFolded = false;
-      setBubbleOpen(true);
-      if (cat3d) cat3d.setState('pet', 3.4);
-      audio.playCatPurr();
-      speak(pickLine('pet'), true);
-    });
-  }
+  if (modeDoneBtn) modeDoneBtn.addEventListener('click', exitInteractiveModes);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && (dragMode || laserMode)) exitInteractiveModes();
+  });
 
-  // Interactive Action Buttons inside Speech Bubble
+  // Action Buttons inside Mentor HUD
   document.querySelectorAll('[data-cat-action]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const act = btn.dataset.catAction;
-      bubbleManuallyFolded = false;
-      if (act === 'run') {
-        if (cat3d) cat3d.setState('run', 4.2);
+      if (act === 'drag') {
+        stopCinemaTour();
+        dragMode = !dragMode;
+        laserMode = false;
+        if (cat3d) {
+          cat3d.setLaserMode(false);
+          cat3d.setDragMode(dragMode);
+        }
+        updateModeBanner();
+        if (dragMode) speak(pickLine('drag'), true);
+      } else if (act === 'laser') {
+        stopCinemaTour();
+        laserMode = !laserMode;
+        dragMode = false;
+        if (cat3d) {
+          cat3d.setDragMode(false);
+          cat3d.setLaserMode(laserMode);
+        }
+        updateModeBanner();
+        if (laserMode) {
+          audio.playCatMeow();
+          speak(pickLine('laser'), true);
+        }
+      } else if (act === 'walk') {
+        exitInteractiveModes();
+        if (cat3d) cat3d.setState('walk', 4.6);
         audio.playCatMeow();
-        speak(pickLine('run'), true);
+        speak(pickLine('walk'), true);
       } else if (act === 'play') {
-        if (cat3d) cat3d.setState('play', 6.5);
+        exitInteractiveModes();
+        if (cat3d) cat3d.setState('play', 7.2);
         audio.playCatMeow();
         speak(pickLine('play'), true);
       } else if (act === 'groom') {
+        exitInteractiveModes();
         if (cat3d) cat3d.setState('groom', 6.2);
         audio.playCatPurr();
         speak(pickLine('groom'), true);
-      } else if (act === 'stretch') {
-        if (cat3d) cat3d.setState('stretch', 4.6);
-        audio.playCatPurr();
-        speak(pickLine('stretch'), true);
+      } else if (act === 'cinema') {
+        startCinemaTour();
+      } else if (act === 'photo') {
+        if (scene3d) scene3d.captureMuseumPostcard();
+        audio.playWishChime();
+        speak(pickLine('photo'), true);
       } else if (act === 'tip') {
-        if (cat3d) cat3d.setState('guide', 7.0);
         const tip = cfg.sectionTips?.[currentSection] || cfg.sectionTips.hero;
         speak(tip, true);
       }
@@ -2043,21 +2162,20 @@ function initCatMentorController(audio) {
       document.body.classList.toggle('cat-hidden', !catVisible);
       toggleBtn.classList.toggle('active', catVisible);
       toggleBtn.setAttribute('aria-pressed', String(catVisible));
-      if (cat3d) cat3d.setPaused(!catVisible);
-      if (catVisible) {
-        bubbleManuallyFolded = false;
-        setBubbleOpen(true);
+      if (!catVisible) {
+        exitInteractiveModes();
+        stopCinemaTour();
       }
+      if (cat3d) cat3d.setVisible(catVisible);
     });
   }
 
   return {
     onPersonaEntered(role) {
-      bubbleManuallyFolded = false;
       const msg = role?.isHonoree
         ? cfg.welcomeByHonoree
         : (cfg.welcomeByGuest || '').replace('{name}', role?.nameAr || '');
-      speak(msg, true, 9000);
+      speak(msg, true);
       if (cat3d) cat3d.setState('pet', 2.8);
       window.setTimeout(() => audio.playCatMeow(), 450);
     },
@@ -2065,11 +2183,21 @@ function initCatMentorController(audio) {
       if (!sectionId || sectionId === currentSection) return;
       currentSection = sectionId;
       const tip = cfg.sectionTips?.[sectionId];
-      if (tip) speak(tip, true, 8500);
+      if (tip) speak(tip, !hud.classList.contains('folded'));
     },
-    onUserScroll(scrollDelta) {
-      if (cat3d && catVisible) cat3d.onUserScroll(scrollDelta);
+    onCatEvent(type, payload) {
+      if (type === 'state' && stateBadge) {
+        stateBadge.textContent = STATE_LABELS[payload] || STATE_LABELS.guide;
+      } else if (type === 'pet') {
+        audio.playCatPurr();
+        speak(pickLine('pet'), true);
+      } else if (type === 'placed') {
+        audio.playCatMeow();
+        if (stateBadge) stateBadge.textContent = 'مثبّتة بمكانك 📍';
+        speak(pickLine('placed'), true);
+      }
     },
+    onUserScroll() {},
   };
 }
 
@@ -2323,10 +2451,13 @@ function bootstrap() {
     // Ignore malformed params
   }
 
+  let catMentorCtrl = null;
   let scene3d = null;
   try {
     const canvas = document.getElementById('atelier-canvas');
-    scene3d = new Atelier3DScene(canvas, FROZEN_CONFIG);
+    scene3d = new Atelier3DScene(canvas, FROZEN_CONFIG, (type, payload) => {
+      if (catMentorCtrl) catMentorCtrl.onCatEvent(type, payload);
+    });
   } catch (err) {
     console.warn('WebGL 3D scene fallback:', err);
   }
@@ -2334,7 +2465,7 @@ function bootstrap() {
   const audio = new AtelierAudio();
   const cloudVault = new FamilyCloudVault();
   const vaultExperience = initFamilyVaultExperience(vaultStore, cloudVault, audio);
-  const catMentorCtrl = initCatMentorController(audio);
+  catMentorCtrl = initCatMentorController(scene3d, audio);
 
   initReceptionPortal(scene3d, audio, vaultExperience, incomingGift, catMentorCtrl);
   initSpotlightManifesto(scene3d, audio);

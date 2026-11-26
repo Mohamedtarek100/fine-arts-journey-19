@@ -11,6 +11,7 @@
  */
 
 import * as THREE from './vendor/three.module.min.js';
+import { PersianCatWorld3D } from './cat-mentor.js?v=16';
 
 function isSafeLocalTexturePath(path) {
   return typeof path === 'string' && /^\.\/assets\/[a-zA-Z0-9._/-]+$/.test(path) && !path.includes('..');
@@ -26,9 +27,14 @@ const ZONE_STAGES = [
 ];
 
 export class Atelier3DScene {
-  constructor(canvas, config) {
+  constructor(canvas, config, onCatEvent = null) {
     this.canvas = canvas;
     this.config = config;
+    this.onCatEvent = onCatEvent;
+
+    // 3D Raycaster for directly petting or grabbing & moving the realistic 3D Cat!
+    this.raycaster = new THREE.Raycaster();
+    this._ndc = new THREE.Vector2();
 
     // Continuous scroll progress [0..1] + exact zone float [0..5]
     this.scrollProgress = 0;
@@ -186,9 +192,75 @@ export class Atelier3DScene {
     this.buildZone5RealisticCake();
     this.buildCelebrationBurstSystem();
 
+    // Real 40-bone Photorealistic Golden Persian Cat Mentor living IN the 3D World!
+    this.catMentor = new PersianCatWorld3D(this.scene, this.camera, this.glowTexture, (st) => {
+      if (this.onCatEvent) this.onCatEvent('state', st);
+    });
+
     this.applyResponsiveLayout();
     this.bindEvents();
     this.animate();
+  }
+
+  /* ==================== 3D PHOTO BOOTH SNAPSHOT (FRAMED MUSEUM PNG) ==================== */
+  captureMuseumPostcard() {
+    // Synchronous fresh render so the WebGL drawing buffer is 100% populated without preserveDrawingBuffer GPU overhead!
+    this.renderer.render(this.scene, this.camera);
+
+    const out = document.createElement('canvas');
+    out.width = 1280;
+    out.height = 760;
+    const ctx = out.getContext('2d');
+
+    // Dark luxury velvet backdrop
+    const bg = ctx.createRadialGradient(640, 340, 60, 640, 380, 740);
+    bg.addColorStop(0, '#271c12');
+    bg.addColorStop(0.65, '#130e0a');
+    bg.addColorStop(1, '#090604');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, out.width, out.height);
+
+    // Draw live 3D WebGL scene centered inside the museum frame
+    const src = this.canvas;
+    const srcRatio = src.width / Math.max(1, src.height);
+    const dstW = out.width - 76;
+    const dstH = out.height - 150;
+    const dstRatio = dstW / dstH;
+    let dw = dstW, dh = dstH, dx = 38, dy = 38;
+    if (srcRatio > dstRatio) {
+      dh = dstW / srcRatio;
+      dy = 38 + (dstH - dh) / 2;
+    } else {
+      dw = dstH * srcRatio;
+      dx = 38 + (dstW - dw) / 2;
+    }
+    ctx.drawImage(src, dx, dy, dw, dh);
+
+    // Antique gold double frame
+    ctx.strokeStyle = '#e8c268';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, out.width - 40, out.height - 40);
+    ctx.strokeStyle = 'rgba(238, 210, 138, 0.36)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(32, 32, out.width - 64, out.height - 64);
+
+    // Bottom museum plaque strip
+    ctx.fillStyle = 'rgba(13, 9, 6, 0.88)';
+    ctx.fillRect(34, out.height - 102, out.width - 68, 68);
+    ctx.textAlign = 'center';
+    ctx.direction = 'rtl';
+    ctx.fillStyle = '#fbf0cf';
+    ctx.font = '700 28px Amiri, Georgia, serif';
+    ctx.fillText('رحلة يمنى — العام التاسع عشر (5 ديسمبر) ✦ HEY', out.width / 2, out.height - 64);
+    ctx.direction = 'ltr';
+    ctx.fillStyle = '#d6ab52';
+    ctx.font = '600 13px Cinzel, Georgia, serif';
+    ctx.fillText('3D INTERACTIVE EXHIBITION  •  DESIGNED & DEVELOPED BY ENG / MOHAMED TAREK', out.width / 2, out.height - 42);
+
+    const link = document.createElement('a');
+    link.download = `Yomna-3D-Atelier-Cat-Snapshot-${Date.now()}.png`;
+    link.href = out.toDataURL('image/png');
+    link.click();
   }
 
   /* ==================== PUBLIC INTERACTIVE CONTROLS ==================== */
@@ -1016,6 +1088,7 @@ export class Atelier3DScene {
         zEntry.rig.scale.setScalar(1);
       }
     }
+    if (this.catMentor) this.catMentor.handleResize();
   }
 
   triggerWishCelebration(blowOut = true) {
@@ -1034,10 +1107,26 @@ export class Atelier3DScene {
     window.addEventListener(
       'pointermove',
       (e) => {
+        const ndcX = (e.clientX / window.innerWidth) * 2 - 1;
+        const ndcY = -(e.clientY / window.innerHeight) * 2 + 1;
+
         if (e.pointerType === 'mouse' || this.inspectMode) {
-          this.pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
-          this.pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+          this.pointer.x = ndcX;
+          this.pointer.y = ndcY;
         }
+
+        // Laser Pointer Toy Mode: real 3D Cat chases laser dot live across 3D space!
+        if (this.catMentor && this.catMentor.laserModeActive) {
+          this.catMentor.updateLaserAtScreenNdc(ndcX, ndcY);
+          return;
+        }
+
+        // Free 3D Cat Dragging: smoothly moves the 3D Cat to ANY spot on screen!
+        if (this.catMentor && this.catMentor.isDragging) {
+          this.catMentor.placeAtScreenNdc(ndcX, ndcY, false);
+          return;
+        }
+
         if (this.isDragging) {
           const dx = (e.clientX - this.dragStart.x) / window.innerWidth;
           const dy = (e.clientY - this.dragStart.y) / window.innerHeight;
@@ -1065,6 +1154,31 @@ export class Atelier3DScene {
     );
 
     this.canvas.addEventListener('pointerdown', (e) => {
+      const ndcX = (e.clientX / window.innerWidth) * 2 - 1;
+      const ndcY = -(e.clientY / window.innerHeight) * 2 + 1;
+
+      if (this.catMentor && this.catMentor.laserModeActive) {
+        this.catMentor.updateLaserAtScreenNdc(ndcX, ndcY);
+        return;
+      }
+
+      if (this.catMentor && this.catMentor.dragModeActive) {
+        this.catMentor.isDragging = true;
+        this.catMentor.placeAtScreenNdc(ndcX, ndcY, false);
+        return;
+      }
+
+      // Direct 3D Raycast click/grab on the realistic 3D Cat -> Pet or Grab!
+      if (this.catMentor && this.catMentor.loaded && this.catMentor.visible) {
+        this._ndc.set(ndcX, ndcY);
+        this.raycaster.setFromCamera(this._ndc, this.camera);
+        if (this.catMentor.hitTest(this.raycaster)) {
+          this.catMentor.setState('pet', 3.4);
+          if (this.onCatEvent) this.onCatEvent('pet', null);
+          return;
+        }
+      }
+
       if (e.pointerType === 'touch' && !this.inspectMode) return;
       this.isDragging = true;
       this.dragStart.x = e.clientX;
@@ -1074,6 +1188,11 @@ export class Atelier3DScene {
     const endDrag = () => {
       this.isDragging = false;
       this.orbitYTarget = 0;
+      if (this.catMentor && this.catMentor.isDragging) {
+        this.catMentor.isDragging = false;
+        this.catMentor.spawnSparkles(this.catMentor.worldPos);
+        if (this.onCatEvent) this.onCatEvent('placed', null);
+      }
     };
     window.addEventListener('pointerup', endDrag);
     window.addEventListener('pointercancel', endDrag);
@@ -1298,6 +1417,11 @@ export class Atelier3DScene {
     }
 
     if (this.dustField) this.dustField.position.y = Math.sin(t * 0.22) * 0.2;
+
+    // Update the in-world 40-bone Photorealistic Persian Cat Mentor inside the 3D Atelier!
+    if (this.catMentor) {
+      this.catMentor.update(dt, t, this.smoothZoneFloat, this.smoothPointer);
+    }
 
     this.renderer.render(this.scene, this.camera);
   }

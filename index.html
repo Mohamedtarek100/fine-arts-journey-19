@@ -24,7 +24,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=14" />
+  <link rel="stylesheet" href="./styles.css?v=16" />
 </head>
 <body class="portal-open">
   <!-- Top Cinema Scroll Progress Bar -->
@@ -698,42 +698,49 @@
     </div>
   </div>
 
-  <!-- ==================== 3D FLUFFY SHIRAZI CAT MENTOR COMPANION ==================== -->
-  <aside id="cat-mentor-widget" class="cat-mentor-widget" aria-label="القطة المرشدة ثلاثية الأبعاد">
-    <div id="cat-mentor-mover" class="cat-mentor-mover">
-      <!-- Luxury Arabic Guide Speech Bubble -->
-      <div id="cat-speech-bubble" class="cat-speech-bubble open" role="status" aria-live="polite">
-        <div class="cat-bubble-head">
-          <span class="cat-bubble-name" id="cat-mentor-name">مرشدة الرحلة 🐾</span>
-          <span class="cat-state-badge" id="cat-state-badge">متابعة معك</span>
-          <button id="cat-bubble-close" class="cat-bubble-close" type="button" aria-label="طي الرسالة">−</button>
-        </div>
-        <p class="cat-bubble-text" id="cat-bubble-text">
-          مياو! أهلاً بيك في معرض رحلة يمنى 🐾 أنا رفيقتك الـ 3D طول الرحلة.. مرّر لتحت وهجري معاك وأشرحلك كل خطوة!
-        </p>
-        <div class="cat-action-chips" role="toolbar" aria-label="تفاعلات القطة المرشدة">
-          <button class="cat-act-btn" data-cat-action="run" type="button" title="خلي القطة تجري">🏃 اجري</button>
-          <button class="cat-act-btn" data-cat-action="play" type="button" title="خلي القطة تلعب بكرة الخيط">🧶 العبي</button>
-          <button class="cat-act-btn" data-cat-action="groom" type="button" title="خلي القطة تلحس كفها وتنضف نفسها">👅 الحسي نفسك</button>
-          <button class="cat-act-btn" data-cat-action="stretch" type="button" title="خلي القطة تتمطّى بدلع">🧘 تمطّي</button>
-          <button class="cat-act-btn" data-cat-action="tip" type="button" title="نصيحة وتعليمات القسم الحالي">💡 التعليمات</button>
-        </div>
+  <!-- ==================== IN-WORLD 3D CAT INTERACTIVE MODE BANNER (DRAG / LASER / CINEMA) ==================== -->
+  <div id="cat-mode-banner" class="cat-mode-banner" aria-hidden="true">
+    <span id="cat-mode-banner-text">✋ اسحب القطة أو اضغط في أي مكان لتثبيتها في الـ 3D</span>
+    <div class="cat-mode-banner-btns">
+      <button id="cat-reset-path-btn" type="button">📍 للمسار</button>
+      <button id="cat-mode-done-btn" class="gold-done" type="button">✓ تم</button>
+    </div>
+  </div>
+
+  <!-- ==================== SLEEK IN-WORLD 3D CAT MENTOR HUD & PRO TOOLKIT ==================== -->
+  <aside id="cat-mentor-hud" class="cat-mentor-hud" aria-label="لوحة القطة المرشدة الـ 3D">
+    <!-- Compact Pill shown when speech bubble is folded -->
+    <button id="cat-hud-reopen-pill" class="cat-hud-reopen-pill" type="button" aria-label="فتح نصائح وأدوات القطة الـ 3D">
+      <span>🐾 مرشدة الرحلة 3D</span>
+    </button>
+
+    <!-- Full Luxury Speech & Pro Controls Card -->
+    <div id="cat-speech-bubble" class="cat-speech-bubble open" role="status" aria-live="polite">
+      <div class="cat-bubble-head">
+        <span class="cat-bubble-name" id="cat-mentor-name">مرشدة الرحلة 3D 🐾</span>
+        <span class="cat-state-badge" id="cat-state-badge">معك في الـ 3D 🐾</span>
+        <button id="cat-voice-btn" class="cat-mini-icon-btn" type="button" aria-pressed="false" title="تشغيل أو إيقاف النطق الصوتي العربي للقطة">🔇</button>
+        <button id="cat-bubble-close" class="cat-bubble-close" type="button" aria-label="طي لوحة القطة">−</button>
       </div>
 
-      <!-- Interactive 3D Photorealistic Volumetric-Fur Shirazi Cat Canvas -->
-      <button
-        id="cat-pet-hitbox"
-        class="cat-pet-hitbox"
-        type="button"
-        title="اضغط للطبطبة على القطة أو إظهار نصيحتها 🐾"
-        aria-label="الطبطبة على القطة المرشدة الـ 3D"
-      >
-        <canvas id="cat-mentor-canvas" width="244" height="244"></canvas>
-      </button>
+      <p class="cat-bubble-text" id="cat-bubble-text">
+        مياو! أهلاً بيك في معرض رحلة يمنى 🐾 أنا قطتك الـ 3D الحقيقية جوه المعرض.. مرّر لتحت وهمشي معاك في الـ 3D!
+      </p>
+
+      <div class="cat-action-chips" role="toolbar" aria-label="تحكم وأدوات القطة الـ 3D">
+        <button class="cat-act-btn highlight-act" id="cat-drag-mode-btn" data-cat-action="drag" type="button" aria-pressed="false" title="اسحب القطة وحطها في أي مكان بالـ 3D">✋ حرّكها لمكانك</button>
+        <button class="cat-act-btn" id="cat-laser-mode-btn" data-cat-action="laser" type="button" aria-pressed="false" title="لاعب القطة بالليزر الذهبي في الـ 3D">🔴 ليزر 3D</button>
+        <button class="cat-act-btn" data-cat-action="groom" type="button" title="خلي القطة تلحس كفها وتنضف نفسها">👅 الحسي كفك</button>
+        <button class="cat-act-btn" data-cat-action="play" type="button" title="خلي القطة تلعب بكرة الخيط الذهبية الـ 3D">🧶 العبي</button>
+        <button class="cat-act-btn" data-cat-action="walk" type="button" title="خلي القطة تتمشى في الـ 3D">🐾 تمشّي</button>
+        <button class="cat-act-btn" id="cat-cinema-btn" data-cat-action="cinema" type="button" aria-pressed="false" title="جولة سينمائية تلقائية عبر كل فصول المعرض">▶ جولة سينمائية</button>
+        <button class="cat-act-btn" data-cat-action="photo" type="button" title="التقط صورة تذكارية مؤطّرة للمشهد الـ 3D مع القطة">📸 لقطة 3D</button>
+        <button class="cat-act-btn" data-cat-action="tip" type="button" title="تعليمات القسم الحالي">💡 نصيحة</button>
+      </div>
     </div>
   </aside>
 
-  <!-- Main Scripts (v15) -->
-  <script type="module" src="./app.js?v=15"></script>
+  <!-- Main Scripts (v16) -->
+  <script type="module" src="./app.js?v=16"></script>
 </body>
 </html>

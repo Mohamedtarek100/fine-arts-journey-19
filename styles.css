@@ -4483,7 +4483,7 @@ body.portal-open .mobile-journey-dock {
 }
 
 /* =========================================================================
-   3D FLUFFY GOLDEN SHIRAZI CAT MENTOR COMPANION (V12)
+   IN-WORLD 40-BONE 3D PERSIAN CAT MENTOR HUD, DRAG/LASER MODE & CINEMA TOUR (V16)
    ========================================================================= */
 
 .cat-pill.active {
@@ -4492,48 +4492,144 @@ body.portal-open .mobile-journey-dock {
   color: var(--gold-100);
 }
 
-.cat-mentor-widget {
+/* Interactive 3D Placement / Laser Mode: fade HTML cards cleanly so user drags/plays anywhere in full 3D space! */
+body.cat-place-mode #journey-root,
+body.cat-laser-mode #journey-root {
+  opacity: 0.22 !important;
+  pointer-events: none !important;
+  transition: opacity 0.35s var(--ease-museum);
+}
+
+body.cat-place-mode #atelier-canvas {
+  touch-action: none;
+  cursor: move !important;
+}
+
+body.cat-laser-mode #atelier-canvas {
+  touch-action: none;
+  cursor: crosshair !important;
+}
+
+.cat-mode-banner {
   position: fixed;
-  right: 16px;
-  bottom: 14px;
-  z-index: 82;
-  pointer-events: none;
-  transition: opacity 0.45s var(--ease-museum), transform 0.45s var(--ease-museum);
-}
-
-body.portal-open .cat-mentor-widget,
-body.inspect-3d-mode .cat-mentor-widget,
-body.cat-hidden .cat-mentor-widget {
+  top: 76px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-18px);
+  z-index: 165;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  max-width: 94vw;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: rgba(16, 11, 8, 0.94);
+  border: 1.5px solid var(--gold-200);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.72), 0 0 28px rgba(232, 194, 104, 0.22);
+  color: var(--gold-100);
+  font-size: 0.82rem;
+  font-weight: 600;
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transform: translateY(28px);
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-museum), visibility 0.3s ease;
 }
 
-.cat-mentor-mover {
+.cat-mode-banner.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.cat-mode-banner-btns {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.cat-mode-banner button {
+  padding: 5px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 210, 138, 0.45);
+  background: rgba(255, 245, 224, 0.08);
+  color: var(--gold-100);
+  font-family: var(--font-ar-body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cat-mode-banner button.gold-done {
+  background: linear-gradient(135deg, #c99b42, #ebd089);
+  color: #19120b;
+  border-color: var(--gold-100);
+}
+
+/* Floating Luxury Mentor HUD (Cat lives inside #atelier-canvas 3D World -> ZERO 2D canvas overlap!) */
+.cat-mentor-hud {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 84;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  will-change: transform;
   pointer-events: none;
+  transition: opacity 0.4s var(--ease-museum), transform 0.4s var(--ease-museum);
+}
+
+body.portal-open .cat-mentor-hud,
+body.cat-hidden .cat-mentor-hud {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(24px);
+}
+
+.cat-hud-reopen-pill {
+  display: none;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 210, 138, 0.58);
+  background: rgba(18, 13, 9, 0.94);
+  color: var(--gold-100);
+  font-family: var(--font-ar-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(214, 171, 82, 0.22);
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+
+.cat-hud-reopen-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-100);
+}
+
+.cat-mentor-hud.folded .cat-hud-reopen-pill {
+  display: inline-flex;
 }
 
 .cat-speech-bubble {
   position: relative;
-  width: 288px;
-  max-width: calc(100vw - 32px);
-  margin-bottom: -14px;
-  padding: 12px 14px 11px;
+  width: 326px;
+  max-width: calc(100vw - 28px);
+  padding: 12px 14px;
   border-radius: 18px;
-  background: linear-gradient(160deg, rgba(25, 18, 12, 0.96) 0%, rgba(13, 9, 6, 0.95) 100%);
+  background: linear-gradient(160deg, rgba(24, 17, 11, 0.95) 0%, rgba(12, 9, 6, 0.94) 100%);
   border: 1px solid rgba(238, 210, 138, 0.56);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.72), 0 0 26px rgba(214, 171, 82, 0.16);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.74), 0 0 28px rgba(214, 171, 82, 0.16);
   color: var(--ivory);
   pointer-events: auto;
   opacity: 0;
   visibility: hidden;
-  transform: translateY(10px) scale(0.95);
+  transform: translateY(12px) scale(0.96);
   transform-origin: bottom right;
-  transition: opacity 0.32s var(--ease-museum), transform 0.32s var(--ease-museum), visibility 0.32s ease;
+  transition: opacity 0.28s var(--ease-museum), transform 0.28s var(--ease-museum), visibility 0.28s ease;
 }
 
 .cat-speech-bubble.open {
@@ -4542,32 +4638,23 @@ body.cat-hidden .cat-mentor-widget {
   transform: translateY(0) scale(1);
 }
 
-.cat-speech-bubble::after {
-  content: "";
-  position: absolute;
-  bottom: -7px;
-  right: 48px;
-  width: 14px;
-  height: 14px;
-  background: #100b08;
-  border-right: 1px solid rgba(238, 210, 138, 0.56);
-  border-bottom: 1px solid rgba(238, 210, 138, 0.56);
-  transform: rotate(45deg);
+.cat-mentor-hud.folded .cat-speech-bubble {
+  display: none;
 }
 
 .cat-bubble-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 6px;
+  margin-bottom: 7px;
 }
 
 .cat-bubble-name {
   font-family: var(--font-ar-display);
-  font-size: 0.95rem;
+  font-size: 0.96rem;
   font-weight: 700;
   color: var(--gold-100);
+  white-space: nowrap;
 }
 
 .cat-state-badge {
@@ -4575,35 +4662,39 @@ body.cat-hidden .cat-mentor-widget {
   padding: 2px 8px;
   border-radius: 999px;
   background: rgba(232, 194, 104, 0.14);
-  border: 1px solid rgba(238, 210, 138, 0.32);
+  border: 1px solid rgba(238, 210, 138, 0.34);
   color: var(--gold-200);
   font-size: 0.66rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
+.cat-mini-icon-btn,
 .cat-bubble-close {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 1px solid rgba(238, 210, 138, 0.36);
+  border: 1px solid rgba(238, 210, 138, 0.38);
   background: rgba(255, 255, 255, 0.05);
   color: var(--gold-100);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
   line-height: 1;
   cursor: pointer;
   display: grid;
   place-items: center;
+  flex-shrink: 0;
 }
 
-.cat-bubble-close:hover {
-  background: rgba(232, 194, 104, 0.2);
+.cat-mini-icon-btn[aria-pressed="true"] {
+  background: rgba(232, 194, 104, 0.24);
+  border-color: var(--gold-100);
 }
 
 .cat-bubble-text {
   font-size: 0.78rem;
   line-height: 1.65;
   color: var(--ivory);
-  margin-bottom: 9px;
+  margin-bottom: 10px;
 }
 
 .cat-action-chips {
@@ -4613,81 +4704,62 @@ body.cat-hidden .cat-mentor-widget {
 }
 
 .cat-act-btn {
-  padding: 4px 8px;
+  padding: 4px 9px;
   border-radius: 999px;
   border: 1px solid rgba(238, 210, 138, 0.34);
   background: rgba(232, 194, 104, 0.08);
   color: var(--gold-100);
   font-family: var(--font-ar-body);
-  font-size: 0.68rem;
+  font-size: 0.69rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 
 .cat-act-btn:hover {
-  background: rgba(232, 194, 104, 0.24);
+  background: rgba(232, 194, 104, 0.22);
   border-color: var(--gold-100);
   transform: translateY(-1px);
 }
 
-.cat-pet-hitbox {
-  position: relative;
-  width: 232px;
-  height: 232px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  pointer-events: auto;
-  display: grid;
-  place-items: center;
-  transition: transform 0.25s var(--ease-museum);
+.cat-act-btn.highlight-act {
+  border-color: rgba(248, 224, 158, 0.62);
+  background: rgba(232, 194, 104, 0.16);
 }
 
-.cat-pet-hitbox:hover {
-  transform: scale(1.03);
-}
-
-#cat-mentor-canvas {
-  display: block;
-  width: 232px;
-  height: 232px;
-  pointer-events: none;
-  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.56));
+.cat-act-btn[aria-pressed="true"] {
+  background: linear-gradient(135deg, #c99b42, #ebd089);
+  color: #19120b;
+  border-color: var(--gold-100);
+  font-weight: 700;
 }
 
 @media (max-width: 980px) {
-  .cat-mentor-widget {
-    right: 4px;
-    bottom: calc(62px + env(safe-area-inset-bottom));
+  .cat-mentor-hud {
+    right: 10px;
+    bottom: calc(68px + env(safe-area-inset-bottom));
   }
 
   .cat-speech-bubble {
-    width: min(262px, 74vw);
-    padding: 9px 11px 9px;
-    margin-bottom: -18px;
-    border-radius: 15px;
+    width: min(312px, calc(100vw - 20px));
+    padding: 10px 11px;
+    border-radius: 16px;
   }
 
   .cat-bubble-text {
     font-size: 0.72rem;
     line-height: 1.55;
-    margin-bottom: 7px;
+    margin-bottom: 8px;
   }
 
   .cat-act-btn {
-    padding: 3px 7px;
-    font-size: 0.64rem;
+    padding: 4px 7.5px;
+    font-size: 0.65rem;
   }
 
-  .cat-pet-hitbox,
-  #cat-mentor-canvas {
-    width: 164px;
-    height: 164px;
-  }
-
-  .cat-speech-bubble::after {
-    right: 42px;
+  .cat-mode-banner {
+    top: 62px;
+    font-size: 0.74rem;
+    padding: 8px 12px;
   }
 }
