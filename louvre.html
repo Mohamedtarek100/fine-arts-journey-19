@@ -4,10 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>جولة باريس ومتحف اللوفر 3D — رحلة يمنى | HEY</title>
-  <meta name="description" content="لعبة قصة ثلاثية الأبعاد تفاعلية في شوارع باريس بجانب برج إيفل وداخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
+  <meta name="description" content="لعبة قصة ثلاثية الأبعاد تفاعلية واقعية في شوارع باريس بجانب برج إيفل وداخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
   <meta name="theme-color" content="#110c09" />
 
-  <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins Only -->
+  <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins + Local GLB Blob Textures Only -->
   <meta
     http-equiv="Content-Security-Policy"
     content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
@@ -21,16 +21,22 @@
     href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="./louvre.css?v=2" />
+  <link rel="stylesheet" href="./louvre.css?v=20" />
 </head>
 <body class="portal-open">
-  <!-- Fullscreen 60FPS 3D Paris & Louvre WebGL World -->
+  <!-- Fullscreen 60FPS Photorealistic Paris & Louvre WebGL World -->
   <canvas id="louvre-canvas" aria-label="عالم باريس ومتحف اللوفر ثلاثي الأبعاد"></canvas>
 
-  <!-- Subtle Center Aim Reticle (Desktop Look & Click) -->
+  <!-- Subtle Center Aim Reticle -->
   <div class="game-reticle" aria-hidden="true"><span></span></div>
 
-  <!-- ==================== 8-MEMBER VIP FAMILY RECEPTION PORTAL (SHARED CLOUD VAULT) ==================== -->
+  <!-- Cinema Photo Mode Exit Bar (Visible only when Cinema Mode active) -->
+  <div id="cinema-exit-bar" class="cinema-exit-bar" aria-hidden="true">
+    <button id="cinema-snap-btn" class="btn-royal-gold compact" type="button">📸 التقاط وحفظ بطاقة اللوفر</button>
+    <button id="cinema-exit-btn" class="btn-royal-ghost" type="button">✕ إنهاء وضع التصوير</button>
+  </div>
+
+  <!-- ==================== STEP 1: 8-MEMBER VIP FAMILY RECEPTION PORTAL ==================== -->
   <section id="louvre-portal" class="louvre-portal" role="dialog" aria-modal="true" aria-labelledby="lp-title">
     <div class="lp-shell">
       <div class="lp-head">
@@ -53,7 +59,7 @@
         <p class="eyebrow-ltr">PARIS &amp; MUSÉE DU LOUVRE 3D STORY EXPERIENCE • 5 DECEMBER</p>
         <h1 id="lp-title">جولة باريس ومتحف اللوفر 3D — رحلة يمنى</h1>
         <p class="lp-sub">
-          تجوّل في شوارع باريس بجانب برج إيفل، اتبع قطتكِ الشيرازي الذهبية إلى داخل متحف اللوفر لاستكشاف التحف والأوراق الذهبية، وافتح صندوق رسائل العيلة حتى تصل لتورتة العام الـ 19!
+          اختر اسمك من عائلة يمنى لتبدأ رحلة ثلاثية الأبعاد واقعية في شوارع باريس بجانب برج إيفل، وتدخل متحف اللوفر خلف القطة الشيرازي الذهبية لاستكشاف التحف وصندوق رسائل العيلة وتورتة العام الـ 19!
         </p>
       </div>
 
@@ -64,7 +70,7 @@
           <span>🏛️ ابدأ مغامرة باريس ومتحف اللوفر 3D ←</span>
         </button>
         <a href="./index.html" class="btn-royal-ghost">
-          <span>✨ العودة للمعرض الكلاسيكي</span>
+          <span>✨ المعرض الكلاسيكي (محفوظ بالكامل)</span>
         </a>
       </div>
 
@@ -91,7 +97,7 @@
       </span>
       <div class="gt-brand-txt">
         <strong>متحف اللوفر 3D</strong>
-        <span>رحلة يمنى • 19</span>
+        <span id="discovery-counter">التحف: 0 / 6</span>
       </div>
     </div>
 
@@ -102,27 +108,43 @@
 
     <div class="gt-actions">
       <button id="gt-visitor-btn" class="hud-pill" type="button" title="تغيير الاسم">🎨 يمنى</button>
-      <button id="gt-map-btn" class="hud-pill gold-hl" type="button" title="خريطة التنقل السريع في باريس واللوفر">🗺️ الخريطة</button>
-      <button id="gt-photo-btn" class="hud-pill" type="button" title="التقاط صورة تذكارية 3D">📸</button>
-      <button id="gt-audio-btn" class="hud-pill" type="button" aria-pressed="false" title="موسيقى الأتيليه">🔇</button>
+      <button id="gt-time-btn" class="hud-pill" type="button" title="تبديل الوقت: غروب باريس / نهار / ليل ساحر">🌇 غروب</button>
+      <button id="gt-map-btn" class="hud-pill gold-hl" type="button" title="خريطة التنقل السريع">🗺️ الخريطة</button>
+      <button id="gt-tools-btn" class="hud-pill" type="button" title="أدوات المتحف: الصوت، الدليل، الجودة والتصوير">⚙️</button>
       <a href="./index.html" class="hud-pill hide-xs" title="العودة للمعرض الكلاسيكي">✨ الكلاسيكي</a>
     </div>
   </header>
 
-  <!-- ==================== FLOATING INTERACTION PROMPT (NEAR ANY ARTIFACT / VAULT / CAKE) ==================== -->
+  <!-- ==================== COLLAPSIBLE PRO MUSEUM TOOLS TRAY (ZERO CLUTTER!) ==================== -->
+  <div id="pro-tools-tray" class="pro-tools-tray" aria-hidden="true">
+    <div class="ptt-row">
+      <button id="gt-voice-btn" class="ptt-btn" type="button" aria-pressed="false">🗣️ الدليل الصوتي: متوقف</button>
+      <button id="gt-audio-btn" class="ptt-btn" type="button" aria-pressed="false">🔇 موسيقى باريس: متوقفة</button>
+      <button id="gt-quality-btn" class="ptt-btn" type="button">⚡ الأداء: تلقائي 60FPS</button>
+      <button id="gt-cinema-btn" class="ptt-btn" type="button">📷 وضع التصوير السينمائي</button>
+      <button id="gt-photo-btn" class="ptt-btn" type="button">📸 حفظ صورة فورية</button>
+      <button id="gt-welcome-btn" class="ptt-btn gold-hl" type="button">🏛️ تعريف تجربة المتحف</button>
+      <a href="./index.html" class="ptt-btn">✨ فتح المعرض الكلاسيكي</a>
+    </div>
+  </div>
+
+  <!-- ==================== FLOATING INTERACTION PROMPT (TOP-CENTER — ZERO OVERLAP!) ==================== -->
   <button id="proximity-prompt" class="proximity-prompt" type="button" aria-hidden="true">
     <span id="proximity-text">📜 اضغط لاستكشاف التحفة</span>
   </button>
 
-  <!-- ==================== VIRTUAL WALKING JOYSTICK (BOTTOM-LEFT — SMOOTH MOBILE & DESKTOP) ==================== -->
+  <!-- ==================== LOUVRE ENTRANCE TOAST BANNER (TRIGGERS WHEN STEPPING INSIDE LOUVRE!) ==================== -->
+  <div id="louvre-toast" class="louvre-toast" role="status" aria-live="polite" aria-hidden="true"></div>
+
+  <!-- ==================== VIRTUAL WALKING JOYSTICK (BOTTOM-LEFT) ==================== -->
   <div id="joystick-zone" class="joystick-zone" aria-label="عصا المشي داخل باريس ومتحف اللوفر">
     <div class="joystick-base">
       <div id="joystick-knob" class="joystick-knob"></div>
     </div>
-    <span class="joystick-hint">اسحب للمشي • أو WASD</span>
+    <span class="joystick-hint">اسحب للمشي • WASD</span>
   </div>
 
-  <!-- ==================== CAT GUIDE QUEST CARD & AUTO-FOLLOW BAR (BOTTOM-RIGHT) ==================== -->
+  <!-- ==================== CAT GUIDE QUEST CARD (BOTTOM-RIGHT) ==================== -->
   <aside id="cat-guide-card" class="cat-guide-card" aria-label="مرشدة الرحلة القطة الذهبية">
     <button id="cat-reopen-btn" class="cat-reopen-btn" type="button">🐾 اتبع القطة</button>
     <div id="cat-guide-body" class="cat-guide-body">
@@ -131,7 +153,7 @@
         <button id="cat-fold-btn" class="cg-close" type="button" aria-label="طي">−</button>
       </div>
       <p id="cat-guide-text">
-        مياو! أهلاً في باريس عند غروب الشمس 🇫🇷✨ شوف برج إيفل العالي على شمالك، واتبعني على طول الشارع ناحية متحف اللوفر!
+        مياو! أهلاً في باريس الساحرة 🇫🇷✨ شوف برج إيفل الشاهق على شمالك والمباني الباريسية، واتبعني ناحية ساحة متحف اللوفر!
       </p>
       <div class="cg-controls">
         <button id="auto-follow-btn" class="cg-btn primary-follow" type="button" aria-pressed="false">🐾 اتبع القطة تلقائياً</button>
@@ -141,6 +163,48 @@
       </div>
     </div>
   </aside>
+
+  <!-- ==================== MODAL 0: WELCOME TO THE MUSÉE DU LOUVRE 3D EXPERIENCE BRIEFING ==================== -->
+  <div id="welcome-museum-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card welcome-theme">
+      <button class="mm-close" data-close-modal="welcome-museum-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">🏛️ مرحباً بك في تجربة متحف اللوفر وباريس التفاعلية 3D • HEY</span>
+      <h2 id="wm-title">أهلاً بكِ يا يمنى في معرضكِ الملكي بباريس ✨</h2>
+      <p id="wm-personal-lead" class="mm-sub"></p>
+
+      <div class="wm-story-grid">
+        <article class="wm-step-card">
+          <span>🇫🇷</span>
+          <h3>1. ابدأ في شوارع باريس</h3>
+          <p>تجوّل وسط المباني الباريسية وبرج إيفل، وجرّب زر <strong>🌇 الوقت</strong> للتبديل بين غروب باريس والنهار والليل الساحر بكشّاف برج إيفل!</p>
+        </article>
+        <article class="wm-step-card">
+          <span>🐾</span>
+          <h3>2. اتبع القطة الشيرازي</h3>
+          <p>قطّتك الذهبية تمشي أمامك وتترك آثار أقدام مضيئة؛ اضغط <strong>🐾 اتبع القطة تلقائياً</strong> أو امشِ بحرية بعصا التحكم أو الأسهم.</p>
+        </article>
+        <article class="wm-step-card">
+          <span>📜</span>
+          <h3>3. اكتشف التحف والأوراق</h3>
+          <p>داخل متحف اللوفر ستجد 4 تحف منحوتة وأوراقاً ذهبية طائرة، بالإضافة لـ<strong>صندوق رسائل العيلة السحابي 💌</strong> و<strong>الرسالة الأهم ★</strong>.</p>
+        </article>
+        <article class="wm-step-card">
+          <span>🎂</span>
+          <h3>4. احتفل تحت القبة الملكية</h3>
+          <p>في نهاية القاعة الكبرى تنتظرك تورتة العام الـ 19 الواقعية بشمعتي 1 و 9 والألعاب النارية وشهادة الفخر!</p>
+        </article>
+      </div>
+
+      <div class="wm-actions">
+        <button id="wm-start-auto-btn" class="btn-royal-gold" type="button">
+          <span>🐾 ابدأ الجولة تلقائياً خلف القطة الآن ✨</span>
+        </button>
+        <button id="wm-start-free-btn" class="btn-royal-ghost" type="button">
+          <span>🚶 أتجول بحرية بنفسي</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ==================== MODAL 1: MUSEUM ARTIFACT & GOLDEN PARCHMENT READER ==================== -->
   <div id="artifact-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
@@ -170,7 +234,7 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 2: ROYAL FAMILY TREASURE BOX (LIVE FIREBASE CLOUD VAULT!) ==================== -->
+  <!-- ==================== MODAL 2: ROYAL FAMILY TREASURE BOX (LIVE FIREBASE CLOUD VAULT) ==================== -->
   <div id="vault-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="museum-modal-card">
       <button class="mm-close" data-close-modal="vault-modal" type="button" aria-label="إغلاق">✕</button>
@@ -178,10 +242,8 @@
       <h2 id="vm-title">صندوق رسائل العائلة ليمنى 💌</h2>
       <p id="vm-sub" class="mm-sub"></p>
 
-      <!-- YOMNA'S 7 ENVELOPES INBOX -->
       <div id="vm-yomna-inbox" class="vm-inbox-grid"></div>
 
-      <!-- FAMILY MEMBER SENDER COMPOSER -->
       <div id="vm-sender-box" class="vm-sender-box">
         <div class="vm-sender-tag">المرسِل إلى صندوق يمنى في المتحف: <strong id="vm-sender-name"></strong></div>
         <div id="vm-presets" class="vm-presets"></div>
@@ -256,13 +318,13 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 5: FAST-TRAVEL LOUVRE & PARIS MAP ==================== -->
+  <!-- ==================== MODAL 5: FAST-TRAVEL LOUVRE & PARIS MAP + COLLECTOR PROGRESS ==================== -->
   <div id="map-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="museum-modal-card map-theme">
       <button class="mm-close" data-close-modal="map-modal" type="button" aria-label="إغلاق">✕</button>
-      <span class="mm-kicker">خريطة القصة التفاعلية • تنقل فوري</span>
+      <span class="mm-kicker">خريطة القصة التفاعلية • تنقل فوري + تقدّم الاستكشاف</span>
       <h2>🗺️ محطات باريس ومتحف اللوفر الـ 3D</h2>
-      <p class="mm-sub">اختر أي محطة للانتقال إليها فوراً، أو امشِ بحرية خلف القطة الذهبية!</p>
+      <p id="map-progress-summary" class="mm-sub">اكتشفت 0 من 6 كنوز داخل متحف اللوفر — اضغط على أي محطة للتنقل الفوري!</p>
       <div id="map-stations-grid" class="map-stations-grid"></div>
       <div class="map-footer-bar">
         <a href="./index.html" class="btn-royal-ghost">✨ فتح المعرض الكلاسيكي (محفوظ بالكامل)</a>
@@ -271,6 +333,6 @@
     </div>
   </div>
 
-  <script type="module" src="./louvre-app.js?v=2"></script>
+  <script type="module" src="./louvre-app.js?v=20"></script>
 </body>
 </html>
