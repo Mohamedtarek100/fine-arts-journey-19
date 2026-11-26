@@ -3989,3 +3989,438 @@ body.portal-open .mobile-journey-dock {
     font-size: 0.75rem;
   }
 }
+
+/* =========================================================================
+   V10 SILKY 60FPS GPU OVERRIDES, CUSTOM HEY LOGO, MANIFESTO SPOTLIGHT & CAKE UI
+   ========================================================================= */
+
+/* 60FPS GPU Compositing Fix: Remove expensive multi-pass backdrop-filter blur from
+   scrolling cards layered over the full-screen WebGL canvas -> instant butter-smooth FPS! */
+.hero-content,
+.chapter-card,
+.monument-card,
+.horizon-progress-shell,
+.guide-card,
+.gallery-controls,
+.atelier-easel-wrapper,
+.support-controls-card,
+.wax-envelope-card,
+.integrated-gallery-strip,
+.finale-card,
+.site-footer,
+.bridge-caption {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: linear-gradient(160deg, rgba(24, 17, 12, 0.9) 0%, rgba(14, 10, 7, 0.86) 100%);
+}
+
+/* Keep crisp subtle glass blur ONLY on fixed UI chrome & modals */
+.topbar.scrolled,
+.mobile-journey-dock,
+.inspect-banner {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Remove legacy countdown styles cleanly */
+.countdown-bar {
+  display: none !important;
+}
+
+/* ==================== SLEEK CUSTOM HEY CREST LOGO ==================== */
+.hey-badge-shell {
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  display: inline-grid !important;
+  place-items: center;
+  box-shadow: none !important;
+}
+
+.hey-logo-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 12px rgba(232, 194, 104, 0.32));
+  transition: transform 0.35s var(--ease-museum), filter 0.35s ease;
+}
+
+.brand-mark:hover .hey-logo-svg {
+  transform: scale(1.06);
+  filter: drop-shadow(0 0 18px rgba(248, 224, 158, 0.55));
+}
+
+.brand-monogram.hey-badge-shell {
+  width: 46px;
+  height: 46px;
+}
+
+.portal-seal-badge.hey-badge-shell {
+  width: 74px;
+  height: 74px;
+  margin: 0 auto 12px;
+}
+
+.footer-monogram.hey-badge-shell {
+  width: 58px;
+  height: 58px;
+  flex-shrink: 0;
+}
+
+.hey-preloader-svg {
+  width: 96px;
+  height: 96px;
+}
+
+/* ==================== SPOTLIGHT IMPORTANT FINAL MESSAGE SECTION ==================== */
+.manifesto-section {
+  min-height: 95vh;
+  align-items: center;
+  justify-content: center;
+}
+
+.manifesto-card {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: clamp(28px, 4.8vw, 56px);
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 0%, rgba(232, 194, 104, 0.14) 0%, rgba(22, 16, 11, 0.94) 55%, rgba(12, 9, 6, 0.94) 100%);
+  border: 1.5px solid rgba(238, 210, 138, 0.65);
+  box-shadow:
+    0 34px 96px rgba(0, 0, 0, 0.78),
+    0 0 80px rgba(214, 171, 82, 0.16),
+    inset 0 1px 0 rgba(255, 246, 214, 0.25);
+  text-align: center;
+  overflow: hidden;
+}
+
+.manifesto-card::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(238, 210, 138, 0.2);
+  pointer-events: none;
+}
+
+.manifesto-aura {
+  position: absolute;
+  top: -120px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 460px;
+  height: 220px;
+  background: radial-gradient(ellipse at center, rgba(238, 210, 138, 0.22) 0%, transparent 72%);
+  pointer-events: none;
+}
+
+.manifesto-kicker {
+  display: inline-block;
+  padding: 6px 18px;
+  margin-bottom: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.24), rgba(178, 131, 48, 0.18));
+  border: 1px solid var(--gold-200);
+  color: var(--gold-100);
+  font-size: 0.84rem;
+  font-weight: 700;
+  box-shadow: 0 0 24px rgba(214, 171, 82, 0.24);
+}
+
+.manifesto-title {
+  font-family: var(--font-ar-display);
+  font-size: clamp(2rem, 4.2vw, 3.2rem);
+  line-height: 1.25;
+  color: var(--ivory);
+  margin-bottom: 24px;
+}
+
+.manifesto-quote-box {
+  position: relative;
+  padding: clamp(22px, 3.6vw, 36px) clamp(18px, 4vw, 42px);
+  margin: 0 auto 28px;
+  border-radius: 20px;
+  background: linear-gradient(155deg, rgba(238, 210, 138, 0.11) 0%, rgba(16, 11, 8, 0.78) 100%);
+  border: 1px solid rgba(238, 210, 138, 0.52);
+  box-shadow: inset 0 0 36px rgba(214, 171, 82, 0.08);
+}
+
+.manifesto-quote-box p {
+  font-family: var(--font-ar-display);
+  font-size: clamp(1.32rem, 2.5vw, 1.92rem);
+  line-height: 1.95;
+  font-weight: 700;
+  color: var(--gold-100);
+  text-shadow: 0 2px 18px rgba(214, 171, 82, 0.22);
+}
+
+.quote-ornament-top,
+.quote-ornament-bot {
+  display: block;
+  color: var(--gold-300);
+  font-size: 0.95rem;
+  letter-spacing: 0.4em;
+}
+
+.quote-ornament-top { margin-bottom: 10px; }
+.quote-ornament-bot { margin-top: 10px; }
+
+.manifesto-pillars {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+}
+
+.manifesto-pillar {
+  padding: 18px 16px;
+  border-radius: 16px;
+  background: rgba(255, 245, 224, 0.04);
+  border: 1px solid rgba(214, 171, 82, 0.28);
+  text-align: center;
+  transition: transform 0.3s var(--ease-museum), border-color 0.3s ease;
+}
+
+.manifesto-pillar:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-200);
+}
+
+.pillar-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(214, 171, 82, 0.14);
+  border: 1px solid rgba(238, 210, 138, 0.36);
+  font-size: 1.25rem;
+  margin-bottom: 10px;
+}
+
+.manifesto-pillar h3 {
+  font-family: var(--font-ar-display);
+  font-size: 1.25rem;
+  color: var(--gold-100);
+  margin-bottom: 6px;
+}
+
+.manifesto-pillar p {
+  font-size: 0.85rem;
+  color: var(--ivory-muted);
+  line-height: 1.7;
+}
+
+/* Peace & Reassurance Interactive Capsule */
+.peace-capsule-card {
+  padding: 20px clamp(16px, 3vw, 28px);
+  border-radius: 18px;
+  background: rgba(12, 9, 6, 0.72);
+  border: 1px dashed rgba(238, 210, 138, 0.45);
+}
+
+.peace-capsule-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.capsule-badge {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--gold-200);
+}
+
+.capsule-counter {
+  font-family: var(--font-en-display);
+  font-size: 0.75rem;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(214, 171, 82, 0.15);
+  border: 1px solid rgba(238, 210, 138, 0.35);
+  color: var(--gold-100);
+}
+
+.peace-capsule-text {
+  font-family: var(--font-ar-display);
+  font-size: clamp(1.08rem, 1.8vw, 1.32rem);
+  color: var(--ivory);
+  line-height: 1.85;
+  margin-bottom: 16px;
+  min-height: 2.2em;
+}
+
+.peace-capsule-text.capsule-pop {
+  animation: portalFadeIn 0.45s var(--ease-museum);
+}
+
+.peace-capsule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pledge-btn.pledged {
+  border-color: var(--emerald-soft);
+  background: rgba(158, 209, 152, 0.18);
+  color: #e2f9df;
+  box-shadow: 0 0 22px rgba(158, 209, 152, 0.24);
+}
+
+.pledge-feedback {
+  margin-top: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #daf5d7;
+  min-height: 20px;
+}
+
+/* Rail & Dock highlight for the Important Message */
+.rail-dot.spotlight-dot {
+  border-color: var(--gold-100);
+  box-shadow: 0 0 10px rgba(238, 210, 138, 0.55);
+}
+
+.dock-chip.spotlight-chip {
+  border-color: rgba(248, 224, 158, 0.72);
+  background: rgba(232, 194, 104, 0.16);
+  color: var(--gold-100);
+}
+
+/* ==================== UNOBSTRUCTED 3D REALISTIC CAKE STAGE (DESKTOP + MOBILE!) ==================== */
+.stage-3d-window.finale-3d-window {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  max-width: 920px;
+  height: clamp(270px, 42vh, 380px);
+  margin: 0 auto;
+  padding-bottom: 10px;
+  position: relative;
+  pointer-events: auto;
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+}
+
+.stage-3d-window.finale-3d-window:active {
+  cursor: grabbing;
+}
+
+.cake-stage-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(15, 11, 8, 0.78);
+  border: 1px solid rgba(238, 210, 138, 0.45);
+  color: var(--gold-100);
+  font-size: 0.8rem;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+}
+
+.cake-controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: -22px;
+  margin-bottom: -16px;
+  position: relative;
+  z-index: 5;
+}
+
+.cake-ctrl-pill {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(238, 210, 138, 0.36);
+  background: rgba(18, 13, 9, 0.86);
+  color: var(--ivory);
+  font-family: var(--font-ar-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+
+.cake-ctrl-pill:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold-100);
+}
+
+.cake-ctrl-pill.active {
+  background: linear-gradient(135deg, rgba(232, 194, 104, 0.26), rgba(178, 131, 48, 0.22));
+  border-color: var(--gold-100);
+  color: var(--gold-100);
+  box-shadow: 0 0 18px rgba(214, 171, 82, 0.28);
+}
+
+.cake-ctrl-pill.gold-accent {
+  background: linear-gradient(135deg, #c99b42, #ebd089);
+  color: #19120b;
+  border-color: var(--gold-100);
+  font-weight: 700;
+}
+
+.footer-credit {
+  color: var(--gold-200);
+  font-weight: 600;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 820px) {
+  .manifesto-pillars {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .stage-3d-window.finale-3d-window {
+    height: clamp(240px, 38svh, 310px);
+  }
+
+  .cake-controls-bar {
+    margin-top: -14px;
+    margin-bottom: -10px;
+  }
+
+  .cake-ctrl-pill {
+    padding: 7px 12px;
+    font-size: 0.76rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .brand-monogram.hey-badge-shell {
+    width: 38px;
+    height: 38px;
+  }
+
+  .portal-seal-badge.hey-badge-shell {
+    width: 64px;
+    height: 64px;
+  }
+
+  .footer-monogram.hey-badge-shell {
+    width: 52px;
+    height: 52px;
+  }
+
+  .manifesto-card {
+    padding: 24px 16px;
+  }
+
+  .manifesto-quote-box p {
+    font-size: 1.18rem;
+    line-height: 1.85;
+  }
+}

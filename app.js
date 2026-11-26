@@ -1,19 +1,19 @@
 /**
  * =========================================================================
- *  Main Application Logic — Edition XIX Ultra (6-Act Ordered 3D Exhibition)
- *  - Exact Section-Locked 3D Camera Choreography + Mobile Touch-Spin 3D Windows
- *  - Clean Chronological 6-Act Story Arc (Zero Repetition!)
+ *  Main Application Logic — HEY Edition Ultra (v10 — 60FPS Silky 3D + Realistic Cake)
+ *  - Continuous pixel-by-pixel 3D scroll motion (zero dead-zone plateau!)
+ *  - Realistic 2-Tier 3D Birthday Cake with Sculpted "1" & "9" Candles + Pro Controls
+ *  - Spotlight Final Manifesto Section + Daily Peace Capsule + Family Star Pledge
  *  - Pro Fine-Arts Studio: Calligraphy, 8-Way Symmetry, Charcoal, Watercolor + Perspective Grid
- *  - Live 3D Museum Lighting Mood Switcher (Rembrandt, Van Gogh, Louvre, Florence)
- *  - Real Microphone Blow-to-Extinguish for the 19 3D Birthday Candles
  *  - Real-Time Firebase Cloud Firestore Sync + 8 VIP Family Personas
  *  - Strict OWASP Zero-innerHTML Security Architecture
+ *  - Designed & Developed by ENG / Mohamed Tarek
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=9';
-import { Atelier3DScene } from './scene3d.js?v=9';
-import { FamilyCloudVault } from './firebase-sync.js?v=9';
+import { SITE_CONFIG } from './config.js?v=10';
+import { Atelier3DScene } from './scene3d.js?v=10';
+import { FamilyCloudVault } from './firebase-sync.js?v=10';
 
 /* ==================== RUNTIME SECURITY GUARDS ==================== */
 (function enforceFrameProtection() {
@@ -46,7 +46,7 @@ const ALLOWED_SENDER_IDS = new Set(
 );
 
 const STAGE_3D_LABELS = [
-  '❖ مجسم 3D حي: لوحة الطفولة وأقلام الباستيل والنجوم — اسحب للتدوير',
+  '❖ مجسم 3D حي: لوحة الطفولة وأقلام الباستيل — اسحب للتدوير',
   '❖ مجسم 3D حي: جوهرة النسبة الذهبية وباليتة الأتيليه — اسحب للتدوير',
   '❖ مجسم 3D حي: الساعة الرملية الذهبية وقناديل تالتة ثانوي — اسحب للتدوير',
   '❖ مجسم 3D حي: بوابة كلية الفنون الجميلة والتمثال الرخامي — اسحب للتدوير',
@@ -176,7 +176,7 @@ class FamilyVaultStore {
   }
 }
 
-/* ==================== GOLDEN SPARKLE CURSOR TRAIL (DESKTOP) ==================== */
+/* ==================== GOLDEN SPARKLE CURSOR TRAIL (LIGHTWEIGHT DESKTOP) ==================== */
 function initSparkleCursorTrail() {
   const canvas = document.getElementById('sparkle-canvas');
   const isTouchOnly = window.matchMedia('(pointer: coarse)').matches;
@@ -196,28 +196,25 @@ function initSparkleCursorTrail() {
     'pointermove',
     (e) => {
       const now = performance.now();
-      if (now - lastSpawn < 26) return;
+      if (now - lastSpawn < 32) return;
       lastSpawn = now;
       particles.push({
         x: e.clientX + (Math.random() - 0.5) * 6,
         y: e.clientY + (Math.random() - 0.5) * 6,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: -0.35 - Math.random() * 0.6,
-        size: 1.4 + Math.random() * 2.2,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: -0.35 - Math.random() * 0.5,
+        size: 1.4 + Math.random() * 2.0,
         life: 1,
-        decay: 0.028 + Math.random() * 0.02,
+        decay: 0.032 + Math.random() * 0.02,
       });
-      if (particles.length > 55) particles.shift();
+      if (particles.length > 36) particles.shift();
     },
     { passive: true }
   );
 
   function renderTrail() {
     requestAnimationFrame(renderTrail);
-    if (!particles.length) {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      return;
-    }
+    if (!particles.length) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i];
@@ -228,16 +225,13 @@ function initSparkleCursorTrail() {
         particles.splice(i, 1);
         continue;
       }
-      ctx.save();
-      ctx.globalAlpha = p.life * 0.7;
+      ctx.globalAlpha = p.life * 0.68;
       ctx.fillStyle = '#f8e29e';
-      ctx.shadowColor = '#e6bd5c';
-      ctx.shadowBlur = 8;
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
       ctx.fill();
-      ctx.restore();
     }
+    ctx.globalAlpha = 1;
   }
   renderTrail();
 }
@@ -497,7 +491,7 @@ function drawGoldenSupportCard(canvas, { senderDisplay, accentHex, message }) {
   ctx.direction = 'ltr';
   ctx.fillStyle = accent;
   ctx.font = '600 15px Cinzel, Georgia, serif';
-  ctx.fillText('5 DECEMBER  •  CHAPTER XIX  •  YOMNA PRIVATE FAMILY VAULT', W / 2, 78);
+  ctx.fillText('HEY  •  5 DECEMBER  •  YOMNA 19TH EDITION  •  FAMILY VAULT', W / 2, 78);
 
   ctx.direction = 'rtl';
   ctx.fillStyle = '#fbf0cf';
@@ -525,7 +519,7 @@ function drawGoldenSupportCard(canvas, { senderDisplay, accentHex, message }) {
 
   ctx.fillStyle = '#eed28a';
   ctx.font = '600 17px Cairo, sans-serif';
-  ctx.fillText('تالتة ثانوي (السنة الفاصلة)  ←  خطوة واحدة نحو كلية الفنون الجميلة ✦', W / 2, H - 117);
+  ctx.fillText('ثانوية عامة بداية الرحلة.. والهدف هو اللي بنشتغل عليه كل يوم بفرح ✦', W / 2, H - 117);
 
   ctx.fillStyle = accent;
   ctx.font = '700 24px Amiri, Georgia, serif';
@@ -535,7 +529,7 @@ function drawGoldenSupportCard(canvas, { senderDisplay, accentHex, message }) {
 function downloadFamilyCertificatePng() {
   const c = document.createElement('canvas');
   c.width = 1200;
-  c.height = 820;
+  c.height = 840;
   const ctx = c.getContext('2d');
   const W = c.width;
   const H = c.height;
@@ -558,7 +552,7 @@ function downloadFamilyCertificatePng() {
   ctx.direction = 'ltr';
   ctx.fillStyle = '#d6ab52';
   ctx.font = '600 18px Cinzel, Georgia, serif';
-  ctx.fillText('CERTIFICATE OF PRIDE & FUTURE ARTISTRY  •  5 DECEMBER  •  EDITION XIX', W / 2, 108);
+  ctx.fillText('HEY  •  CERTIFICATE OF PRIDE & FUTURE ARTISTRY  •  5 DECEMBER', W / 2, 108);
 
   ctx.direction = 'rtl';
   ctx.fillStyle = '#fbf0cf';
@@ -570,60 +564,35 @@ function downloadFamilyCertificatePng() {
   ctx.fillText(`الفنانة ${FROZEN_CONFIG.artistName}`, W / 2, 290);
 
   ctx.fillStyle = '#f8f1e4';
-  ctx.font = '500 28px Cairo, sans-serif';
-  ctx.fillText('تقديراً لموهبتها الفنية الراقية وإصرارها في سنة تالتة ثانوي الفاصلة', W / 2, 396);
-  ctx.fillText('وبثقة كاملة في وصولها قريباً بإذن الله إلى بوابة كلية الفنون الجميلة', W / 2, 448);
+  ctx.font = '500 27px Cairo, sans-serif';
+  ctx.fillText('تقديراً لموهبتها الفنية الراقية وخطواتها الواثقة في عامها التاسع عشر', W / 2, 392);
+  ctx.fillText('ثانوية عامة بداية الرحلة.. والهدف هو اللي بنشتغل عليه كل يوم وإحنا فرحانين', W / 2, 444);
 
   ctx.fillStyle = 'rgba(214, 171, 82, 0.14)';
-  ctx.fillRect(W * 0.2, 505, W * 0.6, 56);
+  ctx.fillRect(W * 0.18, 500, W * 0.64, 56);
   ctx.strokeStyle = 'rgba(238, 210, 138, 0.5)';
-  ctx.strokeRect(W * 0.2, 505, W * 0.6, 56);
+  ctx.strokeRect(W * 0.18, 500, W * 0.64, 56);
   ctx.fillStyle = '#fbf0cf';
   ctx.font = '700 22px Cairo, sans-serif';
-  ctx.fillText('✦ تالتة ثانوي الآن ← خطوة واحدة فقط نحو كلية الفنون الجميلة ✦', W / 2, 541);
+  ctx.fillText('✦ تالتة ثانوي بداية الرحلة ← نحو كلية الفنون الجميلة والنجاح المستمر ✦', W / 2, 536);
 
   ctx.fillStyle = '#d6ab52';
   ctx.font = '600 20px Cairo, sans-serif';
-  ctx.fillText('مُهداة وموقّعة بكل فخر ومحبة من عائلتكِ:', W / 2, 632);
+  ctx.fillText('مُهداة وموقّعة بكل فخر ومحبة من عائلتكِ:', W / 2, 622);
 
   ctx.fillStyle = '#fbf0cf';
   ctx.font = '700 32px Amiri, Georgia, serif';
-  ctx.fillText(FROZEN_CONFIG.familySignOffAr, W / 2, 688);
+  ctx.fillText(FROZEN_CONFIG.familySignOffAr, W / 2, 678);
+
+  ctx.direction = 'ltr';
+  ctx.fillStyle = 'rgba(238, 210, 138, 0.65)';
+  ctx.font = '500 14px Cinzel, Georgia, serif';
+  ctx.fillText('HEY EDITION  •  DESIGNED & DEVELOPED BY ENG / MOHAMED TAREK', W / 2, 756);
 
   const link = document.createElement('a');
-  link.download = 'Yomna-19th-Year-Family-Certificate.png';
+  link.download = 'Yomna-19th-Year-Family-Certificate-HEY.png';
   link.href = c.toDataURL('image/png');
   link.click();
-}
-
-/* ==================== LIVE 5 DECEMBER COUNTDOWN ==================== */
-function initBirthdayCountdown() {
-  const container = document.getElementById('portal-countdown-units');
-  if (!container) return;
-  const targetMs = Date.parse(FROZEN_CONFIG.birthdayTargetISO);
-
-  const renderTick = () => {
-    const diff = targetMs - Date.now();
-    if (diff <= 0) {
-      container.replaceChildren(el('span', 'cd-live-celebration', '✦ اليوم 5 ديسمبر — كل عامٍ ويمنى بألف خير! ✦'));
-      return;
-    }
-    const units = [
-      { v: String(Math.floor(diff / 86400000)).padStart(2, '0'), l: 'يوم' },
-      { v: String(Math.floor((diff % 86400000) / 3600000)).padStart(2, '0'), l: 'ساعة' },
-      { v: String(Math.floor((diff % 3600000) / 60000)).padStart(2, '0'), l: 'دقيقة' },
-      { v: String(Math.floor((diff % 60000) / 1000)).padStart(2, '0'), l: 'ثانية' },
-    ];
-    container.replaceChildren(
-      ...units.map((u) => {
-        const box = el('div', 'cd-box');
-        box.append(el('strong', '', u.v), el('small', '', u.l));
-        return box;
-      })
-    );
-  };
-  renderTick();
-  window.setInterval(renderTick, 1000);
 }
 
 /* ==================== BUILD COHESIVE ACTS 01..04 WITH OPEN MOBILE 3D WINDOWS ==================== */
@@ -635,13 +604,12 @@ function createNarrativeBridge(text) {
 
 function createStoryActSection(ch, idx, cfg, openLightbox) {
   const isReverse = idx % 2 === 1;
-  const zoneNum = idx + 1; // Zones 1, 2, 3, 4!
+  const zoneNum = idx + 1; // Zones 1, 2, 3, 4
   const section = el('section', `section chapter-section${isReverse ? ' reverse' : ''}`);
   section.id = ch.id;
   section.dataset.zone = String(zoneNum);
   section.dataset.stage = `الفصل ${ch.number} • ${ch.titleAr}`;
 
-  // Open 3D Viewport Stage Window at top of Act on Mobile (NEVER covers 3D!)
   const stageWin = el('div', 'stage-3d-window');
   stageWin.dataset.spinStage = 'true';
   const stagePill = el('div', 'stage-3d-pill');
@@ -651,12 +619,11 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
 
   const grid = el('div', 'chapter-grid');
 
-  // Story Card
   const card = el('article', 'chapter-card reveal');
   const numBg = el('span', 'chapter-number-bg', ch.number);
   numBg.setAttribute('aria-hidden', 'true');
 
-  const actNames = ['الفصل الأول من الستة', 'الفصل الثاني من الستة', 'الفصل الثالث من الستة', 'الفصل الرابع من الستة'];
+  const actNames = ['الفصل الأول', 'الفصل الثاني', 'الفصل الثالث', 'الفصل الرابع'];
   card.append(
     numBg,
     el('span', 'act-kicker', actNames[idx] || ch.eraAr),
@@ -666,7 +633,6 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
     el('blockquote', 'chapter-quote', ch.quoteAr)
   );
 
-  // ACT 03 (Thanaweya): Integrate the 90% One-Step Progress Tracker + Wax-Sealed Encouragement Envelope!
   if (ch.id === 'thanaweya') {
     const hg = cfg.horizonGoal;
     const horizonBox = el('div', 'act-integrated-horizon');
@@ -711,7 +677,7 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
       envBtn.setAttribute('aria-expanded', 'false');
       envBtn.append(
         el('span', '', `✦ ${ch.encouragementTitleAr} (اضغط لفتح الرسالة)`),
-        el('span', 'wax-seal-mini', 'XIX')
+        el('span', 'wax-seal-mini', cfg.brandLogo || 'HEY')
       );
       const envLetter = el('div', 'envelope-letter');
       envLetter.appendChild(el('p', '', ch.encouragementBodyAr));
@@ -720,7 +686,6 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
     }
   }
 
-  // ACT 04 (Fine Arts): Integrate the 3 Concrete Goal Steps right inside the card!
   if (ch.id === 'fine-arts') {
     const stepsWrap = el('div', 'goal-milestones');
     cfg.horizonGoal.goalStage.milestonesAr.forEach((m) => {
@@ -731,7 +696,6 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
     card.appendChild(stepsWrap);
   }
 
-  // Art Column
   const artCol = el('div', 'art-column reveal');
   const safeImg = safeAssetUrl(ch.image);
 
@@ -751,7 +715,6 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
   figure.addEventListener('click', () => openLightbox(safeImg, ch.captionEn, ch.titleAr, ch.captionAr));
   artCol.appendChild(figure);
 
-  // ACT 04: Holographic Future Fine Arts Dream Pass
   if (ch.id === 'fine-arts') {
     const passWrap = el('div', 'dream-pass-wrap');
     const pass = el('div', 'dream-pass');
@@ -786,7 +749,6 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
   grid.append(card, artCol);
   section.appendChild(grid);
 
-  // ACT 04 Bottom: Compact Curated Exhibition Lightbox Strip (replaces redundant separate gallery!)
   if (ch.id === 'fine-arts' && cfg.gallery?.length) {
     const strip = el('div', 'integrated-gallery-strip reveal');
     const head = el('div', 'mini-gallery-head');
@@ -817,11 +779,11 @@ function createStoryActSection(ch, idx, cfg, openLightbox) {
   return section;
 }
 
-/* ==================== POPULATE ORDERED 6-ACT CONTENT ==================== */
+/* ==================== POPULATE ALL CONTENT + SPOTLIGHT FINAL MANIFESTO ==================== */
 function renderContent(openLightbox) {
   const cfg = FROZEN_CONFIG;
 
-  document.title = `رحلة ${cfg.artistName} | ${cfg.birthdayDateAr} — العام ${cfg.age}`;
+  document.title = `رحلة ${cfg.artistName} | ${cfg.birthdayDateAr} — العام ${cfg.age} • ${cfg.brandLogo}`;
   document.getElementById('nav-date-en').textContent = cfg.birthdayDateEn;
   document.getElementById('nav-title-ar').textContent = `رحلة ${cfg.artistName}`;
 
@@ -851,6 +813,35 @@ function renderContent(openLightbox) {
     }
   });
 
+  // Spotlight Important Final Message Section
+  const fm = cfg.finalManifesto;
+  if (fm) {
+    const kickerEl = document.getElementById('manifesto-kicker');
+    const eyebrowEl = document.getElementById('manifesto-eyebrow');
+    const titleEl = document.getElementById('manifesto-title');
+    const quoteEl = document.getElementById('manifesto-quote');
+    const pillarsEl = document.getElementById('manifesto-pillars');
+
+    if (kickerEl) kickerEl.textContent = fm.kickerAr;
+    if (eyebrowEl) eyebrowEl.textContent = fm.eyebrowEn;
+    if (titleEl) titleEl.textContent = fm.titleAr;
+    if (quoteEl) quoteEl.textContent = fm.quoteAr;
+
+    if (pillarsEl && fm.pillars) {
+      pillarsEl.replaceChildren(
+        ...fm.pillars.map((p) => {
+          const item = el('article', 'manifesto-pillar');
+          item.append(
+            el('span', 'pillar-icon', p.icon),
+            el('h3', '', p.titleAr),
+            el('p', '', p.descAr)
+          );
+          return item;
+        })
+      );
+    }
+  }
+
   document.getElementById('finale-eyebrow-en').textContent = cfg.finale.eyebrowEn;
   document.getElementById('finale-age').textContent = String(cfg.age);
   document.getElementById('finale-title-ar').textContent = `${cfg.finale.titleAr} يا ${cfg.artistName}`;
@@ -866,6 +857,54 @@ function renderContent(openLightbox) {
   document.getElementById('footer-credit-ar').textContent = cfg.copyright.creditAr;
   document.getElementById('footer-rights-ar').textContent = cfg.copyright.rightsAr;
   document.getElementById('footer-rights-en').textContent = cfg.copyright.rightsEn;
+}
+
+/* ==================== SPOTLIGHT MANIFESTO: PEACE CAPSULE & STAR PLEDGE ==================== */
+function initSpotlightManifesto(scene3d, audio) {
+  const capsules = FROZEN_CONFIG.finalManifesto?.peaceCapsules || [];
+  const textEl = document.getElementById('peace-capsule-text');
+  const countEl = document.getElementById('peace-capsule-count');
+  const nextBtn = document.getElementById('next-capsule-btn');
+  const pledgeBtn = document.getElementById('pledge-star-btn');
+  const pledgeFeedback = document.getElementById('pledge-feedback');
+
+  let idx = 0;
+  const renderCapsule = () => {
+    if (!capsules.length || !textEl) return;
+    textEl.classList.remove('capsule-pop');
+    void textEl.offsetWidth;
+    textEl.textContent = `«${capsules[idx]}»`;
+    textEl.classList.add('capsule-pop');
+    if (countEl) countEl.textContent = `${idx + 1} / ${capsules.length}`;
+  };
+
+  renderCapsule();
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => {
+      idx = (idx + 1) % capsules.length;
+      renderCapsule();
+      audio.playEnvelopeChime();
+    });
+  }
+
+  if (pledgeBtn) {
+    let pledged = false;
+    pledgeBtn.addEventListener('click', () => {
+      pledged = !pledged;
+      pledgeBtn.setAttribute('aria-pressed', String(pledged));
+      pledgeBtn.classList.toggle('pledged', pledged);
+      if (pledged) {
+        audio.playWishChime();
+        if (scene3d) scene3d.nudgeSpin(1.8);
+        if (pledgeFeedback) {
+          pledgeFeedback.textContent = '✦ شكراً لك! الدعم الهادئ والإيمان بالشغف هما أجمل هدية ليمنى في عامها التاسع عشر ✦';
+        }
+      } else if (pledgeFeedback) {
+        pledgeFeedback.textContent = '';
+      }
+    });
+  }
 }
 
 /* ==================== LIGHTBOX CONTROLLER ==================== */
@@ -1152,7 +1191,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
         el('span', 'gold-shimmer', 'عائلتكِ الخاص بكِ يا يمنى')
       );
       vaultSubtitle.textContent =
-        'سبعة أظرف ذهبية مختومة من والدكِ ووالدتكِ وإخوتكِ وخالتكِ وأولاد خالتكِ — كلها محبة ودعاء وتشجيع لكِ في تالتة ثانوي نحو كلية الفنون الجميلة';
+        'سبعة أظرف ذهبية مختومة من والدكِ ووالدتكِ وإخوتكِ وخالتكِ وأولاد خالتكِ — كلها محبة ودعاء وتشجيع لكِ في عامكِ التاسع عشر';
       renderYomnaEnvelopes();
     } else {
       inboxPanel.classList.add('panel-hidden');
@@ -1163,7 +1202,7 @@ function initFamilyVaultExperience(vaultStore, cloudVault, audio) {
         el('span', 'gold-shimmer', 'صندوق يمنى الخاص')
       );
       vaultSubtitle.textContent =
-        'اكتب كلمة تهنئة وتشجيع ليمنى في سنتها الفاصلة (تالتة ثانوي)، وبضغطة واحدة تُختم بالشمع الذهبي وتصل سحابياً في نفس اللحظة إلى صندوقها على موبايلها';
+        'اكتب كلمة تهنئة وتشجيع ليمنى في عامها الـ 19، وبضغطة واحدة تُختم بالشمع الذهبي وتصل سحابياً في نفس اللحظة إلى صندوقها على موبايلها';
 
       senderLabel.textContent = role.displayFullAr;
       const existing = vaultStore.getEntry(role);
@@ -1351,7 +1390,7 @@ function initProFineArtsStudio() {
   const ctx = canvas.getContext('2d');
   let activeColor = '#e8c268';
   let brushSize = 6;
-  let brushMode = 'calligraphy'; // 'calligraphy' | 'symmetry' | 'charcoal' | 'watercolor'
+  let brushMode = 'calligraphy';
   let drawing = false;
   let lastPt = null;
   let lastTime = 0;
@@ -1371,13 +1410,12 @@ function initProFineArtsStudio() {
     ctx.lineWidth = 1.5;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
 
-    ctx.fillStyle = 'rgba(232, 194, 104, 0.28)';
+    ctx.fillStyle = 'rgba(232, 194, 104, 0.3)';
     ctx.font = '14px Cinzel, serif';
     ctx.textAlign = 'center';
-    ctx.fillText('5 DECEMBER  •  ACT V  •  FINE ARTS ATELIER KEEPSAKE', canvas.width / 2, canvas.height - 30);
+    ctx.fillText('HEY  •  5 DECEMBER  •  FINE ARTS ATELIER KEEPSAKE', canvas.width / 2, canvas.height - 30);
   }
 
-  // Draw 1-Point Architectural Perspective + Golden Ratio Grid on Overlay Canvas
   function renderPerspectiveOverlay() {
     if (!guideCanvas) return;
     const gctx = guideCanvas.getContext('2d');
@@ -1390,7 +1428,6 @@ function initProFineArtsStudio() {
     gctx.strokeStyle = 'rgba(232, 194, 104, 0.28)';
     gctx.lineWidth = 1;
 
-    // Horizon & Vertical Axis
     gctx.beginPath();
     gctx.moveTo(20, cy);
     gctx.lineTo(W - 20, cy);
@@ -1398,7 +1435,6 @@ function initProFineArtsStudio() {
     gctx.lineTo(cx, H - 20);
     gctx.stroke();
 
-    // 1-Point Vanishing Rays (Fine Arts Aptitude Perspective!)
     gctx.setLineDash([5, 6]);
     for (let a = 0; a < 12; a++) {
       const angle = (a / 12) * Math.PI * 2;
@@ -1408,7 +1444,6 @@ function initProFineArtsStudio() {
       gctx.stroke();
     }
 
-    // Concentric Golden Proportion Circles
     [70, 145, 220].forEach((r) => {
       gctx.beginPath();
       gctx.arc(cx, cy, r, 0, Math.PI * 2);
@@ -1441,7 +1476,6 @@ function initProFineArtsStudio() {
     ctx.lineJoin = 'round';
 
     if (brushMode === 'charcoal') {
-      // Multi-strand textured academic charcoal shading!
       ctx.strokeStyle = activeColor;
       ctx.globalAlpha = 0.36;
       ctx.lineWidth = Math.max(1.2, brushSize * 0.42);
@@ -1458,13 +1492,12 @@ function initProFineArtsStudio() {
       ctx.globalAlpha = 0.16;
       ctx.lineWidth = brushSize * 2.6;
       ctx.shadowColor = activeColor;
-      ctx.shadowBlur = 16;
+      ctx.shadowBlur = 14;
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
     } else if (brushMode === 'symmetry') {
-      // 8-Axis Radial Fine-Arts Symmetry Ornament Engine!
       const cx = canvas.width / 2;
       const cy = canvas.height / 2;
       const x1 = p1.x - cx;
@@ -1488,7 +1521,6 @@ function initProFineArtsStudio() {
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        // Mirror reflection for true kaleidoscope arabesque!
         ctx.scale(1, -1);
         ctx.beginPath();
         ctx.moveTo(x1, y1);
@@ -1497,7 +1529,6 @@ function initProFineArtsStudio() {
         ctx.restore();
       }
     } else {
-      // 24K Gold Calligraphy (velocity-sensitive stroke width!)
       ctx.strokeStyle = activeColor;
       ctx.lineWidth = dynamicWidth;
       ctx.shadowColor = activeColor;
@@ -1540,7 +1571,6 @@ function initProFineArtsStudio() {
   canvas.addEventListener('pointerup', endDraw);
   canvas.addEventListener('pointercancel', endDraw);
 
-  // Brush Mode Selector
   document.querySelectorAll('.mode-pill').forEach((btn) => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.mode-pill').forEach((b) => b.classList.remove('active'));
@@ -1549,7 +1579,6 @@ function initProFineArtsStudio() {
     });
   });
 
-  // Perspective Grid Toggle
   const perspBtn = document.getElementById('toggle-perspective-btn');
   if (perspBtn && guideCanvas) {
     let showGrid = false;
@@ -1603,13 +1632,13 @@ function initProFineArtsStudio() {
 
   document.getElementById('canvas-save').addEventListener('click', () => {
     const link = document.createElement('a');
-    link.download = `Yomna-Fine-Arts-Studio-${Date.now()}.png`;
+    link.download = `Yomna-Fine-Arts-Studio-HEY-${Date.now()}.png`;
     link.href = canvas.toDataURL('image/png');
     link.click();
   });
 }
 
-/* ==================== PRO TOOL #3: REAL MICROPHONE BLOW-OUT 19 CANDLES ==================== */
+/* ==================== PRO TOOL #3: REAL MICROPHONE BLOW-OUT "1" & "9" CAKE CANDLES ==================== */
 function initMicBlowDetector(scene3d, onBlowSuccess) {
   const micBtn = document.getElementById('mic-blow-btn');
   const micLabel = document.getElementById('mic-blow-label');
@@ -1641,7 +1670,7 @@ function initMicBlowDetector(scene3d, onBlowSuccess) {
     }
     if (scene3d) scene3d.setCandleWind(0);
     micBtn.setAttribute('aria-pressed', 'false');
-    micLabel.textContent = 'أو انفخي في المايكروفون لإطفاء الشموع واقعياً!';
+    micLabel.textContent = 'أو انفخي في المايكروفون لإطفاء شمعتي التورتة واقعياً!';
     meterWrap.classList.remove('active');
     meterWrap.setAttribute('aria-hidden', 'true');
     if (meterFill) meterFill.style.width = '0%';
@@ -1667,14 +1696,13 @@ function initMicBlowDetector(scene3d, onBlowSuccess) {
       active = true;
       charge = 0;
       micBtn.setAttribute('aria-pressed', 'true');
-      micLabel.textContent = 'المايكروفون جاهز — انفخي الآن نحو الشاشة 💨 (إلغاء)';
+      micLabel.textContent = 'المايكروفون جاهز — انفخي الآن نحو التورتة 💨 (إلغاء)';
       meterWrap.classList.add('active');
       meterWrap.setAttribute('aria-hidden', 'false');
 
       const sampleLoop = () => {
         if (!active) return;
         analyser.getByteFrequencyData(data);
-        // Low-frequency wind energy (bins 1..18) responds strongly to human breath blowing!
         let sum = 0;
         for (let i = 1; i <= 18; i++) sum += data[i];
         const avg = sum / 18;
@@ -1702,7 +1730,7 @@ function initMicBlowDetector(scene3d, onBlowSuccess) {
       stopMic();
       if (meterHint) {
         meterWrap.classList.add('active');
-        meterHint.textContent = 'تعذّر الوصول للمايكروفون — يمكنكِ إطفاء الشموع بالزر الذهبي أعلاه ✨';
+        meterHint.textContent = 'تعذّر الوصول للمايكروفون — يمكنكِ إطفاء شمعتي 1 و 9 بالزر الذهبي أعلاه ✨';
       }
     }
   });
@@ -1796,7 +1824,7 @@ function initTiltAndTouchSpinWindows(scene3d) {
     });
   });
 
-  // Horizontal touch/mouse spin directly inside any Open Mobile 3D Stage Window!
+  // Smooth horizontal drag/swipe spin directly inside any Open 3D Stage Window!
   document.querySelectorAll('[data-spin-stage="true"]').forEach((win) => {
     let lastX = null;
     win.addEventListener('pointerdown', (e) => {
@@ -1808,7 +1836,7 @@ function initTiltAndTouchSpinWindows(scene3d) {
         if (lastX === null || !scene3d) return;
         const dx = e.clientX - lastX;
         lastX = e.clientX;
-        scene3d.nudgeSpin(dx * 0.011);
+        scene3d.nudgeSpin(dx * 0.012);
       },
       { passive: true }
     );
@@ -1830,7 +1858,7 @@ function initEnvelope() {
   });
 }
 
-/* ==================== SECTION-LOCKED 3D SCROLL, MOOD SWITCHER & FINALE ==================== */
+/* ==================== CONTINUOUS 60FPS 3D SCROLL, CAKE CONTROLS & FINALE ==================== */
 function initScrollNavigationAndFinale(scene3d, audio) {
   const topbar = document.getElementById('topbar');
   const progressBar = document.getElementById('scroll-progress-fill');
@@ -1857,8 +1885,8 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     if (hudLabel && sec?.dataset.stage) hudLabel.textContent = sec.dataset.stage;
   };
 
-  // Compute EXACT continuous 3D Zone Float [0..5] locked to DOM section positions!
-  const updateSceneZoneAndReveals = () => {
+  // Continuous pixel-by-pixel 3D Zone Float [0..5] — ZERO plateau freeze!
+  const updateSceneZoneAndReveals = (scrollNorm = 0) => {
     const vh = window.innerHeight || 800;
     for (const node of reveals) {
       if (!node.classList.contains('visible')) {
@@ -1867,7 +1895,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
       }
     }
 
-    const focalY = vh * 0.38;
+    const focalY = vh * 0.36;
     let activeSec = sections[0];
     let nextSec = null;
 
@@ -1883,31 +1911,36 @@ function initScrollNavigationAndFinale(scene3d, audio) {
       setActiveStage(activeSec.id);
       if (scene3d) {
         const zCur = Number(activeSec.dataset.zone || 0);
+        let zoneFloat = zCur;
         if (nextSec) {
           const zNext = Number(nextSec.dataset.zone ?? zCur);
           const curRect = activeSec.getBoundingClientRect();
           const span = Math.max(1, curRect.height);
           const localFrac = Math.max(0, Math.min(1, (focalY - curRect.top) / span));
-          // Smoothly transition toward next section's 3D zone in the last 35% of current section
-          const blend = Math.max(0, (localFrac - 0.65) / 0.35);
-          scene3d.setZoneProgress(zCur + (zNext - zCur) * blend);
-        } else {
-          scene3d.setZoneProgress(zCur);
+          // Linear continuous glide across EVERY pixel of scroll!
+          zoneFloat = zCur + (zNext - zCur) * localFrac;
         }
+        scene3d.setContinuousScroll(scrollNorm, zoneFloat);
       }
     }
   };
 
+  let scrollTicking = false;
   const onScroll = () => {
-    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    const progress = window.scrollY / maxScroll;
-    if (progressBar) progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
-    topbar.classList.toggle('scrolled', window.scrollY > 40);
-    updateSceneZoneAndReveals();
+    if (scrollTicking) return;
+    scrollTicking = true;
+    requestAnimationFrame(() => {
+      scrollTicking = false;
+      const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+      const progress = Math.max(0, Math.min(1, window.scrollY / maxScroll));
+      if (progressBar) progressBar.style.width = `${(progress * 100).toFixed(2)}%`;
+      topbar.classList.toggle('scrolled', window.scrollY > 40);
+      updateSceneZoneAndReveals(progress);
+    });
   };
 
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', updateSceneZoneAndReveals, { passive: true });
+  window.addEventListener('resize', () => onScroll(), { passive: true });
 
   const revealObs = new IntersectionObserver(
     (entries) => entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('visible')),
@@ -1925,7 +1958,7 @@ function initScrollNavigationAndFinale(scene3d, audio) {
   railDots.forEach((dot) => dot.addEventListener('click', () => scrollToTarget(dot.dataset.target)));
   dockChips.forEach((chip) => chip.addEventListener('click', () => scrollToTarget(chip.dataset.target)));
 
-  // Pro Tool #2: Live 3D Museum Lighting Mood Switcher!
+  // Live 3D Museum Lighting Mood Switcher
   const moodBtn = document.getElementById('mood-cycle-btn');
   const moodLabel = document.getElementById('mood-pill-label');
   let moodIdx = 0;
@@ -1970,7 +2003,37 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     audioBtn.setAttribute('aria-pressed', String(isPlaying));
   });
 
-  // Finale 19 Candles + Real Microphone Blow Integration!
+  // Pro Realistic 3D Cake Interactive Controls (360° Turntable, Close-Up on 1 & 9, Fireworks)
+  const cakeSpinBtn = document.getElementById('cake-spin-btn');
+  const cakeZoomBtn = document.getElementById('cake-zoom-btn');
+  const cakeFireworksBtn = document.getElementById('cake-fireworks-btn');
+
+  if (cakeSpinBtn && scene3d) {
+    cakeSpinBtn.addEventListener('click', () => {
+      const spinning = scene3d.toggleCakeTurntable();
+      cakeSpinBtn.classList.toggle('active', spinning);
+      cakeSpinBtn.setAttribute('aria-pressed', String(spinning));
+      cakeSpinBtn.replaceChildren(el('span', '', spinning ? '↻ دوران 360° تلقائي' : '⏸ الدوران متوقف (اسحب للتدوير)'));
+    });
+  }
+
+  if (cakeZoomBtn && scene3d) {
+    cakeZoomBtn.addEventListener('click', () => {
+      const zoomed = scene3d.toggleCakeZoom();
+      cakeZoomBtn.classList.toggle('active', zoomed);
+      cakeZoomBtn.setAttribute('aria-pressed', String(zoomed));
+      cakeZoomBtn.replaceChildren(el('span', '', zoomed ? '🔭 عرض التورتة بالكامل' : '🔍 تقريب على شمعتي 1 و 9'));
+    });
+  }
+
+  if (cakeFireworksBtn && scene3d) {
+    cakeFireworksBtn.addEventListener('click', () => {
+      scene3d.launchFireworks();
+      audio.playWishChime();
+    });
+  }
+
+  // Finale Realistic Cake "1" & "9" Candles + Real Microphone Blow Integration
   const wishBtn = document.getElementById('wish-btn');
   const wishBtnAr = document.getElementById('finale-btn-ar');
   const wishLetter = document.getElementById('wish-letter');
@@ -1990,14 +2053,14 @@ function initScrollNavigationAndFinale(scene3d, audio) {
     wishLetter.classList.add('revealed');
     wishLetter.setAttribute('aria-hidden', 'false');
     wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAfterAr;
-    setCandlesStatusText('تحققت الأمنية بإذن الله — أُطلقت شرارات العام التاسع عشر ✦', true);
+    setCandlesStatusText(FROZEN_CONFIG.finale.candlesBlownStatusAr, true);
   };
 
   const relightCandles = () => {
     candlesBlown = false;
     if (scene3d) scene3d.triggerWishCelebration(false);
     wishBtnAr.textContent = FROZEN_CONFIG.finale.buttonAr;
-    setCandlesStatusText('19 شمعة ذهبية مضيئة في المسرح الـ 3D أعلاه', false);
+    setCandlesStatusText(FROZEN_CONFIG.finale.candlesLitStatusAr, false);
   };
 
   const micDetector = initMicBlowDetector(scene3d, extinguishCandles);
@@ -2048,8 +2111,8 @@ function bootstrap() {
   const cloudVault = new FamilyCloudVault();
   const vaultExperience = initFamilyVaultExperience(vaultStore, cloudVault, audio);
 
-  initBirthdayCountdown();
   initReceptionPortal(scene3d, audio, vaultExperience, incomingGift);
+  initSpotlightManifesto(scene3d, audio);
   initSparkleCursorTrail();
   initGuideModal();
   initHorizonMotionGraphics();
@@ -2061,7 +2124,7 @@ function bootstrap() {
   window.setTimeout(() => {
     const preloader = document.getElementById('preloader');
     if (preloader) preloader.classList.add('hidden');
-  }, 650);
+  }, 550);
 }
 
 bootstrap();

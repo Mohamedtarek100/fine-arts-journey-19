@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>رحلة يمنى | 5 ديسمبر — العام التاسع عشر</title>
+  <title>رحلة يمنى | 5 ديسمبر — العام التاسع عشر • HEY</title>
   <meta name="description" content="معرض فني ثلاثي الأبعاد يحتفي برحلة يمنى في عامها التاسع عشر — من البدايات إلى تالتة ثانوي ونحو حلم كلية الفنون الجميلة (5 ديسمبر)." />
   <meta name="theme-color" content="#110c09" />
 
@@ -20,11 +20,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap"
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="./styles.css?v=9" />
+  <link rel="stylesheet" href="./styles.css?v=10" />
 </head>
 <body class="portal-open">
   <!-- Top Cinema Scroll Progress Bar -->
@@ -35,26 +35,40 @@
   <!-- Subtle Warm Canvas Grain Overlay -->
   <div class="canvas-grain" aria-hidden="true"></div>
 
-  <!-- Preloader Curtain -->
+  <!-- Preloader Curtain with Sleek HEY Crest -->
   <div id="preloader" class="preloader" aria-live="polite">
     <div class="preloader-inner">
       <div class="preloader-seal">
-        <span class="seal-roman">XIX</span>
+        <svg class="hey-logo-svg hey-preloader-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="شعار HEY">
+          <defs>
+            <linearGradient id="heyGold1" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fff4ce" />
+              <stop offset="48%" stop-color="#e8c268" />
+              <stop offset="100%" stop-color="#a87928" />
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="46" stroke="url(#heyGold1)" stroke-width="1.8" stroke-opacity="0.92" />
+          <circle cx="50" cy="50" r="40" stroke="url(#heyGold1)" stroke-width="0.9" stroke-dasharray="2.5 3.5" stroke-opacity="0.58" />
+          <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#heyGold1)" />
+          <path d="M23 69 Q50 77 77 69" stroke="url(#heyGold1)" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.72" />
+          <circle cx="50" cy="80" r="2.2" fill="url(#heyGold1)" />
+          <text x="50" y="59" text-anchor="middle" fill="url(#heyGold1)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="600" letter-spacing="3">HEY</text>
+        </svg>
         <span class="seal-ring"></span>
         <span class="seal-ring-outer"></span>
       </div>
-      <p class="preloader-en">OPENING THE 3D ATELIER • 5 DECEMBER</p>
+      <p class="preloader-en">HEY 3D ATELIER • 5 DECEMBER</p>
       <p class="preloader-ar">جاري تجهيز المعرض الفني ثلاثي الأبعاد...</p>
     </div>
   </div>
 
-  <!-- Persistent Full-Screen 3D WebGL Atelier -->
+  <!-- Persistent Full-Screen 60FPS 3D WebGL Atelier -->
   <canvas id="atelier-canvas" aria-label="معرض فني ثلاثي الأبعاد تفاعلي"></canvas>
 
   <!-- Subtle Motion-Graphics Golden Cursor Trail Overlay -->
   <canvas id="sparkle-canvas" aria-hidden="true"></canvas>
 
-  <!-- ==================== 3D EXCLUSIVE 8-MEMBER FAMILY RECEPTION PORTAL ==================== -->
+  <!-- ==================== 3D EXCLUSIVE 8-MEMBER FAMILY RECEPTION PORTAL (NO COUNTDOWN) ==================== -->
   <section
     id="reception-portal"
     class="reception-portal"
@@ -63,11 +77,6 @@
     aria-labelledby="portal-title-ar"
   >
     <div class="portal-shell">
-      <div class="countdown-bar" id="portal-countdown" aria-live="off">
-        <span class="cd-title">✦ العد التنازلي ليوم 5 ديسمبر</span>
-        <div class="cd-units" id="portal-countdown-units"></div>
-      </div>
-
       <div class="incoming-gift-banner" id="incoming-gift-banner" aria-live="polite" aria-hidden="true">
         <span class="gift-icon">💌</span>
         <span id="incoming-gift-text"></span>
@@ -75,8 +84,24 @@
 
       <div class="portal-step active" id="portal-step-select">
         <div class="portal-head">
-          <div class="portal-seal-badge" aria-hidden="true">XIX</div>
-          <p class="eyebrow-en" id="portal-eyebrow-en">PRIVATE FAMILY 3D RECEPTION • 5 DECEMBER</p>
+          <div class="portal-seal-badge hey-badge-shell" aria-hidden="true">
+            <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="heyGold2" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#fff4ce" />
+                  <stop offset="48%" stop-color="#e8c268" />
+                  <stop offset="100%" stop-color="#a87928" />
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="46" stroke="url(#heyGold2)" stroke-width="2" />
+              <circle cx="50" cy="50" r="39" stroke="url(#heyGold2)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.6" />
+              <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#heyGold2)" />
+              <path d="M23 69 Q50 77 77 69" stroke="url(#heyGold2)" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.75" />
+              <circle cx="50" cy="80" r="2.3" fill="url(#heyGold2)" />
+              <text x="50" y="59" text-anchor="middle" fill="url(#heyGold2)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="600" letter-spacing="3">HEY</text>
+            </svg>
+          </div>
+          <p class="eyebrow-en" id="portal-eyebrow-en">HEY PRIVATE FAMILY 3D RECEPTION • 5 DECEMBER</p>
           <h1 class="portal-title" id="portal-title-ar">أهلاً بكم في معرض رحلة يمنى</h1>
           <p class="portal-subtitle" id="portal-subtitle-ar"></p>
         </div>
@@ -107,15 +132,15 @@
         </div>
 
         <div class="letter-mission-strip">
-          <span class="mission-chip live"><i class="pulse-dot"></i> الآن: تالتة ثانوي (سنة فاصلة)</span>
-          <span class="mission-arrow" aria-hidden="true">← خطوة واحدة ←</span>
-          <span class="mission-chip gold">✦ الهدف: كلية الفنون الجميلة</span>
+          <span class="mission-chip live"><i class="pulse-dot"></i> الآن: تالتة ثانوي (بداية الرحلة)</span>
+          <span class="mission-arrow" aria-hidden="true">← بالشغف والفرح ←</span>
+          <span class="mission-chip gold">✦ الأفق: كلية الفنون الجميلة</span>
         </div>
 
         <div class="portal-actions letter-actions">
           <button id="portal-enter-site-btn" class="btn-gold-seal" type="button">
             <span class="btn-ar" id="portal-enter-btn-ar">افتح بوابة المعرض الـ 3D ←</span>
-            <span class="btn-en">ENTER THE 6-ACT 3D STORY</span>
+            <span class="btn-en">ENTER THE 3D EXHIBITION</span>
           </button>
 
           <button id="portal-back-btn" class="btn-glass-secondary" type="button">
@@ -126,10 +151,24 @@
     </div>
   </section>
 
-  <!-- ==================== FLOATING MUSEUM TOP BAR ==================== -->
+  <!-- ==================== FLOATING MUSEUM TOP BAR WITH HEY LOGO ==================== -->
   <header class="topbar" id="topbar">
     <a href="#hero" class="brand-mark" aria-label="العودة للبداية">
-      <span class="brand-monogram">XIX</span>
+      <span class="brand-monogram hey-badge-shell" aria-label="شعار HEY">
+        <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="heyGold3" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#fff4ce" />
+              <stop offset="48%" stop-color="#e8c268" />
+              <stop offset="100%" stop-color="#a87928" />
+            </linearGradient>
+          </defs>
+          <circle cx="50" cy="50" r="46" stroke="url(#heyGold3)" stroke-width="2.2" />
+          <path d="M50 13 L52.8 19.6 L59.4 22.4 L52.8 25.2 L50 31.8 L47.2 25.2 L40.6 22.4 L47.2 19.6 Z" fill="url(#heyGold3)" />
+          <path d="M23 70 Q50 78 77 70" stroke="url(#heyGold3)" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.78" />
+          <text x="50" y="60" text-anchor="middle" fill="url(#heyGold3)" font-family="Cinzel, Georgia, serif" font-size="26" font-weight="700" letter-spacing="2.5">HEY</text>
+        </svg>
+      </span>
       <span class="brand-text">
         <span class="brand-en" id="nav-date-en">5 DECEMBER</span>
         <span class="brand-ar" id="nav-title-ar">رحلة يمنى</span>
@@ -200,23 +239,24 @@
 
   <!-- Floating 3D Full-Screen Inspect Mode Exit Banner -->
   <div id="inspect-banner" class="inspect-banner" aria-hidden="true">
-    <span>✦ اسحب الشاشة بإصبعك أو بالماوس لتدوير المجسم الـ 3D</span>
+    <span>✦ اسحب الشاشة بإصبعك أو بالماوس لتدوير المجسم الـ 3D بحرية</span>
     <button id="exit-inspect-btn" type="button">إظهار القصة ✕</button>
   </div>
 
-  <!-- Ordered 6-Act Vertical Rail (Desktop) -->
+  <!-- Ordered Vertical Story Rail (Desktop) -->
   <nav class="chapter-rail" aria-label="التسلسل القصصي للرحلة">
     <button class="rail-dot active" data-target="hero" data-label="الافتتاحية" aria-label="الافتتاحية"></button>
     <button class="rail-dot" data-target="childhood" data-label="01 الطفولة" aria-label="الفصل الأول: الطفولة"></button>
-    <button class="rail-dot" data-target="passion" data-label="02 الشغف" aria-label="الفصل الثاني: ميلاد الفنانة"></button>
-    <button class="rail-dot" data-target="thanaweya" data-label="03 تالتة ثانوي" aria-label="الفصل الثالث: تالتة ثانوي والـ 90%"></button>
-    <button class="rail-dot" data-target="fine-arts" data-label="04 فنون جميلة" aria-label="الفصل الرابع: حلم الفنون الجميلة"></button>
-    <button class="rail-dot" data-target="canvas-studio" data-label="05 استوديو الفن" aria-label="الفصل الخامس: استوديو أدوات الفنون الجميلة"></button>
+    <button class="rail-dot" data-target="passion" data-label="02 الشغف" aria-label="الفصل الثاني: الشغف"></button>
+    <button class="rail-dot" data-target="thanaweya" data-label="03 تالتة ثانوي" aria-label="الفصل الثالث: تالتة ثانوي"></button>
+    <button class="rail-dot" data-target="fine-arts" data-label="04 فنون جميلة" aria-label="الفصل الرابع: فنون جميلة"></button>
+    <button class="rail-dot" data-target="canvas-studio" data-label="05 الاستوديو" aria-label="الفصل الخامس: الاستوديو"></button>
     <button class="rail-dot" data-target="yomna-vault" data-label="06 صندوق يمنى" aria-label="صندوق رسائل العائلة"></button>
-    <button class="rail-dot" data-target="finale" data-label="19 شمعة" aria-label="الخاتمة: الـ 19 شمعة"></button>
+    <button class="rail-dot spotlight-dot" data-target="final-message" data-label="★ الرسالة الأهم" aria-label="الرسالة الأهم في ختام الرحلة"></button>
+    <button class="rail-dot" data-target="finale" data-label="🎂 تورتة 19" aria-label="الخاتمة: تورتة العام الـ 19"></button>
   </nav>
 
-  <!-- Ordered 6-Act Mobile Bottom Dock -->
+  <!-- Ordered Mobile Bottom Dock -->
   <nav class="mobile-journey-dock" id="mobile-journey-dock" aria-label="مراحل القصة المرتبة">
     <button class="dock-chip active" data-target="hero" type="button">الافتتاحية</button>
     <button class="dock-chip" data-target="childhood" type="button">01 الطفولة</button>
@@ -225,23 +265,23 @@
     <button class="dock-chip gold-chip" data-target="fine-arts" type="button">04 فنون جميلة ✦</button>
     <button class="dock-chip" data-target="canvas-studio" type="button">05 الاستوديو</button>
     <button class="dock-chip gold-chip" data-target="yomna-vault" type="button">06 صندوق يمنى 💌</button>
-    <button class="dock-chip" data-target="finale" type="button">19 شمعة ✨</button>
+    <button class="dock-chip spotlight-chip" data-target="final-message" type="button">★ الرسالة الأهم</button>
+    <button class="dock-chip" data-target="finale" type="button">🎂 تورتة 19</button>
   </nav>
 
-  <!-- ==================== ORDERED 6-ACT CINEMATIC STORY CONTAINER ==================== -->
+  <!-- ==================== ORDERED CINEMATIC STORY CONTAINER ==================== -->
   <main id="journey-root">
 
     <!-- ==================== PROLOGUE (ZONE 0): HERO ==================== -->
     <section id="hero" class="section hero-section" data-zone="0" data-stage="الافتتاحية • 5 ديسمبر">
-      <!-- Open Mobile 3D Stage Window (Unobstructed 3D Easel, Palette & Brushes!) -->
       <div class="stage-3d-window" data-spin-stage="true">
         <div class="stage-3d-pill">
-          <span>❖ مجسم 3D حي: أتيليه الفنانة — اسحب يميناً ويساراً للتدوير</span>
+          <span>❖ مجسم 3D حي: أتيليه الفنانة — اسحب للتدوير ومرّر لحركة 3D سلسة</span>
         </div>
       </div>
 
       <div class="hero-content reveal">
-        <div class="story-arc-stepper" aria-label="خريطة القصة من 6 فصول">
+        <div class="story-arc-stepper" aria-label="خريطة القصة">
           <span class="arc-pill active">الافتتاحية</span>
           <i>←</i>
           <span class="arc-pill">01 الطفولة</span>
@@ -254,7 +294,9 @@
           <i>←</i>
           <span class="arc-pill">05 الاستوديو</span>
           <i>←</i>
-          <span class="arc-pill">06 الختام</span>
+          <span class="arc-pill">★ الرسالة الأهم</span>
+          <i>←</i>
+          <span class="arc-pill">🎂 تورتة 19</span>
         </div>
 
         <div class="date-badge">
@@ -274,7 +316,7 @@
         <div class="hero-cta-group">
           <button id="enter-exhibition-btn" class="btn-gold-seal" type="button">
             <span class="btn-ar" id="hero-cta-ar">ابدأ الحكاية من الفصل الأول ↓</span>
-            <span class="btn-en" id="hero-cta-en">BEGIN THE 6-ACT STORY</span>
+            <span class="btn-en" id="hero-cta-en">BEGIN THE 3D STORY</span>
           </button>
 
           <button id="hero-guide-btn" class="btn-glass-secondary" type="button">
@@ -285,13 +327,13 @@
       </div>
     </section>
 
-    <!-- ==================== ACTS 01, 02, 03 & 04 (DYNAMICALLY RENDERED IN EXACT CHRONOLOGICAL ORDER) ==================== -->
+    <!-- ==================== ACTS 01, 02, 03 & 04 (DYNAMICALLY RENDERED IN ORDER) ==================== -->
     <div id="story-acts-container"></div>
 
-    <!-- ==================== ACT 05 (ZONE 4): PRO FINE-ARTS STUDIO & PERSPECTIVE LAB ==================== -->
-    <section id="canvas-studio" class="section studio-section" data-zone="4" data-stage="الفصل 05 • استوديو قدرات الفنون الجميلة">
+    <!-- ==================== ACT 05 (ZONE 4.25): PRO FINE-ARTS STUDIO & PERSPECTIVE LAB ==================== -->
+    <section id="canvas-studio" class="section studio-section" data-zone="4.25" data-stage="الفصل 05 • استوديو قدرات الفنون الجميلة">
       <div class="section-header centered reveal">
-        <span class="act-kicker">الفصل الخامس من الستة • أداة إبداعية احترافية</span>
+        <span class="act-kicker">الفصل الخامس • أداة إبداعية احترافية</span>
         <p class="eyebrow-en">ACT V • PRO FINE-ARTS &amp; SYMMETRY ATELIER</p>
         <h2 class="section-title">استوديو <span class="gold-shimmer">قدرات الفنون الجميلة</span></h2>
         <p class="section-lead">
@@ -300,7 +342,6 @@
       </div>
 
       <div class="atelier-easel-wrapper reveal">
-        <!-- Row 1: Pro Brush Engines & Perspective Overlays -->
         <div class="pro-modes-bar" role="toolbar" aria-label="أوضاع الفرش الاحترافية">
           <div class="mode-group">
             <button class="mode-pill active" data-brush="calligraphy" type="button">✒ ريشة ذهب خطّاط</button>
@@ -317,7 +358,6 @@
           </div>
         </div>
 
-        <!-- Row 2: Pigments, Size, Undo, Clear, Export -->
         <div class="atelier-toolbar">
           <div class="palette-swatches" role="group" aria-label="ألوان الباليتة">
             <button class="swatch active" data-color="#e8c268" style="--sw:#e8c268" title="ذهبي عتيق" aria-label="لون ذهبي"></button>
@@ -349,10 +389,10 @@
       </div>
     </section>
 
-    <!-- ==================== ACT 06 PART A (ZONE 5): YOMNA'S PRIVATE FAMILY VAULT ==================== -->
-    <section id="yomna-vault" class="section support-studio-section" data-zone="5" data-stage="الفصل 06 • صندوق رسائل العائلة ليمنى">
+    <!-- ==================== ACT 06 (ZONE 4.55): YOMNA'S PRIVATE FAMILY VAULT ==================== -->
+    <section id="yomna-vault" class="section support-studio-section" data-zone="4.55" data-stage="الفصل 06 • صندوق رسائل العائلة ليمنى">
       <div class="section-header centered reveal">
-        <span class="act-kicker">الفصل السادس • التفاف العائلة حول حلمها</span>
+        <span class="act-kicker">الفصل السادس • التفاف العائلة حول يمنى</span>
         <p class="eyebrow-en" id="vault-eyebrow-en">ACT VI • YOMNA'S PRIVATE FAMILY VAULT</p>
         <h2 class="section-title" id="vault-title-ar">صندوق رسائل <span class="gold-shimmer">العائلة ليمنى</span></h2>
         <p class="section-lead" id="vault-subtitle-ar"></p>
@@ -421,13 +461,64 @@
       </div>
     </section>
 
-    <!-- ==================== ACT 06 PART B (ZONE 5): FINALE — 19 3D CANDLES + REAL MIC BLOW ==================== -->
-    <section id="finale" class="section finale-section" data-zone="5" data-stage="الخاتمة • 5 ديسمبر والـ 19 شمعة">
-      <!-- Open Mobile 3D Stage Window for the 19 Floating Golden Candles Crown! -->
-      <div class="stage-3d-window finale-3d-window" data-spin-stage="true">
-        <div class="stage-3d-pill">
-          <span>🕯️ مجسم 3D حي: تاج الـ 19 شمعة الذهبية — اسحب للتدوير أو انفخ في المايك!</span>
+    <!-- ==================== SPOTLIGHT SECTION (ZONE 4.8): THE MOST IMPORTANT MESSAGE OF THE JOURNEY ==================== -->
+    <section id="final-message" class="section manifesto-section" data-zone="4.8" data-stage="★ الرسالة الأهم في ختام الرحلة">
+      <div class="manifesto-card reveal">
+        <div class="manifesto-aura" aria-hidden="true"></div>
+
+        <span class="manifesto-kicker" id="manifesto-kicker">★ وقفة مهمة جداً في ختام الرحلة — رسالة للجميع ★</span>
+        <p class="eyebrow-en" id="manifesto-eyebrow">THE MOST IMPORTANT MESSAGE OF THE JOURNEY</p>
+        <h2 class="manifesto-title" id="manifesto-title">كلمة من القلب.. لكل العائلة وليمنى</h2>
+
+        <blockquote class="manifesto-quote-box">
+          <span class="quote-ornament-top" aria-hidden="true">✦</span>
+          <p id="manifesto-quote"></p>
+          <span class="quote-ornament-bot" aria-hidden="true">✦</span>
+        </blockquote>
+
+        <!-- 3 Distilled Highlight Pillars -->
+        <div class="manifesto-pillars" id="manifesto-pillars"></div>
+
+        <!-- Pro Interactive Feature: Daily Peace & Reassurance Capsule -->
+        <div class="peace-capsule-card">
+          <div class="peace-capsule-head">
+            <span class="capsule-badge">🕊️ كبسولة الطمأنينة اليومية ليمنى</span>
+            <span class="capsule-counter" id="peace-capsule-count">1 / 10</span>
+          </div>
+          <p class="peace-capsule-text" id="peace-capsule-text"></p>
+          <div class="peace-capsule-actions">
+            <button id="next-capsule-btn" class="tool-btn gold-fill" type="button">
+              <span>✦ رسالة طمأنينة أخرى</span>
+            </button>
+            <button id="pledge-star-btn" class="btn-glass-secondary pledge-btn" type="button" aria-pressed="false">
+              <span>⭐ أؤمن بهذه الرسالة وأدعم يمنى بكل هدوء وفرح</span>
+            </button>
+          </div>
+          <p class="pledge-feedback" id="pledge-feedback" aria-live="polite"></p>
         </div>
+      </div>
+    </section>
+
+    <!-- ==================== GRAND FINALE (ZONE 5): REALISTIC 3D BIRTHDAY CAKE WITH "1" & "9" CANDLES ==================== -->
+    <section id="finale" class="section finale-section" data-zone="5" data-stage="الخاتمة • تورتة العام الـ 19 الـ 3D">
+      <!-- Dedicated Unobstructed 3D Birthday Cake Showcase Window (Visible on Desktop AND Mobile!) -->
+      <div class="stage-3d-window finale-3d-window" data-spin-stage="true">
+        <div class="stage-3d-pill cake-stage-pill">
+          <span>🎂 تورتة العام الـ 19 الواقعية الـ 3D بشمعتي «1» و «9» — اسحب للتدوير 360°!</span>
+        </div>
+      </div>
+
+      <!-- Pro Interactive 3D Cake Controls Bar -->
+      <div class="cake-controls-bar reveal" role="toolbar" aria-label="أدوات التحكم في تورتة الـ 3D">
+        <button id="cake-spin-btn" class="cake-ctrl-pill active" type="button" aria-pressed="true">
+          <span>↻ دوران 360° تلقائي</span>
+        </button>
+        <button id="cake-zoom-btn" class="cake-ctrl-pill" type="button" aria-pressed="false">
+          <span>🔍 تقريب على شمعتي 1 و 9</span>
+        </button>
+        <button id="cake-fireworks-btn" class="cake-ctrl-pill gold-accent" type="button">
+          <span>🎆 ألعاب نارية ذهبية</span>
+        </button>
       </div>
 
       <div class="finale-card reveal">
@@ -447,26 +538,26 @@
 
         <div class="candles-status" id="candles-status">
           <span class="flame-dot"></span>
-          <span>19 شمعة ذهبية مضيئة في المسرح الـ 3D أعلاه</span>
+          <span>تورتة العام الـ 19 مضيئة بشمعتي رقم 1 و 9 في المسرح الـ 3D أعلاه</span>
         </div>
 
-        <!-- Pro Interactive Candle Controls: Real Microphone Blow + Tap Button -->
+        <!-- Pro Interactive Candle Controls: Tap or Real Microphone Blow-Out -->
         <div class="finale-actions-stack">
           <button id="wish-btn" class="btn-gold-seal finale-btn" type="button">
-            <span class="btn-ar" id="finale-btn-ar">تمنّي أمنية وأطفئي الـ 19 شمعة ✨</span>
-            <span class="btn-en">TAP TO BLOW OUT THE 19 CANDLES</span>
+            <span class="btn-ar" id="finale-btn-ar">تمنّي أمنية وأطفئي شمعتي 1 و 9 على التورتة 🎂✨</span>
+            <span class="btn-en">BLOW OUT THE 1 &amp; 9 CAKE CANDLES</span>
           </button>
 
           <button id="mic-blow-btn" class="btn-glass-secondary mic-blow-btn" type="button" aria-pressed="false">
             <span>🎙️</span>
-            <span id="mic-blow-label">أو انفخي في المايكروفون لإطفاء الشموع واقعياً!</span>
+            <span id="mic-blow-label">أو انفخي في المايكروفون لإطفاء شمعتي التورتة واقعياً!</span>
           </button>
 
           <div class="mic-meter-wrap" id="mic-meter-wrap" aria-hidden="true">
             <div class="mic-meter-track">
               <div class="mic-meter-fill" id="mic-meter-fill"></div>
             </div>
-            <small id="mic-meter-hint">انفخي بقوة نحو المايكروفون لإطفاء الـ 19 شمعة الـ 3D 💨</small>
+            <small id="mic-meter-hint">انفخي بقوة نحو المايكروفون لإطفاء شمعتي «1» و «9» على التورتة 💨</small>
           </div>
         </div>
 
@@ -488,18 +579,34 @@
         </div>
       </div>
 
-      <!-- Prestigious Copyright & Security Footer -->
+      <!-- Prestigious Copyright & Developer Credit Footer with Custom HEY Logo -->
       <footer class="site-footer reveal" aria-label="حقوق النشر ومعلومات المعرض">
         <div class="footer-inner">
           <div class="footer-brand">
-            <span class="footer-monogram">XIX</span>
+            <span class="footer-monogram hey-badge-shell" aria-label="شعار HEY">
+              <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="heyGold4" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stop-color="#fff4ce" />
+                    <stop offset="48%" stop-color="#e8c268" />
+                    <stop offset="100%" stop-color="#a87928" />
+                  </linearGradient>
+                </defs>
+                <circle cx="50" cy="50" r="46" stroke="url(#heyGold4)" stroke-width="2" />
+                <circle cx="50" cy="50" r="39" stroke="url(#heyGold4)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.58" />
+                <path d="M50 13 L52.8 19.6 L59.4 22.4 L52.8 25.2 L50 31.8 L47.2 25.2 L40.6 22.4 L47.2 19.6 Z" fill="url(#heyGold4)" />
+                <path d="M23 70 Q50 78 77 70" stroke="url(#heyGold4)" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.78" />
+                <circle cx="50" cy="80" r="2.3" fill="url(#heyGold4)" />
+                <text x="50" y="60" text-anchor="middle" fill="url(#heyGold4)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="700" letter-spacing="2.8">HEY</text>
+              </svg>
+            </span>
             <div>
               <strong id="footer-owner-ar">معرض رحلة يمنى — العام التاسع عشر (5 ديسمبر)</strong>
-              <span class="footer-credit" id="footer-credit-ar"></span>
+              <span class="footer-credit" id="footer-credit-ar">التصميم والتطوير بواسطة ENG / Mohamed Tarek</span>
             </div>
           </div>
 
-          <nav class="footer-links" aria-label="روابط الفصول الستة">
+          <nav class="footer-links" aria-label="روابط الفصول">
             <a href="#hero">الافتتاحية</a>
             <a href="#childhood">01 الطفولة</a>
             <a href="#passion">02 الشغف</a>
@@ -507,6 +614,8 @@
             <a href="#fine-arts">04 فنون جميلة</a>
             <a href="#canvas-studio">05 الاستوديو</a>
             <a href="#yomna-vault">06 صندوق يمنى</a>
+            <a href="#final-message">★ الرسالة الأهم</a>
+            <a href="#finale">🎂 تورتة 19</a>
             <button type="button" class="footer-link-btn" id="footer-guide-btn">دليل الموقع</button>
           </nav>
 
@@ -528,7 +637,7 @@
     <div class="guide-modal-card">
       <button class="modal-close-btn" id="guide-modal-close" type="button" aria-label="إغلاق الدليل">✕</button>
       <div class="guide-modal-header">
-        <p class="eyebrow-en">INTERACTIVE 3D EXHIBITION • VISITOR GUIDE</p>
+        <p class="eyebrow-en">HEY 3D EXHIBITION • VISITOR GUIDE</p>
         <h2 id="guide-modal-title">دليل التفاعل والأدوات الاحترافية</h2>
         <p class="modal-sub" id="guide-modal-sub"></p>
       </div>
@@ -578,7 +687,7 @@
     </div>
   </div>
 
-  <!-- Main Scripts -->
-  <script type="module" src="./app.js?v=9"></script>
+  <!-- Main Scripts (v10) -->
+  <script type="module" src="./app.js?v=10"></script>
 </body>
 </html>
