@@ -22,7 +22,7 @@ const ZONE_STAGES = [
   { id: 'passion', z: -26.0, camDist: 6.2, mobileDist: 6.8, y: 0.1 },   // 2: Sacred Golden Geometry
   { id: 'thanaweya', z: -40.0, camDist: 6.6, mobileDist: 7.2, y: 0.1 }, // 3: Hourglass & Hope Lanterns
   { id: 'fine-arts', z: -55.0, camDist: 7.4, mobileDist: 8.2, y: 0.15 },// 4: Fine Arts Archway & Sculpture
-  { id: 'cake', z: -71.0, camDist: 6.2, mobileDist: 6.8, y: 0.15 },     // 5: Realistic 3D Birthday Cake (1 & 9 Candles)
+  { id: 'cake', z: -71.0, camDist: 7.0, mobileDist: 6.8, y: 0.15 },     // 5: Realistic 3D Birthday Cake (1 & 9 Candles)
 ];
 
 export class Atelier3DScene {
@@ -1152,7 +1152,7 @@ export class Atelier3DScene {
       if (this.isMobile) {
         verticalFocusShift = -0.68 - 0.32 * nearCake * (1 - this.cakeZoomLerp * 0.65);
       } else {
-        verticalFocusShift = 0.05 - 0.78 * nearCake * (1 - this.cakeZoomLerp * 0.72);
+        verticalFocusShift = 0.05 - 0.36 * nearCake * (1 - this.cakeZoomLerp * 0.65);
       }
     }
     this.camera.lookAt(
