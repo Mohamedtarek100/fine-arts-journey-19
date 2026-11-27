@@ -61,7 +61,7 @@ export const STORY_WAYPOINTS = [
     id: 'champs-elysees',
     zoneAr: 'الشانزليزيه • بداية الرحلة',
     labelAr: 'الشانزليزيه، سيارة BMW وقوس النصر',
-    x: -0.9, z: 377.7, guideX: 0.35, guideZ: 375.5, lookAtX: -2.6, lookAtY: 1.5, lookAtZ: 369.5, interactId: 'bmw',
+    x: -1.2, z: 377.7, guideX: -1.45, guideZ: 376.2, lookAtX: -3.0, lookAtY: 1.5, lookAtZ: 369.0, interactId: 'bmw',
     bobsSlides: [
       'أهلاً بك بهدوء في شوارع باريس وقت الغروب. أنا القطة بوبس، وسأكون معك في كل لحظة من هذه الرحلة، سواء مشياً على الأقدام أو راكبةً بجانبك داخل سيارة الـ BMW.',
       'أمامك على يسار الرصيف سيارة الـ BMW جاهزة للانطلاق بطول الشانزليزيه نحو متحف اللوفر، وخلفها يرتفع برج إيفل وسط سماء الغروب. خذ وقتك في التأمل، وعندما ترتاح نكمل معاً.',
@@ -249,11 +249,11 @@ export const HIDDEN_SEALS_DATA = [
 
 const TIME_PRESETS = {
   sunset: {
-    labelAr: '🌇 غروب باريس', hdriKey: 'sunset', bgBlur: 0.008, bgIntensity: 1.05, envIntensity: 1.2, bgRotY: 2.45,
-    sunColor: 0xffc685, sunIntensity: 2.75, sunPos: new THREE.Vector3(-55, 28, -32),
-    hemiSky: 0xffe4c4, hemiGround: 0x302420, hemiIntensity: 0.92,
-    fogColor: 0xc98a63, fogDensity: 0.0021, exposure: 1.04, bloomStrength: 0.28,
-    windowEmissive: 0.92, lampFilament: 3.2, searchlightOpacity: 0.1,
+    labelAr: '🌇 غروب باريس', hdriKey: 'sunset', bgBlur: 0.012, bgIntensity: 0.86, envIntensity: 1.05, bgRotY: 1.05,
+    sunColor: 0xffc685, sunIntensity: 2.55, sunPos: new THREE.Vector3(-55, 28, -32),
+    hemiSky: 0xffe4c4, hemiGround: 0x302420, hemiIntensity: 0.88,
+    fogColor: 0xc98a63, fogDensity: 0.0019, exposure: 0.96, bloomStrength: 0.2,
+    windowEmissive: 0.95, lampFilament: 3.4, searchlightOpacity: 0.12,
   },
   day: {
     labelAr: '☀️ نهار باريس', hdriKey: 'day', bgBlur: 0.006, bgIntensity: 1.0, envIntensity: 1.2, bgRotY: 0.6,
@@ -307,7 +307,7 @@ export class LouvreParisWorld3D {
     this.bmwPaintMats = [];
     this.bmwBrakeMats = [];
     this.bmwPaintIdx = 0;
-    this.bmwPos = new THREE.Vector3(-4.2, 0, 369.5);
+    this.bmwPos = new THREE.Vector3(-4.8, 0, 369.0);
     this.bmwYaw = 0.56; // Iconic 3/4 front-quarter showcase showing kidney grille, glowing headlights & clearcoat reflections!
     this.bmwSpeed = 0;
     this.bmwSteer = 0;
@@ -324,11 +324,11 @@ export class LouvreParisWorld3D {
     this.isHidden = false;
 
     // Start on Champs-Élysées framing Hero BMW (unobstructed left), Bobs (center), Haussmann Buildings, Plane Trees, Eiffel Tower & Sunset HDRI!
-    this.playerPos = new THREE.Vector3(-0.9, 1.68, 383.2);
-    this.playerYaw = 0.05;
-    this.playerPitch = 0.02;
-    this.targetYaw = 0.05;
-    this.targetPitch = 0.02;
+    this.playerPos = new THREE.Vector3(-1.2, 1.68, 383.2);
+    this.playerYaw = 0.06;
+    this.playerPitch = 0.015;
+    this.targetYaw = 0.06;
+    this.targetPitch = 0.015;
     this.baseFov = window.innerWidth / Math.max(1, window.innerHeight) < 0.85 ? 64 : 52;
     this.walkBobPhase = 0;
     this.footstepAccum = 0;
@@ -361,8 +361,8 @@ export class LouvreParisWorld3D {
     this.nearestInteractable = null;
 
     this.guideRoot = new THREE.Group();
-    this.guidePos = new THREE.Vector3(0.35, 0, 375.5);
-    this.guideYaw = -0.22;
+    this.guidePos = new THREE.Vector3(-1.45, 0, 376.2);
+    this.guideYaw = 0.16;
     this.bobsGroup = new THREE.Group();
     this.anasGroup = new THREE.Group();
     this.anasGroup.visible = false;
@@ -591,8 +591,8 @@ export class LouvreParisWorld3D {
     if (this.composer) return;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    // Subtle selective UnrealBloomPass (only glowing headlights, taillights, lamp filaments & lanterns!)
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.28, 0.45, 0.88);
+    // Subtle selective UnrealBloomPass (high threshold 1.18 so ONLY headlights, lamp filaments & lanterns bloom — never the HDRI sky!)
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.35, 1.18);
     this.composer.addPass(this.bloomPass);
     if (!this.isMobile) {
       const dpr = this.renderer.getPixelRatio();
@@ -2228,14 +2228,14 @@ export class LouvreParisWorld3D {
     const wp = STORY_WAYPOINTS[safeIdx]; if (!wp) return;
     this.currentWaypointIdx = safeIdx;
     const zOffset = safeIdx === 0 ? 5.5 : safeIdx <= 3 ? 6.0 : safeIdx === 4 ? 4.5 : safeIdx === STORY_WAYPOINTS.length - 1 ? 2.6 : 3.2;
-    this.playerPos.set(safeIdx === 0 ? -0.9 : wp.x, 1.68, wp.z + zOffset);
+    this.playerPos.set(safeIdx === 0 ? -1.2 : wp.x, 1.68, wp.z + zOffset);
     this.resolveCollisions(this.playerPos);
     this.guidePos.set(wp.guideX, 0, wp.guideZ); this.guideRoot.position.copy(this.guidePos);
     const lx = wp.lookAtX !== undefined ? wp.lookAtX : wp.guideX;
     const lz = wp.lookAtZ !== undefined ? wp.lookAtZ : wp.z - 4;
-    this.targetYaw = safeIdx === 0 ? 0.05 : Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
+    this.targetYaw = safeIdx === 0 ? 0.06 : Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
     this.playerYaw = this.targetYaw;
-    this.targetPitch = safeIdx <= 4 ? 0.02 : 0.0; this.playerPitch = this.targetPitch;
+    this.targetPitch = safeIdx <= 4 ? 0.015 : 0.0; this.playerPitch = this.targetPitch;
     if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(safeIdx, wp);
     if (triggerExplain) this.enterExplainState(safeIdx, false); else this.setGuidePhase('idle');
   }
