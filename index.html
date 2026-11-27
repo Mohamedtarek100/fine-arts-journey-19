@@ -7,10 +7,10 @@
   <meta name="description" content="جولة تفاعلية ثلاثية الأبعاد بطول 500 متر في شوارع باريس بجانب برج إيفل والمولات والعقارات والشرطة وحتى داخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
   <meta name="theme-color" content="#0e0a07" />
 
-  <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins + Local GLB Blob Textures Only -->
+  <!-- Strict OWASP CSP + Official Firebase Cloud Firestore + Self-Hosted Draco WASM Worker -->
   <meta
     http-equiv="Content-Security-Policy"
-    content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
+    content="default-src 'none'; script-src 'self' 'wasm-unsafe-eval' https://www.gstatic.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
   />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
@@ -21,7 +21,7 @@
     href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="./louvre.css?v=26" />
+  <link rel="stylesheet" href="./louvre.css?v=27" />
 </head>
 <body class="portal-open">
   <!-- Lightweight Gold HEY Curtain Preloader -->
@@ -43,8 +43,8 @@
         </svg>
       </div>
       <p class="eyebrow-ltr">PARIS GRAND BOULEVARD • MUSÉE DU LOUVRE 3D</p>
-      <p class="preloader-label">جاري تهيئة مدينة باريس ومتحف اللوفر ثلاثي الأبعاد</p>
-      <div class="preloader-bar"><span></span></div>
+      <p id="preloader-label" class="preloader-label">جاري تهيئة مدينة باريس ومتحف اللوفر ثلاثي الأبعاد</p>
+      <div class="preloader-bar"><span id="preloader-fill"></span></div>
     </div>
   </div>
 
@@ -59,6 +59,17 @@
     <button id="cinema-filter-btn" class="btn-royal-ghost" type="button">🎞️ فلتر: طبيعي</button>
     <button id="cinema-snap-btn" class="btn-royal-gold compact" type="button">📸 حفظ بطاقة باريس</button>
     <button id="cinema-exit-btn" class="btn-royal-ghost" type="button">✕ العودة للتحكم</button>
+  </div>
+
+  <!-- Live BMW Driving Cockpit HUD Bar (appears when driving Hero BMW) -->
+  <div id="bmw-drive-bar" class="bmw-drive-bar" aria-hidden="true">
+    <div class="bmw-speedo">
+      <strong id="bmw-speed-val">0</strong>
+      <span>كم/س • BMW</span>
+    </div>
+    <button id="bmw-paint-btn" class="btn-royal-ghost" type="button">🎨 لون السيارة</button>
+    <button id="bmw-horn-btn" class="btn-royal-ghost" type="button">📣 بوق</button>
+    <button id="bmw-exit-btn" class="btn-royal-gold compact" type="button">🚶 انزل من BMW</button>
   </div>
 
   <!-- ==================== 2-STEP VIP FAMILY RECEPTION PORTAL ==================== -->
@@ -193,7 +204,9 @@
   <div id="pro-tools-tray" class="pro-tools-tray" aria-hidden="true">
     <div class="ptt-row">
       <p class="ptt-group-title">🎪 أحداث وجولات باريس الحية (525 متر)</p>
-      <button id="gt-cab-btn" class="ptt-btn gold-hl" type="button">🏎️ جولة بوليفارد باريس السريعة حتى اللوفر</button>
+      <button id="gt-bmw-btn" class="ptt-btn gold-hl" type="button">🚗 ركوب وقيادة سيارة BMW في شوارع باريس</button>
+      <button id="gt-house-btn" class="ptt-btn gold-hl" type="button">🏠 دخول منزل باريس والصعود للشرفة العلوية</button>
+      <button id="gt-cab-btn" class="ptt-btn" type="button">🏎️ جولة بوليفارد باريس السريعة حتى اللوفر</button>
       <button id="gt-lanterns-btn" class="ptt-btn gold-hl" type="button">🏮 إطلاق 19 فانوس أمنيات في سماء باريس</button>
       <button id="gt-sparkle-btn" class="ptt-btn gold-hl" type="button">✨ عرض أضواء برج إيفل المتلألئ</button>
       <button id="gt-fountain-btn" class="ptt-btn" type="button">🪙 إلقاء عملة أمنية في نافورة اللوفر</button>
@@ -471,6 +484,6 @@
     </div>
   </div>
 
-  <script type="module" src="./louvre-app.js?v=26"></script>
+  <script type="module" src="./louvre-app.js?v=27"></script>
 </body>
 </html>

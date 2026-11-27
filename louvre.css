@@ -77,6 +77,23 @@ body.cinema-mode .proximity-prompt { opacity: 0 !important; pointer-events: none
 }
 body.cinema-mode .cinema-exit-bar { display: flex; }
 
+/* Live BMW Driving HUD Bar */
+body.bmw-driving .cat-guide-card { opacity: 0; pointer-events: none; }
+.bmw-drive-bar {
+  position: fixed; right: 16px; bottom: 18px; z-index: 118;
+  display: none; align-items: center; flex-wrap: wrap; gap: 8px;
+  max-width: calc(100vw - 122px); padding: 9px 14px; border-radius: 20px;
+  background: rgba(14, 11, 9, 0.94); border: 1.5px solid #78d2ff;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.78);
+}
+body.bmw-driving .bmw-drive-bar { display: flex; }
+.bmw-speedo {
+  display: flex; align-items: baseline; gap: 6px; padding: 4px 12px; border-radius: 999px;
+  background: rgba(120, 210, 255, 0.14); border: 1px solid rgba(120, 210, 255, 0.42);
+}
+.bmw-speedo strong { font-family: var(--font-en); font-size: 1.35rem; color: #dff7ff; }
+.bmw-speedo span { font-size: 0.72rem; color: #9de0ff; font-weight: 700; }
+
 /* ==================== BUTTONS ==================== */
 .btn-royal-gold {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;

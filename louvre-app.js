@@ -15,7 +15,7 @@
 
 import { SITE_CONFIG } from './config.js?v=24';
 import { FamilyCloudVault } from './firebase-sync.js?v=24';
-import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=26';
+import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=27';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const WALL_PAINTING_KEY = 'yomna_louvre_wall_painting_v1';
@@ -149,6 +149,13 @@ class LouvreAudio {
   chime() { try { this.ensure(); [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => setTimeout(() => this.tone(f, 2.0, 0.22), i * 85)); } catch { /* ignore */ } }
   sparkleChime() { try { this.ensure(); [659.25, 783.99, 987.77, 1318.5, 1567.98].forEach((f, i) => setTimeout(() => this.tone(f, 1.8, 0.18, 'triangle'), i * 75)); } catch { /* ignore */ } }
   coinSplash() { try { this.ensure(); [987.77, 1318.5, 1567.98].forEach((f, i) => setTimeout(() => this.tone(f, 1.4, 0.2, 'triangle'), i * 70)); } catch { /* ignore */ } }
+  carHorn() {
+    try {
+      this.ensure();
+      this.tone(415, 0.28, 0.2, 'sawtooth');
+      this.tone(523, 0.28, 0.18, 'sawtooth');
+    } catch { /* ignore */ }
+  }
   meow() {
     try {
       this.ensure();
@@ -343,6 +350,8 @@ function bootstrap() {
     if (wp.interactId && phase !== 'walking') {
       tourExploreBtn.classList.remove('panel-hidden');
       const labels = {
+        bmw: '🚗 اركب وقُد سيارة BMW',
+        'house-stairs': '🏠 اصعد لشرفة منزل باريس',
         fountain: '🪙 ألقِ عملة في النافورة',
         childhood: '📜 افتح التحفة 01',
         easel: '🎨 افتح مرسم اللوفر',
@@ -407,8 +416,25 @@ function bootstrap() {
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
 
   // ==================== BUILD 600M PARIS & LOUVRE 3D WORLD ====================
+  const preloaderLabel = document.getElementById('preloader-label');
+  const bmwDriveBar = document.getElementById('bmw-drive-bar');
+  const bmwSpeedVal = document.getElementById('bmw-speed-val');
+
   const world = new LouvreParisWorld3D(canvasEl, SITE_CONFIG, {
-    onReady() { window.setTimeout(dismissPreloader, 260); },
+    onReady() { window.setTimeout(dismissPreloader, 300); },
+    onLoadProgress(pct, labelAr) {
+      if (preloaderLabel && labelAr) preloaderLabel.textContent = `${labelAr} (${pct}%)`;
+    },
+    onBmwDriveChange(active) {
+      document.body.classList.toggle('bmw-driving', active);
+      if (bmwDriveBar) bmwDriveBar.setAttribute('aria-hidden', String(!active));
+      showToast(
+        active
+          ? '🚗 أنت تقود سيارة BMW الآن في شوارع باريس. استخدم WASD أو عصا التحكم، واضغط «انزل من BMW» وقتما تشاء.'
+          : '🚶 نزلت من سيارة BMW بأمان على بوليفارد الشانزليزيه.',
+        4800
+      );
+    },
     onWaypointChange(idx, wp) {
       currentSlideIdx = 0;
       renderTourStoryCard(idx);
@@ -519,10 +545,15 @@ function bootstrap() {
     mctx.beginPath(); mctx.arc(toMX(0), toMZ(-93), 6, 0, Math.PI * 2); mctx.fillStyle = 'rgba(232, 194, 104, 0.4)'; mctx.fill();
 
     const tel = world.getMiniMapTelemetry();
+    if (bmwSpeedVal && tel.drivingBmw) bmwSpeedVal.textContent = String(tel.bmwKmh);
     if (minimapTelemetry) {
-      minimapTelemetry.textContent = tel.distToLouvre > 0
-        ? `${tel.distToLouvre} م للوفر • ${tel.headingAr.split('•')[0].trim()}`
-        : `داخل اللوفر • ${tel.headingAr.split('•')[0].trim()}`;
+      minimapTelemetry.textContent = tel.drivingBmw
+        ? `🚗 ${tel.bmwKmh} كم/س • ${tel.distToLouvre} م للوفر`
+        : tel.inHouseUpperFloor
+          ? '🏠 شرفة منزل باريس (الدور 2)'
+          : tel.distToLouvre > 0
+            ? `${tel.distToLouvre} م للوفر • ${tel.headingAr.split('•')[0].trim()}`
+            : `داخل اللوفر • ${tel.headingAr.split('•')[0].trim()}`;
     }
 
     // Uncollected Seals
@@ -866,7 +897,20 @@ function bootstrap() {
         audio.speakAr(collected.quoteAr);
       }
     } else if (['childhood', 'passion', 'thanaweya', 'fine-arts'].includes(id)) openArtifactModal(id);
-    else if (id === 'fountain') triggerCoinFountain();
+    else if (id === 'bmw') {
+      if (world.enterBmwDrive()) audio.carHorn();
+      else showToast('🚗 جاري تجهيز سيارة BMW الرياضية، حاول بعد ثوانٍ.', 3000);
+    } else if (id === 'house-stairs') {
+      const goUp = !world.inHouseUpperFloor;
+      world.enterParisHouseBalcony(goUp);
+      audio.chime();
+      showToast(
+        goUp
+          ? '🏠 أهلاً بك في الطابق الثاني وشرفة منزل باريس المفتوح المطلة على الشانزليزيه وبرج إيفل. ابحث عن الختم الذهبي على الشرفة.'
+          : '🚶 عدت إلى شارع الشانزليزيه أمام منزل باريس.',
+        5600
+      );
+    } else if (id === 'fountain') triggerCoinFountain();
     else if (id === 'easel') { audio.chime(); openModal('studio-wall-modal'); }
     else if (id === 'vault') { markDiscovered('vault'); renderVaultModal(); audio.chime(); openModal('vault-modal'); }
     else if (id === 'manifesto') { audio.chime(); audio.speakAr(fm.quoteAr); openModal('manifesto-modal'); }
@@ -893,6 +937,30 @@ function bootstrap() {
       toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
     }
   });
+
+  document.getElementById('gt-bmw-btn').addEventListener('click', () => {
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    if (world.enterBmwDrive()) audio.carHorn();
+    else showToast('🚗 جاري تحميل سيارة BMW، حاول مرة أخرى خلال لحظة.', 3200);
+  });
+  document.getElementById('gt-house-btn').addEventListener('click', () => {
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    const goUp = !world.inHouseUpperFloor;
+    world.enterParisHouseBalcony(goUp);
+    audio.chime();
+    showToast(
+      goUp
+        ? '🏠 صعدت إلى الطابق الثاني وشرفة منزل باريس المطلة على الشانزليزيه وبرج إيفل.'
+        : '🚶 نزلت من منزل باريس إلى الشارع.',
+      5000
+    );
+  });
+  document.getElementById('bmw-paint-btn').addEventListener('click', () => {
+    const p = world.cycleBmwPaint(); audio.chime();
+    showToast(`🎨 تم تغيير طلاء BMW Clearcoat إلى: ${p.labelAr}`, 2800);
+  });
+  document.getElementById('bmw-horn-btn').addEventListener('click', () => audio.carHorn());
+  document.getElementById('bmw-exit-btn').addEventListener('click', () => world.exitBmwDrive());
 
   document.getElementById('gt-cab-btn').addEventListener('click', () => {
     toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
