@@ -1275,7 +1275,7 @@ export class LouvreParisWorld3D {
 
     const cakeHit = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 4.6, 14), new THREE.MeshBasicMaterial({ visible: false }));
     cakeHit.position.y = 2.3; cakeHit.userData.interactId = 'cake'; rotunda.add(cakeHit);
-    this.interactables.push({ id: 'cake', titleAr: 'تورتة العام التاسع عشر', badgeAr: '🎂 اضغط على التورتة للاحتفال وإطفاء شمعتي 1 و 9', mesh: cakeHit, worldPos: new THREE.Vector3(0, 2.2, -93), radius: 9.8 });
+    this.interactables.push({ id: 'cake', titleAr: 'تورتة العام التاسع عشر', badgeAr: '🎂 اضغط على التورتة للاحتفال وإطفاء شمعتي 1 و 9', mesh: cakeHit, worldPos: new THREE.Vector3(0, 2.2, -93), radius: 12.5 });
     this.scene.add(rotunda);
   }
 
@@ -1496,7 +1496,7 @@ export class LouvreParisWorld3D {
     const wp = STORY_WAYPOINTS[Math.max(0, Math.min(STORY_WAYPOINTS.length - 1, idx))];
     if (!wp) return;
     this.currentWaypointIdx = idx;
-    const zOffset = idx === 0 ? 7.0 : idx === 1 ? 4.5 : idx === STORY_WAYPOINTS.length - 1 ? 4.2 : 3.2;
+    const zOffset = idx === 0 ? 7.0 : idx === 1 ? 4.5 : idx === STORY_WAYPOINTS.length - 1 ? 2.6 : 3.2;
     this.playerPos.set(wp.x, 1.68, wp.z + zOffset);
     this.resolveCollisions(this.playerPos);
     this.catPos.set(wp.catX, 0, wp.catZ); this.catRoot.position.copy(this.catPos);

@@ -157,11 +157,15 @@ body.cinema-mode .cinema-exit-bar { display: flex; }
 
 .lp-shell {
   width: min(100%, 910px); max-height: 94vh; overflow-y: auto; margin: auto;
-  padding: clamp(18px, 3vw, 32px); border-radius: 26px;
+  padding: clamp(16px, 2.4vw, 26px); border-radius: 26px;
   background: linear-gradient(160deg, rgba(24, 18, 13, 0.98), rgba(13, 9, 6, 0.98));
   border: 1.5px solid var(--portal-accent, var(--border-gold));
   box-shadow: 0 32px 84px rgba(0, 0, 0, 0.86); text-align: center; user-select: text;
+  scrollbar-width: thin; scrollbar-color: rgba(238, 210, 138, 0.36) transparent;
 }
+.lp-shell::-webkit-scrollbar, .museum-modal-card::-webkit-scrollbar, .pro-tools-tray::-webkit-scrollbar { width: 6px; }
+.lp-shell::-webkit-scrollbar-track, .museum-modal-card::-webkit-scrollbar-track, .pro-tools-tray::-webkit-scrollbar-track { background: transparent; }
+.lp-shell::-webkit-scrollbar-thumb, .museum-modal-card::-webkit-scrollbar-thumb, .pro-tools-tray::-webkit-scrollbar-thumb { background: rgba(238, 210, 138, 0.34); border-radius: 999px; }
 
 .incoming-gift-banner {
   display: none; align-items: center; justify-content: center; gap: 8px;
@@ -271,6 +275,7 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 }
 .hud-pill.gold-hl { border-color: var(--gold-100); color: var(--gold-100); background: rgba(232, 194, 104, 0.18); }
 .hud-pill[aria-pressed="true"] { background: rgba(110, 224, 255, 0.24); border-color: #8ceeff; color: #dffaff; }
+.lbl-short { display: none; }
 
 /* ==================== LIVE INTERACTIVE LOUVRE MINI-MAP RADAR ==================== */
 .minimap-widget {
@@ -478,13 +483,17 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 }
 
 @media (max-width: 760px) {
-  .game-topbar { padding: 8px 9px; gap: 4px; }
-  .hey-crest-sm { width: 28px; height: 28px; }
-  .gt-brand-txt strong { font-size: 0.78rem; }
-  .gt-counters-row { font-size: 0.55rem; gap: 3px; }
-  .gt-actions { gap: 4px; flex-shrink: 1; min-width: 0; }
+  .game-topbar { padding: 8px 8px; gap: 4px; }
+  .hey-crest-sm { width: 26px; height: 26px; }
+  .gt-brand { gap: 5px; }
+  .gt-brand-txt strong { font-size: 0.74rem; }
+  .gt-counters-row { font-size: 0.56rem; gap: 3px; }
+  .gt-sep, #seals-counter { display: none; }
+  .gt-actions { gap: 4px; flex-shrink: 0; }
   .hud-pill { padding: 5px 7px; font-size: 0.65rem; }
-  #gt-visitor-btn { max-width: 58px; overflow: hidden; text-overflow: ellipsis; }
+  #gt-visitor-btn { max-width: 70px; overflow: hidden; text-overflow: ellipsis; }
+  .lbl-full { display: none; }
+  .lbl-short { display: inline; }
   .hide-xs { display: none; }
   .minimap-widget { display: none; }
 
