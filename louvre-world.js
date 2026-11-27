@@ -61,13 +61,13 @@ export const STORY_WAYPOINTS = [
     id: 'champs-elysees',
     zoneAr: 'الشانزليزيه • بداية الرحلة',
     labelAr: 'الشانزليزيه، سيارة BMW وقوس النصر',
-    x: 0, z: 378, guideX: -1.8, guideZ: 374.5, lookAtX: 4.5, lookAtY: 2.8, lookAtZ: 368, interactId: 'bmw',
+    x: -0.9, z: 377.7, guideX: 0.35, guideZ: 375.5, lookAtX: -2.6, lookAtY: 1.5, lookAtZ: 369.5, interactId: 'bmw',
     bobsSlides: [
       'أهلاً بك بهدوء في شوارع باريس وقت الغروب. أنا القطة بوبس، وسأكون معك في كل لحظة من هذه الرحلة، سواء مشياً على الأقدام أو راكبةً بجانبك داخل سيارة الـ BMW.',
-      'أمامك على يمين الرصيف سيارة الـ BMW جاهزة للانطلاق بطول الشانزليزيه نحو متحف اللوفر، وعلى يسارك يرتفع برج إيفل وسط سماء الغروب. خذ وقتك في التأمل، وعندما ترتاح نكمل معاً.',
+      'أمامك على يسار الرصيف سيارة الـ BMW جاهزة للانطلاق بطول الشانزليزيه نحو متحف اللوفر، وخلفها يرتفع برج إيفل وسط سماء الغروب. خذ وقتك في التأمل، وعندما ترتاح نكمل معاً.',
     ],
     anasSlides: [
-      'أهلاً يا يوسف يا بطل، منوّر باريس. أنا أنس حبيب هكون معاك طول الجولة، ولو ركبت الـ BMW اللي قدامك على اليمين هركب جنبك ونوصل سوا لحد باب اللوفر.',
+      'أهلاً يا يوسف يا بطل، منوّر باريس. أنا أنس حبيب هكون معاك طول الجولة، ولو ركبت الـ BMW اللي قدامك على الشمال هركب جنبك ونوصل سوا لحد باب اللوفر.',
       'خد راحتك واتفرج على الشانزليزيه والمباني الهوسمانية وبرج إيفل في الأفق، ولما تحب نتحرك سوا اضغط أكمل الجولة أو اركب الـ BMW.',
     ],
     funFactAr: 'معلومة هادئة: يمكنك ركوب الـ BMW وسأركب معك مباشرة في المقعد المجاور، وعند نزولك أمام اللوفر أنزل معك لاستكمال الجولة.',
@@ -249,28 +249,28 @@ export const HIDDEN_SEALS_DATA = [
 
 const TIME_PRESETS = {
   sunset: {
-    labelAr: '🌇 غروب باريس', hdriKey: 'sunset', bgBlur: 0.015, bgIntensity: 1.0, envIntensity: 1.15,
+    labelAr: '🌇 غروب باريس', hdriKey: 'sunset', bgBlur: 0.008, bgIntensity: 1.05, envIntensity: 1.2, bgRotY: 2.45,
     sunColor: 0xffc685, sunIntensity: 2.75, sunPos: new THREE.Vector3(-55, 28, -32),
     hemiSky: 0xffe4c4, hemiGround: 0x302420, hemiIntensity: 0.92,
     fogColor: 0xc98a63, fogDensity: 0.0021, exposure: 1.04, bloomStrength: 0.28,
     windowEmissive: 0.92, lampFilament: 3.2, searchlightOpacity: 0.1,
   },
   day: {
-    labelAr: '☀️ نهار باريس', hdriKey: 'day', bgBlur: 0.01, bgIntensity: 1.0, envIntensity: 1.2,
+    labelAr: '☀️ نهار باريس', hdriKey: 'day', bgBlur: 0.006, bgIntensity: 1.0, envIntensity: 1.2, bgRotY: 0.6,
     sunColor: 0xfff5e4, sunIntensity: 3.1, sunPos: new THREE.Vector3(-34, 72, -18),
     hemiSky: 0xdcecff, hemiGround: 0x5c5348, hemiIntensity: 1.15,
     fogColor: 0x9bb7d6, fogDensity: 0.0014, exposure: 0.98, bloomStrength: 0.16,
     windowEmissive: 0.08, lampFilament: 0.4, searchlightOpacity: 0.0,
   },
   night: {
-    labelAr: '🌙 ليل باريس', hdriKey: 'night', bgBlur: 0.015, bgIntensity: 0.95, envIntensity: 0.95,
+    labelAr: '🌙 ليل باريس', hdriKey: 'night', bgBlur: 0.01, bgIntensity: 0.95, envIntensity: 0.95, bgRotY: 1.2,
     sunColor: 0x8eaef0, sunIntensity: 0.95, sunPos: new THREE.Vector3(36, 48, -50),
     hemiSky: 0x3b4f7a, hemiGround: 0x161210, hemiIntensity: 0.68,
     fogColor: 0x0a1020, fogDensity: 0.0025, exposure: 1.12, bloomStrength: 0.42,
     windowEmissive: 1.48, lampFilament: 4.5, searchlightOpacity: 0.52,
   },
   gallery: {
-    labelAr: '🏛️ أتيليه دافئ', hdriKey: 'sunset', bgBlur: 0.02, bgIntensity: 0.85, envIntensity: 1.0,
+    labelAr: '🏛️ أتيليه دافئ', hdriKey: 'sunset', bgBlur: 0.014, bgIntensity: 0.88, envIntensity: 1.05, bgRotY: 2.45,
     sunColor: 0xffd28e, sunIntensity: 2.35, sunPos: new THREE.Vector3(-28, 42, -30),
     hemiSky: 0xffebd0, hemiGround: 0x332419, hemiIntensity: 1.05,
     fogColor: 0x6b4d3a, fogDensity: 0.0018, exposure: 1.08, bloomStrength: 0.26,
@@ -299,7 +299,7 @@ export class LouvreParisWorld3D {
     this.cruiseFast = false;
     this.cabRideActive = false;
 
-    // HERO DRIVABLE BMW SHOWCASE RIGHT AT STATION 1 (prominently framed in starting view!)
+    // HERO DRIVABLE BMW SHOWCASE UNOBSTRUCTED LEFT-OF-CENTER AT STATION 1!
     this.drivingBmw = false;
     this.bmwRoot = null;
     this.bmwPassengerSlot = new THREE.Group();
@@ -307,8 +307,8 @@ export class LouvreParisWorld3D {
     this.bmwPaintMats = [];
     this.bmwBrakeMats = [];
     this.bmwPaintIdx = 0;
-    this.bmwPos = new THREE.Vector3(5.3, 0, 371.5);
-    this.bmwYaw = Math.PI - 0.16; // Sleek 3/4 front-quarter showcase angle facing North toward Louvre!
+    this.bmwPos = new THREE.Vector3(-4.2, 0, 369.5);
+    this.bmwYaw = 0.56; // Iconic 3/4 front-quarter showcase showing kidney grille, glowing headlights & clearcoat reflections!
     this.bmwSpeed = 0;
     this.bmwSteer = 0;
     this.bmwBraking = false;
@@ -323,12 +323,12 @@ export class LouvreParisWorld3D {
     this.disposed = false;
     this.isHidden = false;
 
-    // Start on Champs-Élysées framing Hero BMW, 6-Story Haussmann Boulevard, Plane Trees, Eiffel Tower & Sunset HDRI!
-    this.playerPos = new THREE.Vector3(-0.6, 1.68, 383.5);
-    this.playerYaw = -0.06;
-    this.playerPitch = 0.025;
-    this.targetYaw = -0.06;
-    this.targetPitch = 0.025;
+    // Start on Champs-Élysées framing Hero BMW (unobstructed left), Bobs (center), Haussmann Buildings, Plane Trees, Eiffel Tower & Sunset HDRI!
+    this.playerPos = new THREE.Vector3(-0.9, 1.68, 383.2);
+    this.playerYaw = 0.05;
+    this.playerPitch = 0.02;
+    this.targetYaw = 0.05;
+    this.targetPitch = 0.02;
     this.baseFov = window.innerWidth / Math.max(1, window.innerHeight) < 0.85 ? 64 : 52;
     this.walkBobPhase = 0;
     this.footstepAccum = 0;
@@ -361,8 +361,8 @@ export class LouvreParisWorld3D {
     this.nearestInteractable = null;
 
     this.guideRoot = new THREE.Group();
-    this.guidePos = new THREE.Vector3(-2.1, 0, 375.5);
-    this.guideYaw = 0.35;
+    this.guidePos = new THREE.Vector3(0.35, 0, 375.5);
+    this.guideYaw = -0.22;
     this.bobsGroup = new THREE.Group();
     this.anasGroup = new THREE.Group();
     this.anasGroup.visible = false;
@@ -427,6 +427,7 @@ export class LouvreParisWorld3D {
     // Real Poly Haven Photogrammetry PBR Sets
     this.asphaltScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.asphalt, 3, 64, aniso);
     this.cobbleScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.cobble, 5, 110, aniso);
+    this.flagstoneScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.stone, 2, 130, aniso);
     this.plazaCobbleScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.cobble, 14, 14, aniso);
     this.parquetScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.parquet, 6, 24, aniso);
     this.marbleScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.marble, 2, 2, aniso);
@@ -497,6 +498,10 @@ export class LouvreParisWorld3D {
       planeLeaf: new THREE.MeshStandardMaterial({ map: this.planeLeafTex, alphaTest: 0.32, side: THREE.DoubleSide, roughness: 0.72, metalness: 0.02 }),
       velvetRed: overlayMat({ color: 0x6b1522, roughness: 0.86 }),
       runnerOverlay: overlayMat({ color: 0x3b2316, roughness: 0.65 }),
+      promenadeFlagstone: overlayMat({
+        map: this.flagstoneScan.map, normalMap: this.flagstoneScan.normalMap, normalScale: new THREE.Vector2(0.42, 0.42),
+        roughnessMap: this.flagstoneScan.roughnessMap, color: 0xd6cab6, roughness: 0.66, metalness: 0.06,
+      }),
       crosswalkStripe: overlayMat({ color: 0xeae4d6, roughness: 0.72 }),
       laneDash: overlayMat({ color: 0xede7d8, roughness: 0.68 }),
       woodDark: new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.46, metalness: 0.06 }),
@@ -578,6 +583,8 @@ export class LouvreParisWorld3D {
     if ('backgroundBlurriness' in this.scene) this.scene.backgroundBlurriness = p.bgBlur;
     if ('backgroundIntensity' in this.scene) this.scene.backgroundIntensity = p.bgIntensity;
     if ('environmentIntensity' in this.scene) this.scene.environmentIntensity = p.envIntensity;
+    if (this.scene.backgroundRotation) this.scene.backgroundRotation.y = p.bgRotY || 0;
+    if (this.scene.environmentRotation) this.scene.environmentRotation.y = p.bgRotY || 0;
   }
 
   ensureUltraComposer() {
@@ -734,12 +741,12 @@ export class LouvreParisWorld3D {
     centralPromenade.rotation.x = -Math.PI / 2; centralPromenade.position.set(0, 0, midZ); centralPromenade.receiveShadow = true;
     this.scene.add(centralPromenade);
 
-    const runner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, len - 8), this.mats.runnerOverlay);
-    runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.045, midZ); runner.receiveShadow = true;
+    const runner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, len - 8), this.mats.promenadeFlagstone);
+    runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.042, midZ); runner.receiveShadow = true;
     this.scene.add(runner);
-    [-1.68, 1.68].forEach((x) => {
-      const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.1, len - 8), this.mats.goldOverlay);
-      trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.052, midZ); this.scene.add(trim);
+    [-1.66, 1.66].forEach((x) => {
+      const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.08, len - 8), this.mats.goldOverlay);
+      trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.048, midZ); this.scene.add(trim);
     });
 
     // Wet-Asphalt Reflective Champs-Élysées Avenues (Poly Haven asphalt_03 + wet reflection patch roughnessMap!)
@@ -1223,6 +1230,7 @@ export class LouvreParisWorld3D {
     this.bmwRoot.rotation.y = this.bmwYaw;
     this.bmwLoaded = true;
     this.scene.add(this.bmwRoot);
+    this.renderer.shadowMap.needsUpdate = true;
 
     this.interactables.push({
       id: 'bmw', titleAr: 'سيارة BMW الرياضية في باريس',
@@ -1294,6 +1302,11 @@ export class LouvreParisWorld3D {
     this.inHouseUpperFloor = false; this.playerFloorY = 0;
     this.drivingBmw = true;
     this.bmwSpeed = 0;
+    // If BMW was parked in front-3/4 showcase pose at Station 1, orient cleanly North toward the Louvre!
+    if (this.bmwPos.z > 362 && Math.cos(this.bmwYaw) > 0) {
+      this.bmwYaw = Math.PI;
+      if (this.bmwRoot) this.bmwRoot.rotation.y = this.bmwYaw;
+    }
     if (this.bmwBadge) this.bmwBadge.visible = false;
     // Guide hops right into the BMW passenger seat beside you!
     this.seatGuideInsideBmw();
@@ -2215,14 +2228,14 @@ export class LouvreParisWorld3D {
     const wp = STORY_WAYPOINTS[safeIdx]; if (!wp) return;
     this.currentWaypointIdx = safeIdx;
     const zOffset = safeIdx === 0 ? 5.5 : safeIdx <= 3 ? 6.0 : safeIdx === 4 ? 4.5 : safeIdx === STORY_WAYPOINTS.length - 1 ? 2.6 : 3.2;
-    this.playerPos.set(safeIdx === 0 ? -0.6 : wp.x, 1.68, wp.z + zOffset);
+    this.playerPos.set(safeIdx === 0 ? -0.9 : wp.x, 1.68, wp.z + zOffset);
     this.resolveCollisions(this.playerPos);
     this.guidePos.set(wp.guideX, 0, wp.guideZ); this.guideRoot.position.copy(this.guidePos);
     const lx = wp.lookAtX !== undefined ? wp.lookAtX : wp.guideX;
     const lz = wp.lookAtZ !== undefined ? wp.lookAtZ : wp.z - 4;
-    this.targetYaw = safeIdx === 0 ? -0.06 : Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
+    this.targetYaw = safeIdx === 0 ? 0.05 : Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
     this.playerYaw = this.targetYaw;
-    this.targetPitch = safeIdx <= 4 ? 0.03 : 0.0; this.playerPitch = this.targetPitch;
+    this.targetPitch = safeIdx <= 4 ? 0.02 : 0.0; this.playerPitch = this.targetPitch;
     if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(safeIdx, wp);
     if (triggerExplain) this.enterExplainState(safeIdx, false); else this.setGuidePhase('idle');
   }

@@ -12,7 +12,7 @@
 
 import { SITE_CONFIG } from './config.js?v=24';
 import { FamilyCloudVault } from './firebase-sync.js?v=24';
-import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=28';
+import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=281';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const WALL_PAINTING_KEY = 'yomna_louvre_wall_painting_v1';
