@@ -2,123 +2,108 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-  <title>رحلة يمنى | 5 ديسمبر — العام التاسع عشر • HEY</title>
-  <meta name="description" content="معرض فني ثلاثي الأبعاد يحتفي برحلة يمنى في عامها التاسع عشر — من البدايات إلى تالتة ثانوي ونحو حلم كلية الفنون الجميلة (5 ديسمبر)." />
-  <meta name="theme-color" content="#110c09" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>رحلة يمنى — متحف اللوفر وباريس 3D | HEY</title>
+  <meta name="description" content="تجربة تفاعلية ثلاثية الأبعاد فائقة السلاسة في شوارع باريس بجانب برج إيفل وداخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
+  <meta name="theme-color" content="#0e0a07" />
 
-  <!-- Cybersecurity & Privacy Hardening Headers (Strict CSP + Official Firebase Origins Only) -->
+  <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins + Local GLB Blob Textures Only -->
   <meta
     http-equiv="Content-Security-Policy"
     content="default-src 'none'; script-src 'self' https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' blob: https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; upgrade-insecure-requests;"
   />
   <meta name="referrer" content="no-referrer" />
   <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
-  <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
 
-  <!-- Artistic Arabic & Classical Museum Typography -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
-    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@300;400;500;600;700&family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap"
     rel="stylesheet"
   />
-
-  <link rel="stylesheet" href="./styles.css?v=17" />
+  <link rel="stylesheet" href="./louvre.css?v=24" />
 </head>
 <body class="portal-open">
-  <!-- Top Cinema Scroll Progress Bar -->
-  <div class="scroll-progress-track" aria-hidden="true">
-    <div class="scroll-progress-fill" id="scroll-progress-fill"></div>
-  </div>
-
-  <!-- Subtle Warm Canvas Grain Overlay -->
-  <div class="canvas-grain" aria-hidden="true"></div>
-
-  <!-- Preloader Curtain with Sleek HEY Crest -->
+  <!-- Lightweight Gold HEY Curtain Preloader (fades out automatically on 3D ready) -->
   <div id="preloader" class="preloader" aria-live="polite">
     <div class="preloader-inner">
-      <div class="preloader-seal">
-        <svg class="hey-logo-svg hey-preloader-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="شعار HEY">
+      <div class="hey-crest-lg" aria-hidden="true">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="heyGold1" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+            <linearGradient id="lgHeyPre" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#fff4ce" />
-              <stop offset="48%" stop-color="#e8c268" />
+              <stop offset="50%" stop-color="#e8c268" />
               <stop offset="100%" stop-color="#a87928" />
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="46" stroke="url(#heyGold1)" stroke-width="1.8" stroke-opacity="0.92" />
-          <circle cx="50" cy="50" r="40" stroke="url(#heyGold1)" stroke-width="0.9" stroke-dasharray="2.5 3.5" stroke-opacity="0.58" />
-          <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#heyGold1)" />
-          <path d="M23 69 Q50 77 77 69" stroke="url(#heyGold1)" stroke-width="1.2" stroke-linecap="round" stroke-opacity="0.72" />
-          <circle cx="50" cy="80" r="2.2" fill="url(#heyGold1)" />
-          <text x="50" y="59" text-anchor="middle" fill="url(#heyGold1)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="600" letter-spacing="3">HEY</text>
+          <circle cx="50" cy="50" r="46" stroke="url(#lgHeyPre)" stroke-width="2" />
+          <circle cx="50" cy="50" r="39" stroke="url(#lgHeyPre)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.6" />
+          <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#lgHeyPre)" />
+          <text x="50" y="60" text-anchor="middle" fill="url(#lgHeyPre)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="700" letter-spacing="3">HEY</text>
         </svg>
-        <span class="seal-ring"></span>
-        <span class="seal-ring-outer"></span>
       </div>
-      <p class="preloader-en">HEY 3D ATELIER • 5 DECEMBER</p>
-      <p class="preloader-ar">جاري تجهيز المعرض الفني ثلاثي الأبعاد...</p>
+      <p class="eyebrow-ltr">MUSÉE DU LOUVRE • PARIS 3D EDITION</p>
+      <p class="preloader-label">جاري تهيئة شوارع باريس ومتحف اللوفر ثلاثي الأبعاد</p>
+      <div class="preloader-bar"><span></span></div>
     </div>
   </div>
 
-  <!-- Persistent Full-Screen 60FPS 3D WebGL Atelier -->
-  <canvas id="atelier-canvas" aria-label="معرض فني ثلاثي الأبعاد تفاعلي"></canvas>
+  <!-- Fullscreen Silky 60FPS Paris & Louvre WebGL World -->
+  <canvas id="louvre-canvas" aria-label="عالم باريس ومتحف اللوفر ثلاثي الأبعاد"></canvas>
 
-  <!-- Subtle Motion-Graphics Golden Cursor Trail Overlay -->
-  <canvas id="sparkle-canvas" aria-hidden="true"></canvas>
+  <!-- Subtle Center Aim Reticle -->
+  <div class="game-reticle" aria-hidden="true"><span></span></div>
 
-  <!-- ==================== 3D EXCLUSIVE 8-MEMBER FAMILY RECEPTION PORTAL (NO COUNTDOWN) ==================== -->
-  <section
-    id="reception-portal"
-    class="reception-portal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="portal-title-ar"
-  >
-    <div class="portal-shell">
+  <!-- Cinema Photo / Drone Active Floating Bar -->
+  <div id="cinema-exit-bar" class="cinema-exit-bar" aria-hidden="true">
+    <button id="cinema-snap-btn" class="btn-royal-gold compact" type="button">📸 التقاط وحفظ بطاقة اللوفر</button>
+    <button id="cinema-exit-btn" class="btn-royal-ghost" type="button">✕ العودة للتحكم الحر</button>
+  </div>
+
+  <!-- ==================== 2-STEP VIP FAMILY RECEPTION PORTAL (PERSONAL LETTERS + CRESTS) ==================== -->
+  <section id="louvre-portal" class="louvre-portal" role="dialog" aria-modal="true" aria-labelledby="lp-title">
+    <div class="lp-shell" id="lp-shell">
+      <!-- Incoming Shared Gift Banner (?gift=...) -->
       <div class="incoming-gift-banner" id="incoming-gift-banner" aria-live="polite" aria-hidden="true">
-        <span class="gift-icon">💌</span>
+        <span>💌</span>
         <span id="incoming-gift-text"></span>
       </div>
 
+      <!-- STEP A: SELECT FAMILY MEMBER -->
       <div class="portal-step active" id="portal-step-select">
-        <div class="portal-head">
-          <div class="portal-seal-badge hey-badge-shell" aria-hidden="true">
-            <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div class="lp-head">
+          <div class="hey-crest-lg" aria-hidden="true">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="heyGold2" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+                <linearGradient id="lgHey1" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
                   <stop offset="0%" stop-color="#fff4ce" />
-                  <stop offset="48%" stop-color="#e8c268" />
+                  <stop offset="50%" stop-color="#e8c268" />
                   <stop offset="100%" stop-color="#a87928" />
                 </linearGradient>
               </defs>
-              <circle cx="50" cy="50" r="46" stroke="url(#heyGold2)" stroke-width="2" />
-              <circle cx="50" cy="50" r="39" stroke="url(#heyGold2)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.6" />
-              <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#heyGold2)" />
-              <path d="M23 69 Q50 77 77 69" stroke="url(#heyGold2)" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.75" />
-              <circle cx="50" cy="80" r="2.3" fill="url(#heyGold2)" />
-              <text x="50" y="59" text-anchor="middle" fill="url(#heyGold2)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="600" letter-spacing="3">HEY</text>
+              <circle cx="50" cy="50" r="46" stroke="url(#lgHey1)" stroke-width="2" />
+              <circle cx="50" cy="50" r="39" stroke="url(#lgHey1)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.6" />
+              <path d="M50 13 L52.6 19.4 L59 22 L52.6 24.6 L50 31 L47.4 24.6 L41 22 L47.4 19.4 Z" fill="url(#lgHey1)" />
+              <path d="M23 69 Q50 77 77 69" stroke="url(#lgHey1)" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.75" />
+              <text x="50" y="59" text-anchor="middle" fill="url(#lgHey1)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="700" letter-spacing="3">HEY</text>
             </svg>
           </div>
-          <p class="eyebrow-en" id="portal-eyebrow-en">HEY PRIVATE FAMILY 3D RECEPTION • 5 DECEMBER</p>
-          <h1 class="portal-title" id="portal-title-ar">أهلاً بكم في معرض رحلة يمنى</h1>
-          <p class="portal-subtitle" id="portal-subtitle-ar"></p>
+          <p class="eyebrow-ltr" id="lp-eyebrow-en">HEY PRIVATE FAMILY 3D RECEPTION • PARIS &amp; LOUVRE EDITION</p>
+          <h1 id="lp-title">أهلاً بكم في معرض رحلة يمنى</h1>
+          <p class="lp-sub" id="lp-subtitle-ar"></p>
         </div>
 
-        <div class="portal-roles-grid family-grid-8" id="portal-roles-grid" role="radiogroup" aria-label="اختر اسمك من عائلة يمنى"></div>
+        <div id="lp-roles-grid" class="lp-roles-grid" role="radiogroup" aria-label="اختر اسمك من عائلة يمنى"></div>
 
-        <div class="portal-actions">
-          <button id="portal-continue-btn" class="btn-gold-seal" type="button">
-            <span class="btn-ar">عرض رسالتك الخاصة ودخول المعرض ✦</span>
-            <span class="btn-en">REVEAL PERSONAL INVITATION</span>
+        <div class="lp-actions">
+          <button id="lp-continue-btn" class="btn-royal-gold" type="button">
+            <span>عرض رسالتك الخاصة ودخول المتحف ✦</span>
           </button>
-          <a href="./louvre.html" class="btn-glass-secondary louvre-entry-btn">
-            <span>🏛️ لعبة جولة باريس ومتحف اللوفر 3D (جديد!) ✨</span>
-          </a>
         </div>
+        <p class="lp-credit">التصميم والتطوير بواسطة ENG / Mohamed Tarek • HEY Edition</p>
       </div>
 
+      <!-- STEP B: PERSONALIZED FAMILY INVITATION LETTER -->
       <div class="portal-step" id="portal-step-letter" aria-hidden="true">
         <div class="letter-crest-wrap">
           <span class="letter-crest-ring"></span>
@@ -126,7 +111,7 @@
         </div>
 
         <span class="letter-role-pill" id="letter-role-pill"></span>
-        <p class="eyebrow-en" id="letter-tag-en"></p>
+        <p class="eyebrow-ltr" id="letter-tag-en"></p>
         <h2 class="letter-title" id="letter-title-ar"></h2>
         <p class="letter-lead" id="letter-lead-ar"></p>
 
@@ -140,13 +125,11 @@
           <span class="mission-chip gold">✦ الأفق: كلية الفنون الجميلة</span>
         </div>
 
-        <div class="portal-actions letter-actions">
-          <button id="portal-enter-site-btn" class="btn-gold-seal" type="button">
-            <span class="btn-ar" id="portal-enter-btn-ar">افتح بوابة المعرض الـ 3D ←</span>
-            <span class="btn-en">ENTER THE 3D EXHIBITION</span>
+        <div class="lp-actions">
+          <button id="lp-enter-btn" class="btn-royal-gold" type="button">
+            <span id="lp-enter-btn-ar">افتح بوابة باريس ومتحف اللوفر 3D ←</span>
           </button>
-
-          <button id="portal-back-btn" class="btn-glass-secondary" type="button">
+          <button id="lp-back-btn" class="btn-royal-ghost" type="button">
             <span>← اختيار اسم آخر</span>
           </button>
         </div>
@@ -154,600 +137,322 @@
     </div>
   </section>
 
-  <!-- ==================== FLOATING MUSEUM TOP BAR WITH HEY LOGO ==================== -->
-  <header class="topbar" id="topbar">
-    <a href="#hero" class="brand-mark" aria-label="العودة للبداية">
-      <span class="brand-monogram hey-badge-shell" aria-label="شعار HEY">
-        <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <!-- ==================== TOP GAME HUD BAR ==================== -->
+  <header class="game-topbar">
+    <div class="gt-brand">
+      <span class="hey-crest-sm" aria-label="شعار HEY">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <defs>
-            <linearGradient id="heyGold3" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+            <linearGradient id="lgHey2" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
               <stop offset="0%" stop-color="#fff4ce" />
-              <stop offset="48%" stop-color="#e8c268" />
+              <stop offset="50%" stop-color="#e8c268" />
               <stop offset="100%" stop-color="#a87928" />
             </linearGradient>
           </defs>
-          <circle cx="50" cy="50" r="46" stroke="url(#heyGold3)" stroke-width="2.2" />
-          <path d="M50 13 L52.8 19.6 L59.4 22.4 L52.8 25.2 L50 31.8 L47.2 25.2 L40.6 22.4 L47.2 19.6 Z" fill="url(#heyGold3)" />
-          <path d="M23 70 Q50 78 77 70" stroke="url(#heyGold3)" stroke-width="1.5" stroke-linecap="round" stroke-opacity="0.78" />
-          <text x="50" y="60" text-anchor="middle" fill="url(#heyGold3)" font-family="Cinzel, Georgia, serif" font-size="26" font-weight="700" letter-spacing="2.5">HEY</text>
+          <circle cx="50" cy="50" r="46" stroke="url(#lgHey2)" stroke-width="2.2" />
+          <path d="M50 13 L52.8 19.6 L59.4 22.4 L52.8 25.2 L50 31.8 L47.2 25.2 L40.6 22.4 L47.2 19.6 Z" fill="url(#lgHey2)" />
+          <text x="50" y="61" text-anchor="middle" fill="url(#lgHey2)" font-family="Cinzel, Georgia, serif" font-size="26" font-weight="700" letter-spacing="2.5">HEY</text>
         </svg>
       </span>
-      <span class="brand-text">
-        <span class="brand-en" id="nav-date-en">5 DECEMBER</span>
-        <span class="brand-ar" id="nav-title-ar">رحلة يمنى</span>
-      </span>
-    </a>
-
-    <div class="live-stage-hud" id="live-stage-hud" aria-live="polite">
-      <span class="hud-dot"></span>
-      <span id="hud-stage-label">الافتتاحية • 5 ديسمبر</span>
+      <div class="gt-brand-txt">
+        <strong>متحف اللوفر 3D</strong>
+        <div class="gt-counters-row">
+          <span id="discovery-counter">الكنوز: 0 / 7</span>
+          <span class="gt-sep" aria-hidden="true">•</span>
+          <span id="seals-counter">الأختام: 0 / 5</span>
+        </div>
+      </div>
     </div>
 
-    <div class="topbar-actions">
-      <button
-        id="visitor-switch-btn"
-        class="icon-pill visitor-pill"
-        type="button"
-        title="تغيير الاسم أو عرض الرسالة الشخصية"
-      >
-        <span class="pill-label" id="visitor-pill-label">🎨 يمنى</span>
-      </button>
+    <div class="quest-hud-pill" id="quest-pill" aria-live="polite">
+      <span class="q-dot"></span>
+      <span id="quest-label">🐾 اتبع القطة • 1 / 9 — شارع باريس وبرج إيفل</span>
+    </div>
 
-      <button
-        id="mood-cycle-btn"
-        class="icon-pill mood-pill"
-        type="button"
-        title="تغيير إضاءة وجو المعرض ثلاثي الأبعاد"
-      >
-        <span class="pill-icon" aria-hidden="true">◐</span>
-        <span class="pill-label" id="mood-pill-label">إضاءة: أتيليه الذهب</span>
-      </button>
-
-      <button
-        id="inspect-3d-btn"
-        class="icon-pill"
-        type="button"
-        aria-pressed="false"
-        title="معاينة المشهد ثلاثي الأبعاد بملء الشاشة"
-      >
-        <span class="pill-icon" aria-hidden="true">❖</span>
-        <span class="pill-label">3D كامل</span>
-      </button>
-
-      <button
-        id="cat-toggle-btn"
-        class="icon-pill cat-pill active"
-        type="button"
-        aria-pressed="true"
-        title="إظهار أو إخفاء القطة المرشدة الـ 3D"
-        aria-label="القطة المرشدة 3D"
-      >
-        <span class="pill-icon" aria-hidden="true">🐾</span>
-        <span class="pill-label hide-sm">القطة</span>
-      </button>
-
-      <button
-        id="guide-open-btn"
-        class="icon-pill"
-        type="button"
-        title="دليل التعامل مع الموقع"
-        aria-label="دليل التعامل مع الموقع"
-      >
-        <span class="pill-icon" aria-hidden="true">؟</span>
-        <span class="pill-label hide-sm">الدليل</span>
-      </button>
-
-      <button
-        id="audio-toggle"
-        class="icon-pill"
-        type="button"
-        aria-pressed="false"
-        title="تشغيل أو إيقاف موسيقى الأتيليه"
-        aria-label="موسيقى الأتيليه"
-      >
-        <span class="sound-bars" aria-hidden="true">
-          <i></i><i></i><i></i>
-        </span>
-      </button>
+    <div class="gt-actions">
+      <button id="gt-visitor-btn" class="hud-pill" type="button" title="تغيير الاسم أو عرض رسالتك الشخصية">🎨 يمنى</button>
+      <button id="gt-time-btn" class="hud-pill" type="button" title="تبديل الإضاءة: غروب / نهار / ليل / أتيليه دافئ">🌇 غروب</button>
+      <button id="gt-zoom-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة تقريب تلسكوبية لتفاصيل اللوحات وبرج إيفل (مفتاح Z)">🔭 تقريب</button>
+      <button id="gt-uv-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة القيّم الفني السرية لكشف رسائل اللوحات المخفية">🔍 أسرار</button>
+      <button id="gt-map-btn" class="hud-pill gold-hl" type="button" title="خريطة التنقل السريع">🗺️ الخريطة</button>
+      <button id="gt-tools-btn" class="hud-pill" type="button" title="أحداث متحف اللوفر والأدوات الاحترافية">🎪 الأحداث والأدوات</button>
     </div>
   </header>
 
-  <!-- Floating 3D Full-Screen Inspect Mode Exit Banner -->
-  <div id="inspect-banner" class="inspect-banner" aria-hidden="true">
-    <span>✦ اسحب الشاشة بإصبعك أو بالماوس لتدوير المجسم الـ 3D بحرية</span>
-    <button id="exit-inspect-btn" type="button">إظهار القصة ✕</button>
-  </div>
+  <!-- ==================== LIVE INTERACTIVE LOUVRE MINI-MAP RADAR (DESKTOP) ==================== -->
+  <button id="minimap-widget" class="minimap-widget" type="button" title="رادار متحف اللوفر المباشر — اضغط لفتح خريطة التنقل السريع" aria-label="رادار متحف اللوفر المباشر">
+    <canvas id="louvre-minimap" width="112" height="156"></canvas>
+    <span class="minimap-caption">رادار اللوفر المباشر</span>
+  </button>
 
-  <!-- Ordered Vertical Story Rail (Desktop) -->
-  <nav class="chapter-rail" aria-label="التسلسل القصصي للرحلة">
-    <button class="rail-dot active" data-target="hero" data-label="الافتتاحية" aria-label="الافتتاحية"></button>
-    <button class="rail-dot" data-target="childhood" data-label="01 الطفولة" aria-label="الفصل الأول: الطفولة"></button>
-    <button class="rail-dot" data-target="passion" data-label="02 الشغف" aria-label="الفصل الثاني: الشغف"></button>
-    <button class="rail-dot" data-target="thanaweya" data-label="03 تالتة ثانوي" aria-label="الفصل الثالث: تالتة ثانوي"></button>
-    <button class="rail-dot" data-target="fine-arts" data-label="04 فنون جميلة" aria-label="الفصل الرابع: فنون جميلة"></button>
-    <button class="rail-dot" data-target="canvas-studio" data-label="05 الاستوديو" aria-label="الفصل الخامس: الاستوديو"></button>
-    <button class="rail-dot" data-target="yomna-vault" data-label="06 صندوق يمنى" aria-label="صندوق رسائل العائلة"></button>
-    <button class="rail-dot spotlight-dot" data-target="final-message" data-label="★ الرسالة الأهم" aria-label="الرسالة الأهم في ختام الرحلة"></button>
-    <button class="rail-dot" data-target="finale" data-label="🎂 تورتة 19" aria-label="الخاتمة: تورتة العام الـ 19"></button>
-  </nav>
+  <!-- ==================== PRO LIVE EVENTS & TOOLS MENU ==================== -->
+  <div id="pro-tools-tray" class="pro-tools-tray" aria-hidden="true">
+    <div class="ptt-row">
+      <p class="ptt-group-title">🎪 أحداث باريس ومتحف اللوفر الحية</p>
+      <button id="gt-lanterns-btn" class="ptt-btn gold-hl" type="button">🏮 إطلاق 19 فانوس أمنيات في سماء باريس</button>
+      <button id="gt-sparkle-btn" class="ptt-btn gold-hl" type="button">✨ عرض أضواء برج إيفل المتلألئ</button>
+      <button id="gt-fountain-btn" class="ptt-btn" type="button">🪙 إلقاء عملة أمنية في نافورة اللوفر</button>
+      <button id="gt-drone-btn" class="ptt-btn" type="button">🚁 جولة درون سينمائية فوق باريس واللوفر</button>
 
-  <!-- Ordered Mobile Bottom Dock -->
-  <nav class="mobile-journey-dock" id="mobile-journey-dock" aria-label="مراحل القصة المرتبة">
-    <button class="dock-chip active" data-target="hero" type="button">الافتتاحية</button>
-    <button class="dock-chip" data-target="childhood" type="button">01 الطفولة</button>
-    <button class="dock-chip" data-target="passion" type="button">02 الشغف</button>
-    <button class="dock-chip" data-target="thanaweya" type="button">03 تالتة ثانوي</button>
-    <button class="dock-chip gold-chip" data-target="fine-arts" type="button">04 فنون جميلة ✦</button>
-    <button class="dock-chip" data-target="canvas-studio" type="button">05 الاستوديو</button>
-    <button class="dock-chip gold-chip" data-target="yomna-vault" type="button">06 صندوق يمنى 💌</button>
-    <button class="dock-chip spotlight-chip" data-target="final-message" type="button">★ الرسالة الأهم</button>
-    <button class="dock-chip" data-target="finale" type="button">🎂 تورتة 19</button>
-  </nav>
-
-  <!-- ==================== ORDERED CINEMATIC STORY CONTAINER ==================== -->
-  <main id="journey-root">
-
-    <!-- ==================== PROLOGUE (ZONE 0): HERO ==================== -->
-    <section id="hero" class="section hero-section" data-zone="0" data-stage="الافتتاحية • 5 ديسمبر">
-      <div class="stage-3d-window" data-spin-stage="true">
-        <div class="stage-3d-pill">
-          <span>❖ مجسم 3D حي: أتيليه الفنانة — اسحب للتدوير ومرّر لحركة 3D سلسة</span>
-        </div>
-      </div>
-
-      <div class="hero-content reveal">
-        <div class="story-arc-stepper" aria-label="خريطة القصة">
-          <span class="arc-pill active">الافتتاحية</span>
-          <i>←</i>
-          <span class="arc-pill">01 الطفولة</span>
-          <i>←</i>
-          <span class="arc-pill">02 الشغف</span>
-          <i>←</i>
-          <span class="arc-pill">03 تالتة ثانوي</span>
-          <i>←</i>
-          <span class="arc-pill">04 فنون جميلة</span>
-          <i>←</i>
-          <span class="arc-pill">05 الاستوديو</span>
-          <i>←</i>
-          <span class="arc-pill">★ الرسالة الأهم</span>
-          <i>←</i>
-          <span class="arc-pill">🎂 تورتة 19</span>
-        </div>
-
-        <div class="date-badge">
-          <span class="badge-star">✦</span>
-          <span id="hero-badge-ar">5 ديسمبر • إتمام العام التاسع عشر</span>
-          <span class="badge-star">✦</span>
-        </div>
-
-        <h1 class="hero-title">
-          <span id="hero-title-prefix">رحلة</span>
-          <span class="gold-shimmer" id="hero-artist-name">يمنى</span>
-        </h1>
-
-        <p class="hero-personal-note" id="hero-personal-note"></p>
-        <p class="hero-subtitle" id="hero-subtitle-ar"></p>
-
-        <div class="hero-cta-group">
-          <button id="enter-exhibition-btn" class="btn-gold-seal" type="button">
-            <span class="btn-ar" id="hero-cta-ar">ابدأ الحكاية من الفصل الأول ↓</span>
-            <span class="btn-en" id="hero-cta-en">BEGIN THE 3D STORY</span>
-          </button>
-
-          <button id="hero-guide-btn" class="btn-glass-secondary" type="button">
-            <span>◈</span>
-            <span id="hero-guide-btn-ar">دليل التفاعل والأدوات</span>
-          </button>
-
-          <a href="./louvre.html" class="btn-glass-secondary louvre-entry-btn">
-            <span>🏛️ جولة باريس ومتحف اللوفر 3D (اتبع القطة!) ✨</span>
-          </a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== ACTS 01, 02, 03 & 04 (DYNAMICALLY RENDERED IN ORDER) ==================== -->
-    <div id="story-acts-container"></div>
-
-    <!-- ==================== ACT 05 (ZONE 4.25): PRO FINE-ARTS STUDIO & PERSPECTIVE LAB ==================== -->
-    <section id="canvas-studio" class="section studio-section" data-zone="4.25" data-stage="الفصل 05 • استوديو قدرات الفنون الجميلة">
-      <div class="section-header centered reveal">
-        <span class="act-kicker">الفصل الخامس • أداة إبداعية احترافية</span>
-        <p class="eyebrow-en">ACT V • PRO FINE-ARTS &amp; SYMMETRY ATELIER</p>
-        <h2 class="section-title">استوديو <span class="gold-shimmer">قدرات الفنون الجميلة</span></h2>
-        <p class="section-lead">
-          أدوات رسم احترافية مصممة بروح كلية الفنون الجميلة: جرّب فرشاة الخط الذهبي، الفحم الأكاديمي، الألوان المائية، أو <strong>وضع الزخرفة الهندسية المتماثلة (8 محاور)</strong> مع شبكة المنظور المعماري!
-        </p>
-      </div>
-
-      <div class="atelier-easel-wrapper reveal">
-        <div class="pro-modes-bar" role="toolbar" aria-label="أوضاع الفرش الاحترافية">
-          <div class="mode-group">
-            <button class="mode-pill active" data-brush="calligraphy" type="button">✒ ريشة ذهب خطّاط</button>
-            <button class="mode-pill" data-brush="symmetry" type="button">❖ زخرفة متماثلة (8×)</button>
-            <button class="mode-pill" data-brush="charcoal" type="button">✎ فحم أكاديمي</button>
-            <button class="mode-pill" data-brush="watercolor" type="button">💧 ألوان مائية</button>
-          </div>
-
-          <div class="mode-group">
-            <button class="tool-btn" id="toggle-perspective-btn" type="button" aria-pressed="false">
-              ⊞ شبكة منظور فنون جميلة
-            </button>
-            <button class="tool-btn" id="canvas-gold-dust" type="button">✦ غبار ذهب</button>
-          </div>
-        </div>
-
-        <div class="atelier-toolbar">
-          <div class="palette-swatches" role="group" aria-label="ألوان الباليتة">
-            <button class="swatch active" data-color="#e8c268" style="--sw:#e8c268" title="ذهبي عتيق" aria-label="لون ذهبي"></button>
-            <button class="swatch" data-color="#faf3e3" style="--sw:#faf3e3" title="عاجي رخامي" aria-label="لون عاجي"></button>
-            <button class="swatch" data-color="#d4734d" style="--sw:#d4734d" title="تيراكوتا" aria-label="لون تيراكوتا"></button>
-            <button class="swatch" data-color="#5d90ba" style="--sw:#5d90ba" title="أزرق أولترامارين" aria-label="لون أزرق"></button>
-            <button class="swatch" data-color="#7fa879" style="--sw:#7fa879" title="أخضر زيتوني" aria-label="لون زيتوني"></button>
-            <button class="swatch" data-color="#c95467" style="--sw:#c95467" title="قرمزي فني" aria-label="لون قرمزي"></button>
-          </div>
-
-          <div class="brush-controls">
-            <label class="brush-size-label" for="brush-size">
-              <span>السُمك</span>
-              <input id="brush-size" type="range" min="2" max="22" value="6" />
-            </label>
-            <button class="tool-btn" id="canvas-undo" type="button">↶ تراجع</button>
-            <button class="tool-btn" id="canvas-clear" type="button">مسح</button>
-            <button class="tool-btn gold-fill" id="canvas-save" type="button">↓ حفظ اللوحة (PNG)</button>
-          </div>
-        </div>
-
-        <div class="ornate-canvas-frame">
-          <canvas id="sketch-canvas" width="900" height="520" aria-label="لوحة استوديو الفنون الجميلة"></canvas>
-          <canvas id="guide-overlay-canvas" class="guide-overlay-canvas" width="900" height="520" aria-hidden="true"></canvas>
-          <div class="canvas-placeholder-hint" id="canvas-hint">
-            <span>❖</span> ارسم هنا (جرّب «زخرفة متماثلة 8×» لإبداع فوري!) <span>❖</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== ACT 06 (ZONE 4.55): YOMNA'S PRIVATE FAMILY VAULT ==================== -->
-    <section id="yomna-vault" class="section support-studio-section" data-zone="4.55" data-stage="الفصل 06 • صندوق رسائل العائلة ليمنى">
-      <div class="section-header centered reveal">
-        <span class="act-kicker">الفصل السادس • التفاف العائلة حول يمنى</span>
-        <p class="eyebrow-en" id="vault-eyebrow-en">ACT VI • YOMNA'S PRIVATE FAMILY VAULT</p>
-        <h2 class="section-title" id="vault-title-ar">صندوق رسائل <span class="gold-shimmer">العائلة ليمنى</span></h2>
-        <p class="section-lead" id="vault-subtitle-ar"></p>
-      </div>
-
-      <!-- MODE A: YOMNA'S 7 WAX-SEALED ENVELOPES -->
-      <div id="yomna-inbox-panel" class="yomna-inbox-panel reveal">
-        <div class="vault-summary-bar">
-          <span class="vault-count-pill" id="vault-count-pill">✦ 7 أظرف ذهبية مختومة بانتظاركِ يا يمنى</span>
-          <span class="vault-hint-text">اضغطي على أي ظرف لفتح ختم الشمع وقراءة الرسالة</span>
-        </div>
-        <div class="yomna-envelopes-grid" id="yomna-envelopes-grid"></div>
-      </div>
-
-      <!-- MODE B: FAMILY MEMBER SENDER STUDIO -->
-      <div id="family-sender-panel" class="support-studio-grid reveal">
-        <div class="support-controls-card">
-          <div class="support-sender-badge">
-            <span>المرسِل إلى صندوق يمنى الخاص:</span>
-            <strong id="support-sender-label">عصام (والد يمنى)</strong>
-          </div>
-
-          <p class="support-label">اختر عبارة تشجيع جاهزة مخصصة لك، أو اكتب رسالتك من القلب:</p>
-          <div class="support-presets" id="support-presets"></div>
-
-          <label class="support-label" for="support-message-input">رسالتك إلى يمنى في صندوقها الخاص (حتى 220 حرفاً):</label>
-          <textarea
-            id="support-message-input"
-            class="support-textarea"
-            rows="3"
-            maxlength="220"
-            placeholder="اكتب تهنئتك ودعاءك وتشجيعك ليمنى في تالتة ثانوي وحلم كلية الفنون الجميلة..."
-          ></textarea>
-
-          <div class="vault-send-actions">
-            <button id="vault-send-btn" class="btn-gold-seal compact" type="button">
-              <span class="btn-ar">إرسال الرسالة لصندوق يمنى الخاص ✦</span>
-              <span class="btn-en">SEAL &amp; SYNC TO YOMNA'S PHONE</span>
-            </button>
-
-            <button id="support-download-btn" class="btn-glass-secondary" type="button">
-              <span>↓ حفظ كبطاقة ذهبية (PNG)</span>
-            </button>
-          </div>
-
-          <div class="vault-delivery-drawer" id="vault-delivery-drawer" aria-hidden="true">
-            <p class="delivery-success-msg" id="delivery-success-msg"></p>
-            <p class="delivery-sub">يمكنك أيضاً إرسال الظرف مباشرة ليمنى على واتساب أو نسخ الرابط:</p>
-            <div class="delivery-btn-row">
-              <a id="vault-whatsapp-btn" class="delivery-wa-btn" href="#" target="_blank" rel="noopener noreferrer">
-                <span>📲 إرسال الظرف ليمنى على واتساب</span>
-              </a>
-              <button id="vault-copy-link-btn" class="tool-btn" type="button">🔗 نسخ رابط الظرف</button>
-            </div>
-            <span class="copy-feedback" id="copy-feedback" aria-live="polite"></span>
-          </div>
-        </div>
-
-        <div class="support-preview-wrap">
-          <div class="ornate-canvas-frame">
-            <canvas id="support-card-canvas" width="900" height="560" aria-label="معاينة بطاقة التهنئة والتشجيع ليمنى"></canvas>
-          </div>
-          <div class="family-vault-tracker" id="family-vault-tracker"></div>
-          <p class="support-privacy-note" id="cloud-sync-status">🔄 جاري الاتصال بالسحابة المؤمّنة للمزامنة اللحظية...</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== SPOTLIGHT SECTION (ZONE 4.8): THE MOST IMPORTANT MESSAGE OF THE JOURNEY ==================== -->
-    <section id="final-message" class="section manifesto-section" data-zone="4.8" data-stage="★ الرسالة الأهم في ختام الرحلة">
-      <div class="manifesto-card reveal">
-        <div class="manifesto-aura" aria-hidden="true"></div>
-
-        <span class="manifesto-kicker" id="manifesto-kicker">★ وقفة مهمة جداً في ختام الرحلة — رسالة للجميع ★</span>
-        <p class="eyebrow-en" id="manifesto-eyebrow">THE MOST IMPORTANT MESSAGE OF THE JOURNEY</p>
-        <h2 class="manifesto-title" id="manifesto-title">كلمة من القلب.. لكل العائلة وليمنى</h2>
-
-        <blockquote class="manifesto-quote-box">
-          <span class="quote-ornament-top" aria-hidden="true">✦</span>
-          <p id="manifesto-quote"></p>
-          <span class="quote-ornament-bot" aria-hidden="true">✦</span>
-        </blockquote>
-
-        <!-- 3 Distilled Highlight Pillars -->
-        <div class="manifesto-pillars" id="manifesto-pillars"></div>
-
-        <!-- Pro Interactive Feature: Daily Peace & Reassurance Capsule -->
-        <div class="peace-capsule-card">
-          <div class="peace-capsule-head">
-            <span class="capsule-badge">🕊️ كبسولة الطمأنينة اليومية ليمنى</span>
-            <span class="capsule-counter" id="peace-capsule-count">1 / 10</span>
-          </div>
-          <p class="peace-capsule-text" id="peace-capsule-text"></p>
-          <div class="peace-capsule-actions">
-            <button id="next-capsule-btn" class="tool-btn gold-fill" type="button">
-              <span>✦ رسالة طمأنينة أخرى</span>
-            </button>
-            <button id="pledge-star-btn" class="btn-glass-secondary pledge-btn" type="button" aria-pressed="false">
-              <span>⭐ أؤمن بهذه الرسالة وأدعم يمنى بكل هدوء وفرح</span>
-            </button>
-          </div>
-          <p class="pledge-feedback" id="pledge-feedback" aria-live="polite"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ==================== GRAND FINALE (ZONE 5): REALISTIC 3D BIRTHDAY CAKE WITH "1" & "9" CANDLES ==================== -->
-    <section id="finale" class="section finale-section" data-zone="5" data-stage="الخاتمة • تورتة العام الـ 19 الـ 3D">
-      <!-- Dedicated Unobstructed 3D Birthday Cake Showcase Window (100% Open Air — Zero Pills Covering the Cake!) -->
-      <div class="stage-3d-window finale-3d-window" data-spin-stage="true" aria-label="مسرح تورتة العام الـ 19 ثلاثية الأبعاد — اسحب للتدوير"></div>
-
-      <!-- Pro Interactive 3D Cake Controls Bar cleanly BELOW the Cake -->
-      <div class="cake-controls-bar reveal" role="toolbar" aria-label="أدوات التحكم في تورتة الـ 3D">
-        <span class="cake-micro-hint">🎂 اسحب فوق التورتة لتدويرها 360°</span>
-        <div class="cake-ctrl-row">
-          <button id="cake-spin-btn" class="cake-ctrl-pill active" type="button" aria-pressed="true">
-            <span>↻ حركة استعراض تلقائية</span>
-          </button>
-          <button id="cake-zoom-btn" class="cake-ctrl-pill" type="button" aria-pressed="false">
-            <span>🔍 تقريب على شمعتي 1 و 9</span>
-          </button>
-          <button id="cake-fireworks-btn" class="cake-ctrl-pill gold-accent" type="button">
-            <span>🎆 ألعاب نارية ذهبية</span>
-          </button>
-        </div>
-      </div>
-
-      <div class="finale-card reveal">
-        <div class="finale-ornament" aria-hidden="true">
-          <span></span><i>✦</i><span></span>
-        </div>
-
-        <p class="eyebrow-en" id="finale-eyebrow-en">5 DECEMBER • HAPPY 19TH BIRTHDAY YOMNA</p>
-
-        <div class="age-medallion" aria-label="19 عاماً">
-          <span class="age-num" id="finale-age">19</span>
-          <span class="age-unit">عاماً من الإبداع</span>
-        </div>
-
-        <h2 class="finale-title" id="finale-title-ar">كل عامٍ وأنتِ بخير وتألق يا يمنى</h2>
-        <p class="finale-subtitle" id="finale-subtitle-ar"></p>
-
-        <div class="candles-status" id="candles-status">
-          <span class="flame-dot"></span>
-          <span>تورتة العام الـ 19 مضيئة بشمعتي رقم 1 و 9 في المسرح الـ 3D أعلاه</span>
-        </div>
-
-        <!-- Pro Interactive Candle Controls: Tap or Real Microphone Blow-Out -->
-        <div class="finale-actions-stack">
-          <button id="wish-btn" class="btn-gold-seal finale-btn" type="button">
-            <span class="btn-ar" id="finale-btn-ar">تمنّي أمنية وأطفئي شمعتي 1 و 9 على التورتة 🎂✨</span>
-            <span class="btn-en" id="finale-btn-en">BLOW OUT THE 1 &amp; 9 CAKE CANDLES</span>
-          </button>
-
-          <button id="mic-blow-btn" class="btn-glass-secondary mic-blow-btn" type="button" aria-pressed="false">
-            <span>🎙️</span>
-            <span id="mic-blow-label">أو انفخي في المايكروفون لإطفاء شمعتي التورتة واقعياً!</span>
-          </button>
-
-          <div class="mic-meter-wrap" id="mic-meter-wrap" aria-hidden="true">
-            <div class="mic-meter-track">
-              <div class="mic-meter-fill" id="mic-meter-fill"></div>
-            </div>
-            <small id="mic-meter-hint">انفخي بقوة نحو المايكروفون لإطفاء شمعتي «1» و «9» على التورتة 💨</small>
-          </div>
-        </div>
-
-        <div class="wish-letter" id="wish-letter" aria-hidden="true">
-          <div class="wish-letter-inner">
-            <h3 id="wish-heading-ar"></h3>
-            <p id="wish-message-ar"></p>
-            <div class="wish-signature">
-              <span class="sig-line"></span>
-              <p class="sig-family-names" id="finale-family-names"></p>
-              <p class="sig-ar" id="finale-sig-ar"></p>
-              <p class="sig-en" id="finale-sig-en"></p>
-              <button id="certificate-download-btn" class="btn-glass-secondary cert-btn" type="button">
-                <span>🏆</span>
-                <span>حفظ شهادة فخر العام الـ 19 الموقّعة من العائلة (PNG) ↓</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Prestigious Copyright & Developer Credit Footer with Custom HEY Logo -->
-      <footer class="site-footer reveal" aria-label="حقوق النشر ومعلومات المعرض">
-        <div class="footer-inner">
-          <div class="footer-brand">
-            <span class="footer-monogram hey-badge-shell" aria-label="شعار HEY">
-              <svg class="hey-logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <defs>
-                  <linearGradient id="heyGold4" x1="12" y1="8" x2="88" y2="92" gradientUnits="userSpaceOnUse">
-                    <stop offset="0%" stop-color="#fff4ce" />
-                    <stop offset="48%" stop-color="#e8c268" />
-                    <stop offset="100%" stop-color="#a87928" />
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="46" stroke="url(#heyGold4)" stroke-width="2" />
-                <circle cx="50" cy="50" r="39" stroke="url(#heyGold4)" stroke-width="1" stroke-dasharray="2.5 3.5" stroke-opacity="0.58" />
-                <path d="M50 13 L52.8 19.6 L59.4 22.4 L52.8 25.2 L50 31.8 L47.2 25.2 L40.6 22.4 L47.2 19.6 Z" fill="url(#heyGold4)" />
-                <path d="M23 70 Q50 78 77 70" stroke="url(#heyGold4)" stroke-width="1.4" stroke-linecap="round" stroke-opacity="0.78" />
-                <circle cx="50" cy="80" r="2.3" fill="url(#heyGold4)" />
-                <text x="50" y="60" text-anchor="middle" fill="url(#heyGold4)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="700" letter-spacing="2.8">HEY</text>
-              </svg>
-            </span>
-            <div>
-              <strong id="footer-owner-ar">معرض رحلة يمنى — العام التاسع عشر (5 ديسمبر)</strong>
-              <span class="footer-credit" id="footer-credit-ar">التصميم والتطوير بواسطة ENG / Mohamed Tarek</span>
-            </div>
-          </div>
-
-          <nav class="footer-links" aria-label="روابط الفصول">
-            <a href="#hero">الافتتاحية</a>
-            <a href="#childhood">01 الطفولة</a>
-            <a href="#passion">02 الشغف</a>
-            <a href="#thanaweya">03 تالتة ثانوي</a>
-            <a href="#fine-arts">04 فنون جميلة</a>
-            <a href="#canvas-studio">05 الاستوديو</a>
-            <a href="#yomna-vault">06 صندوق يمنى</a>
-            <a href="#final-message">★ الرسالة الأهم</a>
-            <a href="#finale">🎂 تورتة 19</a>
-            <button type="button" class="footer-link-btn" id="footer-guide-btn">دليل الموقع</button>
-          </nav>
-
-          <div class="footer-copyright">
-            <p class="copy-ar" id="footer-rights-ar"></p>
-            <p class="copy-en" id="footer-rights-en"></p>
-            <p class="security-badge">
-              <span>🔒</span>
-              <span>محمي بتشفير HTTPS • سياسة أمان صارمة CSP • مزامنة سحابية مؤمّنة بـ Firestore Rules • محظور من أرشفة محركات البحث</span>
-            </p>
-          </div>
-        </div>
-      </footer>
-    </section>
-  </main>
-
-  <!-- ==================== INTERACTIVE GUIDE MODAL ==================== -->
-  <div id="guide-modal" class="guide-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="guide-modal-title">
-    <div class="guide-modal-card">
-      <button class="modal-close-btn" id="guide-modal-close" type="button" aria-label="إغلاق الدليل">✕</button>
-      <div class="guide-modal-header">
-        <p class="eyebrow-en">HEY 3D EXHIBITION • VISITOR GUIDE</p>
-        <h2 id="guide-modal-title">دليل التفاعل والأدوات الاحترافية</h2>
-        <p class="modal-sub" id="guide-modal-sub"></p>
-      </div>
-      <div class="guide-modal-grid" id="guide-modal-grid"></div>
-      <div class="guide-modal-footer">
-        <button class="btn-gold-seal compact" id="guide-modal-start" type="button">
-          <span class="btn-ar">فهمت — استكشف القصة ✦</span>
-        </button>
-      </div>
+      <p class="ptt-group-title">🎨 أدوات القيّم الفني والمرسم</p>
+      <button id="gt-paint-wall-btn" class="ptt-btn" type="button">🎨 مرسم جدار اللوفر وتعليق لوحتك بالـ 3D</button>
+      <button id="gt-uv-tray-btn" class="ptt-btn" type="button" aria-pressed="false">🔍 عدسة أسرار اللوحات (UV): متوقفة</button>
+      <button id="gt-zoom-tray-btn" class="ptt-btn" type="button" aria-pressed="false">🔭 عدسة التقريب البصري: 1×</button>
+      <button id="gt-voice-btn" class="ptt-btn" type="button" aria-pressed="false">🗣️ الدليل الصوتي العربي: متوقف</button>
+      <button id="gt-audio-btn" class="ptt-btn" type="button" aria-pressed="false">🔇 موسيقى باريس: متوقفة</button>
+      <button id="gt-quality-btn" class="ptt-btn" type="button">⚡ الأداء: سلس 60FPS (افتراضي)</button>
+      <button id="gt-cinema-btn" class="ptt-btn" type="button">📷 وضع التصوير وحفظ بطاقة تذكارية</button>
+      <button id="gt-welcome-btn" class="ptt-btn" type="button">🏛️ دليل تجربة متحف اللوفر</button>
     </div>
   </div>
 
-  <!-- Family Envelope Reader Modal -->
-  <div id="envelope-reader-modal" class="guide-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="reader-sender-title">
-    <div class="guide-modal-card envelope-reader-card">
-      <button class="modal-close-btn" id="reader-close-btn" type="button" aria-label="إغلاق الرسالة">✕</button>
-      <div class="reader-head">
-        <div class="letter-crest-wrap small">
-          <span class="letter-crest-ring"></span>
-          <div class="letter-crest-icon" id="reader-crest-icon" aria-hidden="true"></div>
-        </div>
-        <span class="letter-role-pill" id="reader-status-pill">✦ رسالة مختومة بالشمع الذهبي</span>
-        <h2 id="reader-sender-title"></h2>
-        <p class="eyebrow-en" id="reader-tag-en"></p>
-      </div>
-      <div class="letter-body-box reader-body">
-        <p id="reader-message-text"></p>
-      </div>
-      <div class="reader-actions">
-        <button id="reader-save-png-btn" class="btn-gold-seal compact" type="button">
-          <span class="btn-ar">حفظ الرسالة كبطاقة ذهبية (PNG) ↓</span>
-        </button>
-      </div>
+  <!-- ==================== FLOATING INTERACTION PROMPT (TOP-CENTER) ==================== -->
+  <button id="proximity-prompt" class="proximity-prompt" type="button" aria-hidden="true">
+    <span id="proximity-text">📜 اضغط لاستكشاف التحفة</span>
+  </button>
+
+  <!-- ==================== TOAST NOTIFICATION ==================== -->
+  <div id="louvre-toast" class="louvre-toast" role="status" aria-live="polite" aria-hidden="true"></div>
+
+  <!-- ==================== VIRTUAL WALKING JOYSTICK (BOTTOM-LEFT) ==================== -->
+  <div id="joystick-zone" class="joystick-zone" aria-label="عصا المشي داخل باريس ومتحف اللوفر">
+    <div class="joystick-base">
+      <div id="joystick-knob" class="joystick-knob"></div>
     </div>
+    <span class="joystick-hint">اسحب للمشي • WASD</span>
   </div>
 
-  <!-- Museum Lightbox Modal -->
-  <div id="lightbox" class="lightbox" role="dialog" aria-modal="true" aria-hidden="true" aria-label="عرض اللوحة بالكامل">
-    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="إغلاق">✕</button>
-    <div class="lightbox-frame">
-      <img id="lightbox-img" src="" alt="" draggable="false" referrerpolicy="no-referrer" />
-      <div class="lightbox-caption">
-        <span class="plaque-meta" id="lightbox-meta"></span>
-        <h3 id="lightbox-title"></h3>
-        <p id="lightbox-desc"></p>
+  <!-- ==================== CAT GUIDE QUEST CARD (BOTTOM-RIGHT) ==================== -->
+  <aside id="cat-guide-card" class="cat-guide-card" aria-label="مرشدة الرحلة القطة الذهبية">
+    <button id="cat-reopen-btn" class="cat-reopen-btn" type="button">🐾 اتبع القطة</button>
+    <div id="cat-guide-body" class="cat-guide-body">
+      <div class="cg-head">
+        <strong>🐾 اتبع القطة الذهبية</strong>
+        <button id="cat-fold-btn" class="cg-close" type="button" aria-label="طي">−</button>
       </div>
-    </div>
-  </div>
-
-  <!-- ==================== IN-WORLD 3D CAT INTERACTIVE MODE BANNER (DRAG / LASER / CINEMA) ==================== -->
-  <div id="cat-mode-banner" class="cat-mode-banner" aria-hidden="true">
-    <span id="cat-mode-banner-text">✋ اسحب القطة أو اضغط في أي مكان لتثبيتها في الـ 3D</span>
-    <div class="cat-mode-banner-btns">
-      <button id="cat-reset-path-btn" type="button">📍 للمسار</button>
-      <button id="cat-mode-done-btn" class="gold-done" type="button">✓ تم</button>
-    </div>
-  </div>
-
-  <!-- ==================== SLEEK IN-WORLD 3D CAT MENTOR HUD & PRO TOOLKIT ==================== -->
-  <aside id="cat-mentor-hud" class="cat-mentor-hud" aria-label="لوحة القطة المرشدة الـ 3D">
-    <!-- Compact Pill shown when speech bubble is folded -->
-    <button id="cat-hud-reopen-pill" class="cat-hud-reopen-pill" type="button" aria-label="فتح نصائح وأدوات القطة الـ 3D">
-      <span>🐾 مرشدة الرحلة 3D</span>
-    </button>
-
-    <!-- Full Luxury Speech & Pro Controls Card -->
-    <div id="cat-speech-bubble" class="cat-speech-bubble open" role="status" aria-live="polite">
-      <div class="cat-bubble-head">
-        <span class="cat-bubble-name" id="cat-mentor-name">مرشدة الرحلة 3D 🐾</span>
-        <span class="cat-state-badge" id="cat-state-badge">معك في الـ 3D 🐾</span>
-        <button id="cat-voice-btn" class="cat-mini-icon-btn" type="button" aria-pressed="false" title="تشغيل أو إيقاف النطق الصوتي العربي للقطة">🔇</button>
-        <button id="cat-bubble-close" class="cat-bubble-close" type="button" aria-label="طي لوحة القطة">−</button>
-      </div>
-
-      <p class="cat-bubble-text" id="cat-bubble-text">
-        مياو! أهلاً بيك في معرض رحلة يمنى 🐾 أنا قطتك الـ 3D الحقيقية جوه المعرض.. مرّر لتحت وهمشي معاك في الـ 3D!
+      <p id="cat-guide-text">
+        أهلاً بك في شوارع باريس بجانب برج إيفل. اتبع خطواتي نحو ساحة نابليون وهرم متحف اللوفر لاكتشاف الكنوز والأختام المخفية.
       </p>
-
-      <div class="cat-action-chips" role="toolbar" aria-label="تحكم وأدوات القطة الـ 3D">
-        <button class="cat-act-btn highlight-act" id="cat-drag-mode-btn" data-cat-action="drag" type="button" aria-pressed="false" title="اسحب القطة وحطها في أي مكان بالـ 3D">✋ حرّكها لمكانك</button>
-        <button class="cat-act-btn" id="cat-laser-mode-btn" data-cat-action="laser" type="button" aria-pressed="false" title="لاعب القطة بالليزر الذهبي في الـ 3D">🔴 ليزر 3D</button>
-        <button class="cat-act-btn" data-cat-action="groom" type="button" title="خلي القطة تلحس كفها وتنضف نفسها">👅 الحسي كفك</button>
-        <button class="cat-act-btn" data-cat-action="play" type="button" title="خلي القطة تلعب بكرة الخيط الذهبية الـ 3D">🧶 العبي</button>
-        <button class="cat-act-btn" data-cat-action="walk" type="button" title="خلي القطة تتمشى في الـ 3D">🐾 تمشّي</button>
-        <button class="cat-act-btn" id="cat-cinema-btn" data-cat-action="cinema" type="button" aria-pressed="false" title="جولة سينمائية تلقائية عبر كل فصول المعرض">▶ جولة سينمائية</button>
-        <button class="cat-act-btn" data-cat-action="photo" type="button" title="التقط صورة تذكارية مؤطّرة للمشهد الـ 3D مع القطة">📸 لقطة 3D</button>
-        <button class="cat-act-btn" data-cat-action="tip" type="button" title="تعليمات القسم الحالي">💡 نصيحة</button>
+      <div class="cg-controls">
+        <button id="auto-follow-btn" class="cg-btn primary-follow" type="button" aria-pressed="false">🐾 اتبع القطة تلقائياً</button>
+        <button id="next-stop-btn" class="cg-btn" type="button">المحطة التالية ←</button>
+        <button id="cat-lick-btn" class="cg-btn" type="button">👅 الحسي كفك</button>
+        <button id="cat-play-btn" class="cg-btn" type="button">🧶 العبي</button>
       </div>
     </div>
   </aside>
 
-  <!-- Main Scripts (v16) -->
-  <script type="module" src="./app.js?v=16"></script>
+  <!-- ==================== MODAL 0: LOUVRE MUSEUM EXPERIENCE CURATOR GUIDE ==================== -->
+  <div id="welcome-museum-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card welcome-theme">
+      <button class="mm-close" data-close-modal="welcome-museum-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">🏛️ دليل تجربة متحف اللوفر وباريس التفاعلية 3D • HEY</span>
+      <h2 id="wm-title">دليل جولة متحف اللوفر لرحلة يمنى ✨</h2>
+      <p id="wm-personal-lead" class="mm-sub"></p>
+
+      <div class="wm-story-grid">
+        <article class="wm-step-card">
+          <span>🏮</span>
+          <h3>أحداث باريس الحية وبوابة الهرم</h3>
+          <p>أطلق <strong>19 فانوس أمنيات</strong> في سماء باريس، وشاهد <strong>عرض أضواء برج إيفل المتلألئ</strong>، وعند الاقتراب من الهرم الزجاجي تنفتح أبوابه تلقائياً.</p>
+        </article>
+        <article class="wm-step-card">
+          <span>🏅</span>
+          <h3>تحدي الأختام الخمسة والمرسم الحي</h3>
+          <p>ابحث عن <strong>5 أختام ذهبية مخفية</strong> في الساحة والقاعات، وتوقف عند الحامل الذهبي لترسم وتعلّق لوحتك مباشرة على جدار اللوفر بالـ 3D.</p>
+        </article>
+        <article class="wm-step-card">
+          <span>🔍</span>
+          <h3>عدسة الأسرار، التقريب وصندوق العيلة</h3>
+          <p>استخدم <strong>عدسة الأسرار (UV)</strong> لقراءة الرسائل الخفية، و<strong>عدسة التقريب 2×</strong> لتفاصيل التحف، وافتح <strong>صندوق رسائل العائلة السحابي</strong>.</p>
+        </article>
+        <article class="wm-step-card">
+          <span>🎂</span>
+          <h3>الرسالة الأهم وتورتة العام الـ 19</h3>
+          <p>اقرأ <strong>الرسالة الأهم</strong> لمرحلة تالتة ثانوي، واختم تحت القبة الملكية بإطفاء شمعتي 1 و 9 وإطلاق الألعاب النارية.</p>
+        </article>
+      </div>
+
+      <div class="wm-actions">
+        <button id="wm-start-auto-btn" class="btn-royal-gold" type="button">
+          <span>🐾 ابدأ الجولة تلقائياً خلف القطة الآن ✦</span>
+        </button>
+        <button id="wm-start-drone-btn" class="btn-royal-ghost" type="button">
+          <span>🚁 جولة درون سينمائية</span>
+        </button>
+        <button id="wm-start-free-btn" class="btn-royal-ghost" type="button">
+          <span>🚶 أتجول بحرية بنفسي</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 1: INTERACTIVE LOUVRE WALL PAINTING STUDIO ==================== -->
+  <div id="studio-wall-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card studio-theme">
+      <button class="mm-close" data-close-modal="studio-wall-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">🎨 مرسم متحف اللوفر الحي • تُعلّق اللوحة فوراً على جدار المتحف بالـ 3D</span>
+      <h2>ارسم أو وقّع لوحة تذكارية وعلّقها على جدار اللوفر 🖼️</h2>
+      <p class="mm-sub">اختر لون الفرشاة وحجمها أو فعّل الزخرفة التماثلية 8× أو أضف ختم التهنئة، ثم اضغط «علّق على جدار اللوفر».</p>
+
+      <div class="lw-toolbar">
+        <div class="lw-swatches" id="lw-swatches">
+          <button class="lw-swatch active" data-color="#f2cc6e" style="background:#f2cc6e" type="button" title="ذهبي ملكي"></button>
+          <button class="lw-swatch" data-color="#fff4da" style="background:#fff4da" type="button" title="عاجي مضيء"></button>
+          <button class="lw-swatch" data-color="#e06d53" style="background:#e06d53" type="button" title="تيراكوتا"></button>
+          <button class="lw-swatch" data-color="#72b5e8" style="background:#72b5e8" type="button" title="أزرق باريسي"></button>
+          <button class="lw-swatch" data-color="#87d1a4" style="background:#87d1a4" type="button" title="زمردي"></button>
+          <button class="lw-swatch" data-color="#e594b8" style="background:#e594b8" type="button" title="وردي ناعم"></button>
+        </div>
+        <label class="lw-brush-control" for="lw-brush-size">
+          <span>حجم الفرشاة</span>
+          <input id="lw-brush-size" type="range" min="2" max="14" value="4" />
+        </label>
+        <button id="lw-sym-btn" class="btn-royal-ghost" type="button" aria-pressed="true">❄️ تماثل زخرفي 8×: مفعّل</button>
+        <button id="lw-stamp-btn" class="btn-royal-ghost" type="button">✦ ختم تهنئة ليمنى 19</button>
+        <button id="lw-clear-btn" class="btn-royal-ghost" type="button">مسح اللوحة</button>
+      </div>
+
+      <div class="lw-canvas-frame">
+        <canvas id="lw-paint-canvas" width="640" height="480"></canvas>
+      </div>
+
+      <div class="wm-actions">
+        <button id="lw-hang-btn" class="btn-royal-gold" type="button">
+          <span>🖼️ علّق اللوحة على جدار متحف اللوفر الآن ✦</span>
+        </button>
+        <button id="lw-download-btn" class="btn-royal-ghost" type="button">↓ حفظ اللوحة PNG</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 2: MUSEUM ARTIFACT & GOLDEN PARCHMENT READER ==================== -->
+  <div id="artifact-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card parchment-theme">
+      <button class="mm-close" data-close-modal="artifact-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker" id="art-kicker">تحفة من معرض رحلة يمنى • متحف اللوفر</span>
+      <h2 id="art-title-ar"></h2>
+      <p class="eyebrow-ltr" id="art-title-en"></p>
+
+      <div class="art-modal-grid">
+        <div class="art-frame-box">
+          <img id="art-img" src="" alt="" draggable="false" referrerpolicy="no-referrer" />
+          <span id="art-caption" class="art-caption"></span>
+        </div>
+        <div class="art-story-col">
+          <p id="art-story" class="art-story-text"></p>
+          <blockquote id="art-quote" class="art-quote"></blockquote>
+          <div id="art-extra-slot" class="art-extra-slot"></div>
+        </div>
+      </div>
+
+      <div class="mm-footer-row">
+        <button class="btn-royal-gold compact" data-close-modal="artifact-modal" type="button">
+          <span>متابعة الجولة خلف القطة 🐾 ←</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 3: ROYAL FAMILY TREASURE BOX (LIVE FIREBASE CLOUD VAULT) ==================== -->
+  <div id="vault-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card">
+      <button class="mm-close" data-close-modal="vault-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">صندوق متحف اللوفر الملكي • متصل سحابياً لحظياً</span>
+      <h2 id="vm-title">صندوق رسائل العائلة ليمنى 💌</h2>
+      <p id="vm-sub" class="mm-sub"></p>
+
+      <div id="vm-yomna-inbox" class="vm-inbox-grid"></div>
+
+      <div id="vm-sender-box" class="vm-sender-box">
+        <div class="vm-sender-tag">المرسِل إلى صندوق يمنى في المتحف: <strong id="vm-sender-name"></strong></div>
+        <div id="vm-presets" class="vm-presets"></div>
+        <textarea id="vm-textarea" class="vm-textarea" rows="3" maxlength="220" placeholder="اكتب رسالتك وتهنئتك ليمنى..."></textarea>
+        <div class="vm-send-row">
+          <button id="vm-send-btn" class="btn-royal-gold compact" type="button">
+            <span>💌 إرسال لصندوق يمنى في المتحف الآن ✦</span>
+          </button>
+          <button id="vm-png-btn" class="btn-royal-ghost" type="button">↓ حفظ بطاقة PNG</button>
+        </div>
+        <div id="vm-delivery" class="vm-delivery" aria-hidden="true">
+          <p id="vm-delivery-msg"></p>
+          <div class="vm-delivery-links">
+            <a id="vm-wa-link" class="wa-pill" href="#" target="_blank" rel="noopener noreferrer">📲 إرسال الظرف على واتساب</a>
+            <button id="vm-copy-btn" class="btn-royal-ghost" type="button">🔗 نسخ الرابط</button>
+          </div>
+        </div>
+      </div>
+      <p id="vm-cloud-status" class="vm-cloud-status">🔄 جاري الاتصال بالسحابة المؤمّنة...</p>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 4: SPOTLIGHT IMPORTANT FINAL MESSAGE MONUMENT ==================== -->
+  <div id="manifesto-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card manifesto-theme">
+      <button class="mm-close" data-close-modal="manifesto-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">★ وقفة مهمة جداً في ختام المتحف — رسالة للجميع ★</span>
+      <h2 id="mm-man-title">كلمة من القلب.. لكل العائلة وليمنى</h2>
+      <blockquote class="mm-man-quote" id="mm-man-quote"></blockquote>
+      <div id="mm-man-pillars" class="mm-pillars"></div>
+      <div class="mm-capsule">
+        <div class="mm-cap-head">
+          <span>🕊️ كبسولة الطمأنينة اليومية</span>
+          <span id="mm-cap-count">1 / 10</span>
+        </div>
+        <p id="mm-cap-text"></p>
+        <div class="mm-cap-btns">
+          <button id="mm-cap-next" class="btn-royal-gold compact" type="button">✦ رسالة طمأنينة أخرى</button>
+          <button id="mm-pledge-btn" class="btn-royal-ghost" type="button" aria-pressed="false">⭐ أؤمن بهذه الرسالة وأدعم يمنى بفرح</button>
+        </div>
+        <p id="mm-pledge-msg" class="mm-pledge-msg"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 5: GRAND ROTUNDA 3D CAKE ("1" & "9") CELEBRATION ==================== -->
+  <div id="cake-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card cake-theme">
+      <button class="mm-close" data-close-modal="cake-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">القبة الملكية بمتحف اللوفر • 5 ديسمبر</span>
+      <h2>🎂 تورتة العام التاسع عشر — كل عامٍ وأنتِ بخير يا يمنى</h2>
+      <p id="cm-status" class="cm-status">شمعتا «1» و «9» مضيئتان على تورتة الـ 3D أمامك في القبة.</p>
+
+      <div class="cm-actions">
+        <button id="cm-blow-btn" class="btn-royal-gold" type="button">
+          <span id="cm-blow-label">تمنّي أمنية وأطفئي شمعتي 1 و 9 🎂✨</span>
+        </button>
+        <button id="cm-mic-btn" class="btn-royal-ghost" type="button" aria-pressed="false">
+          <span id="cm-mic-label">🎙️ أو انفخي في المايكروفون لإطفاء الشمعتين</span>
+        </button>
+        <button id="cm-fw-btn" class="btn-royal-ghost" type="button">🎆 إطلاق ألعاب نارية تحت قبة اللوفر</button>
+      </div>
+
+      <div id="cm-wish-box" class="cm-wish-box" aria-hidden="true">
+        <h3 id="cm-wish-title"></h3>
+        <p id="cm-wish-body"></p>
+        <p id="cm-family-sign" class="cm-family-sign"></p>
+        <button id="cm-cert-btn" class="btn-royal-gold compact" type="button">🏆 حفظ شهادة فخر العام الـ 19 (PNG) ↓</button>
+      </div>
+
+      <p class="lp-credit">التصميم والتطوير بواسطة ENG / Mohamed Tarek • HEY Edition</p>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL 6: FAST-TRAVEL LOUVRE & PARIS MAP ==================== -->
+  <div id="map-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="museum-modal-card map-theme">
+      <button class="mm-close" data-close-modal="map-modal" type="button" aria-label="إغلاق">✕</button>
+      <span class="mm-kicker">خريطة القصة التفاعلية • تنقل فوري + تقدّم الاستكشاف</span>
+      <h2>🗺️ محطات باريس ومتحف اللوفر الـ 3D</h2>
+      <p id="map-progress-summary" class="mm-sub">اكتشفت 0 من 7 كنوز و 0 من 5 أختام ذهبية داخل متحف اللوفر — اضغط على أي محطة للتنقل الفوري.</p>
+      <div id="map-stations-grid" class="map-stations-grid"></div>
+      <div class="map-seals-strip" id="map-seals-strip"></div>
+      <div class="map-footer-bar">
+        <span class="lp-credit">التصميم والتطوير بواسطة ENG / Mohamed Tarek • HEY Edition</span>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./louvre-app.js?v=24"></script>
 </body>
 </html>

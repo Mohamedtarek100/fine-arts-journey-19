@@ -1,10 +1,10 @@
 /**
  * =========================================================================
- *  PHOTOREALISTIC PBR & ARCHITECTURAL TEXTURE SUITE (louvre-assets.js v22)
- *  Combines real CC0 Photogrammetry Scanned Normal/Roughness/Albedo maps
- *  with crisp architectural French Renaissance & Haussmann PBR overlays,
- *  UV Curator Secret Inscriptions, and Custom Louvre Wall Canvas Painting!
- *  Designed & Developed by ENG / Mohamed Tarek • HEY Edition
+ *  LIGHTWEIGHT PHOTOREALISTIC PBR TEXTURE SUITE (louvre-assets.js v24)
+ *  Uses compressed 512px CC0 Photogrammetry Scanned Normal/Roughness/Albedo
+ *  maps + fast cached architectural canvases for silky 60FPS performance.
+ *  Zero exclamation marks in all museum copy • HEY Edition
+ *  Designed & Developed by ENG / Mohamed Tarek
  * =========================================================================
  */
 
@@ -36,15 +36,13 @@ export function loadRealPBRSet(loader, diffPath, norPath, roughPath, repeatX, re
     tex.anisotropy = aniso;
     return tex;
   };
-  const out = {
+  return {
     map: cfg(loader.load(diffPath), true),
     normalMap: norPath ? cfg(loader.load(norPath), false) : null,
     roughnessMap: roughPath ? cfg(loader.load(roughPath), false) : null,
   };
-  return out;
 }
 
-/* ==================== 1. GLOW, SUNBEAM & SOFT CLOUD TEXTURES ==================== */
 export function createGlowTexture(inner = 'rgba(255,248,225,1)', mid = 'rgba(244,200,104,0.62)') {
   const [c, ctx] = makeCanvas(128, 128);
   const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
@@ -97,10 +95,11 @@ export function createCloudTexture() {
   return tex;
 }
 
-/* ==================== 2. HAUSSMANN & LOUVRE ARCHITECTURAL PBR FACADES ==================== */
 export function createHaussmannFacadePBR(aniso = 4) {
-  const [c, ctx] = makeCanvas(1024, 1024);
-  const [e, ectx] = makeCanvas(1024, 1024);
+  const [c, ctx] = makeCanvas(512, 512);
+  const [e, ectx] = makeCanvas(512, 512);
+  ctx.scale(0.5, 0.5);
+  ectx.scale(0.5, 0.5);
 
   const bg = ctx.createLinearGradient(0, 0, 0, 1024);
   bg.addColorStop(0, '#e6dac6');
@@ -183,8 +182,10 @@ export function createHaussmannFacadePBR(aniso = 4) {
 }
 
 export function createLouvrePalacePBR(aniso = 4) {
-  const [c, ctx] = makeCanvas(1024, 1024);
-  const [e, ectx] = makeCanvas(1024, 1024);
+  const [c, ctx] = makeCanvas(512, 512);
+  const [e, ectx] = makeCanvas(512, 512);
+  ctx.scale(0.5, 0.5);
+  ectx.scale(0.5, 0.5);
 
   const lg = ctx.createLinearGradient(0, 0, 0, 1024);
   lg.addColorStop(0, '#eadcc3'); lg.addColorStop(0.55, '#d6c09d'); lg.addColorStop(1, '#b69d79');
@@ -315,7 +316,6 @@ export function createLouvreWallPanelPBR(aniso = 4) {
   return toTex(c, { repeatX: 12, repeatY: 1, srgb: true, aniso });
 }
 
-/* ==================== 3. PARCHMENTS, UV SECRET CURATOR INSCRIPTIONS & CUSTOM WALL CANVAS ==================== */
 export function createParchmentTexture(titleText, subtitleText) {
   const [c, ctx] = makeCanvas(320, 420);
   const g = ctx.createLinearGradient(0, 0, 320, 420);
@@ -351,7 +351,6 @@ export function createUVSecretOverlayTexture(secretAr, constellationCode) {
   ctx.lineWidth = 2.5;
   ctx.strokeRect(18, 18, 476, 348);
 
-  // Glowing golden-cyan Da Vinci / Louvre curator geometric lines
   ctx.strokeStyle = 'rgba(255, 224, 120, 0.55)';
   ctx.beginPath();
   ctx.arc(256, 192, 130, 0, Math.PI * 2);
@@ -360,21 +359,15 @@ export function createUVSecretOverlayTexture(secretAr, constellationCode) {
   ctx.stroke();
 
   ctx.textAlign = 'center';
-  ctx.direction = 'ltr';
-  ctx.fillStyle = '#8ceeff';
-  ctx.font = '600 18px Cinzel, Georgia, serif';
-  ctx.fillText(`✦ LOUVRE CURATOR UV SECRET • ${constellationCode} ✦`, 256, 66);
+  ctx.direction = 'ltr'; ctx.fillStyle = '#8ceeff'; ctx.font = '600 18px Cinzel, Georgia, serif';
+  ctx.fillText(`✦ LOUVRE CURATOR UV ARCHIVE • ${constellationCode} ✦`, 256, 66);
 
-  ctx.direction = 'rtl';
-  ctx.fillStyle = '#fff4c2';
-  ctx.shadowColor = '#ffd058';
-  ctx.shadowBlur = 14;
+  ctx.direction = 'rtl'; ctx.fillStyle = '#fff4c2'; ctx.shadowColor = '#ffd058'; ctx.shadowBlur = 14;
   ctx.font = 'bold 28px Amiri, Georgia, serif';
   ctx.fillText(secretAr, 256, 202);
 
-  ctx.font = '600 18px Cairo, sans-serif';
-  ctx.fillStyle = '#b4f4ff';
-  ctx.fillText('مكتشف بعدسة أسرار اللوفر • HEY 19', 256, 326);
+  ctx.font = '600 18px Cairo, sans-serif'; ctx.fillStyle = '#b4f4ff';
+  ctx.fillText('تم الكشف بعدسة القيّم الفني • HEY 19', 256, 326);
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -390,9 +383,9 @@ export function createDefaultCustomLouvreCanvas() {
   ctx.textAlign = 'center';
   ctx.direction = 'ltr'; ctx.fillStyle = '#d6ab52'; ctx.font = '600 16px Cinzel, serif';
   ctx.fillText('MUSÉE DU LOUVRE  •  LIVE VISITOR MASTERPIECE', 320, 84);
-  ctx.direction = 'rtl'; ctx.fillStyle = '#fbf0cf'; ctx.font = '700 38px Amiri, serif';
-  ctx.fillText('ارسم لوحتك وعلّقها هنا في اللوفر! 🎨', 320, 225);
-  ctx.fillStyle = '#eed28a'; ctx.font = '600 22px Cairo, sans-serif';
+  ctx.direction = 'rtl'; ctx.fillStyle = '#fbf0cf'; ctx.font = '700 36px Amiri, serif';
+  ctx.fillText('ارسم لوحتك وعلّقها هنا في متحف اللوفر', 320, 225);
+  ctx.fillStyle = '#eed28a'; ctx.font = '600 21px Cairo, sans-serif';
   ctx.fillText('اضغط على الحامل الذهبي للرسم والتوقيع ليمنى ✦', 320, 286);
   return c;
 }

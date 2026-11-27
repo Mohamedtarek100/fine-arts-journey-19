@@ -1,23 +1,24 @@
 /**
  * =========================================================================
- *  PARIS & MUSÉE DU LOUVRE 3D STORY GAME CONTROLLER (louvre-app.js v22)
- *  - Exact 2-Step Classic Reception Portal + Personalized Family Letters
- *    (from SITE_CONFIG.reception.roles + SVG Crests + ?gift= Token Decoder!)
- *  - Louvre Museum Curator Intro Briefing
- *  - 5 Jaw-Dropping Pro Features:
- *      1) Live 3D Painting Studio -> Hang Art Directly on Louvre Wall in 3D!
- *      2) Cour Napoléon Wishing Coin Fountain (3D Spinning Coin + Wishes)
- *      3) Curator UV Secret Layer Reveal Mode (🔍 عدسة الأسرار)
- *      4) Cinematic Drone Flyover Camera (🚁 جولة درون)
- *      5) Realistic Footstep SFX (Cobblestone vs Parquet) + Arabic Narrator
- *  - Live Firebase Cloud Firestore Sync + Strict OWASP Zero-HTML-Injection
+ *  PARIS & MUSÉE DU LOUVRE 3D STORY EXPERIENCE CONTROLLER (louvre-app.js v24)
+ *  - Silky 60FPS Lifecycle: Curtain Preloader + Portal Pause/Resume Throttle
+ *  - Exact 2-Step Reception Portal + Personalized Family Letters + ?gift=
+ *  - Live Paris & Louvre Events:
+ *      * 19 Birthday Sky Lanterns Rising Over Paris & Louvre Pyramid
+ *      * Paris Eiffel Tower Champagne Sparkle Show + Rotating Searchlight
+ *      * 5 Hidden Collectible Golden Wax Seals Hunt + Honorary Curator Medal
+ *      * Cour Napoléon Wishing Coin Fountain + Cinematic Drone Flyover
+ *  - Pro Museum Tools: Live Mini-Map Radar, Telephoto Zoom (1x / 2x),
+ *    Live 3D Wall Art Studio (with Brush Size Slider), UV Secret Loupe,
+ *    4 Lighting Atmospheres, Arabic Voice Guide, Paris Music & Cloud Vault
+ *  - Strict OWASP Zero-HTML-Injection • Zero Exclamation Marks in UI Copy
  *  - Designed & Developed by ENG / Mohamed Tarek • HEY Edition
  * =========================================================================
  */
 
-import { SITE_CONFIG } from './config.js?v=16';
-import { FamilyCloudVault } from './firebase-sync.js?v=16';
-import { LouvreParisWorld3D, STORY_WAYPOINTS } from './louvre-world.js?v=23';
+import { SITE_CONFIG } from './config.js?v=24';
+import { FamilyCloudVault } from './firebase-sync.js?v=24';
+import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=24';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const WALL_PAINTING_KEY = 'yomna_louvre_wall_painting_v1';
@@ -25,10 +26,10 @@ const ALLOWED_SENDERS = new Set(SITE_CONFIG.reception.roles.filter((r) => !r.isH
 const TRACKED_DISCOVERIES = ['fountain', 'childhood', 'easel', 'passion', 'thanaweya', 'fine-arts', 'vault'];
 
 const FOUNTAIN_WISHES = [
-  '🪙 أمنية نافورة اللوفر 1: عامكِ الـ 19 بداية فرحة كبيرة وخطوة واثقة نحو كلية الفنون الجميلة! ✨',
-  '🪙 أمنية نافورة اللوفر 2: ربنا يرزقكِ السكينة والهدوء في كل يوم من تالتة ثانوي ويفرح قلبكِ بالتفوق! 🕊️',
-  '🪙 أمنية نافورة اللوفر 3: أن تظل موهبتكِ وفرحكِ بالرسم كل يوم هما بوصلتكِ الأجمل دائماً! 🎨',
-  '🪙 أمنية نافورة اللوفر 4: أن تري لوحاتكِ الحقيقية معلّقة في أجمل المعارض كما تتألق اليوم في اللوفر! 🏛️',
+  '🪙 أمنية نافورة اللوفر 1: عامكِ الـ 19 بداية فرحة كبيرة وخطوة واثقة نحو كلية الفنون الجميلة. ✨',
+  '🪙 أمنية نافورة اللوفر 2: ربنا يرزقكِ السكينة والهدوء في كل يوم من تالتة ثانوي ويفرح قلبكِ بالتفوق. 🕊️',
+  '🪙 أمنية نافورة اللوفر 3: أن تظل موهبتكِ وفرحكِ بالرسم كل يوم هما بوصلتكِ الأجمل دائماً. 🎨',
+  '🪙 أمنية نافورة اللوفر 4: أن تري لوحاتكِ الحقيقية معلّقة في أجمل المعارض كما تتألق اليوم في اللوفر. 🏛️',
 ];
 
 function el(tag, className, text) {
@@ -159,7 +160,7 @@ class LouvreAudio {
     if (!this.voiceEnabled || !('speechSynthesis' in window)) return;
     try {
       window.speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(String(text).replace(/[^\u0600-\u06FF0-9a-zA-Z\s.,،!؟]/g, ' '));
+      const u = new SpeechSynthesisUtterance(String(text).replace(/[^\u0600-\u06FF0-9a-zA-Z\s.,،؟]/g, ' '));
       u.lang = 'ar-EG'; u.rate = 0.96;
       window.speechSynthesis.speak(u);
     } catch { /* ignore */ }
@@ -169,11 +170,12 @@ class LouvreAudio {
     try { this.ensure(); [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => setTimeout(() => this.tone(f, 2.0, 0.22), i * 85)); } catch { /* ignore */ }
   }
 
+  sparkleChime() {
+    try { this.ensure(); [659.25, 783.99, 987.77, 1318.5, 1567.98].forEach((f, i) => setTimeout(() => this.tone(f, 1.8, 0.18, 'triangle'), i * 75)); } catch { /* ignore */ }
+  }
+
   coinSplash() {
-    try {
-      this.ensure();
-      [987.77, 1318.5, 1567.98].forEach((f, i) => setTimeout(() => this.tone(f, 1.4, 0.2, 'triangle'), i * 70));
-    } catch { /* ignore */ }
+    try { this.ensure(); [987.77, 1318.5, 1567.98].forEach((f, i) => setTimeout(() => this.tone(f, 1.4, 0.2, 'triangle'), i * 70)); } catch { /* ignore */ }
   }
 
   meow() {
@@ -252,8 +254,13 @@ function bootstrap() {
   let shownWelcomeOnce = false;
   let wishIdx = 0;
   const discovered = new Set();
+  const foundSeals = new Set();
 
-  // Check incoming ?gift= URL token (exact parity with Classic Exhibition!)
+  const preloader = document.getElementById('preloader');
+  const dismissPreloader = () => { if (preloader) preloader.classList.add('done'); };
+  window.setTimeout(dismissPreloader, 2600);
+
+  // Check incoming ?gift= URL token
   try {
     const params = new URLSearchParams(window.location.search);
     const gift = decodeGiftToken(params.get('gift') || '');
@@ -261,7 +268,7 @@ function bootstrap() {
       vaultStore.save(gift.senderId, gift.message);
       const senderRole = roles.find((r) => r.id === gift.senderId);
       const banner = document.getElementById('incoming-gift-banner');
-      document.getElementById('incoming-gift-text').textContent = `وصلت رسالة تهنئة جديدة ليمنى من ${senderRole ? senderRole.displayFullAr : 'العائلة'} — محفوظة الآن داخل صندوق متحف اللوفر!`;
+      document.getElementById('incoming-gift-text').textContent = `وصلت رسالة تهنئة جديدة ليمنى من ${senderRole ? senderRole.displayFullAr : 'العائلة'} — محفوظة الآن داخل صندوق متحف اللوفر.`;
       banner.classList.add('visible');
       banner.setAttribute('aria-hidden', 'false');
     }
@@ -269,7 +276,9 @@ function bootstrap() {
 
   const questLabel = document.getElementById('quest-label');
   const discoveryCounter = document.getElementById('discovery-counter');
+  const sealsCounter = document.getElementById('seals-counter');
   const mapProgressSummary = document.getElementById('map-progress-summary');
+  const mapSealsStrip = document.getElementById('map-seals-strip');
   const catGuideText = document.getElementById('cat-guide-text');
   const catGuideCard = document.getElementById('cat-guide-card');
   const proximityBtn = document.getElementById('proximity-prompt');
@@ -277,6 +286,8 @@ function bootstrap() {
   const autoFollowBtn = document.getElementById('auto-follow-btn');
   const visitorBtn = document.getElementById('gt-visitor-btn');
   const timeBtn = document.getElementById('gt-time-btn');
+  const zoomTopBtn = document.getElementById('gt-zoom-btn');
+  const zoomTrayBtn = document.getElementById('gt-zoom-tray-btn');
   const uvTopBtn = document.getElementById('gt-uv-btn');
   const uvTrayBtn = document.getElementById('gt-uv-tray-btn');
   const toolsTray = document.getElementById('pro-tools-tray');
@@ -290,17 +301,30 @@ function bootstrap() {
     toastTimer = window.setTimeout(() => { toastEl.classList.remove('show'); toastEl.setAttribute('aria-hidden', 'true'); }, dur);
   };
 
+  const renderProgressSummaries = () => {
+    const n = discovered.size, total = TRACKED_DISCOVERIES.length;
+    const s = foundSeals.size, sTotal = HIDDEN_SEALS_DATA.length;
+    discoveryCounter.textContent = n === total ? `🏆 الكنوز ${total}/${total}` : `الكنوز: ${n} / ${total}`;
+    sealsCounter.textContent = s === sTotal ? `🏅 الأختام ${sTotal}/${sTotal}` : `الأختام: ${s} / ${sTotal}`;
+    mapProgressSummary.textContent = (n === total && s === sTotal)
+      ? '🏆 اكتملت رحلة متحف اللوفر بالكامل — جميع الكنوز السبعة والأختام الذهبية الخمسة.'
+      : `اكتشفت ${n} من ${total} كنوز و ${s} من ${sTotal} أختام ذهبية داخل متحف اللوفر — اضغط على أي محطة للتنقل الفوري.`;
+    if (mapSealsStrip) {
+      mapSealsStrip.replaceChildren(...HIDDEN_SEALS_DATA.map((item) => {
+        const isFound = foundSeals.has(item.id);
+        return el('span', `seal-chip${isFound ? ' found' : ''}`, `${isFound ? '✓' : '○'} ${item.labelAr}`);
+      }));
+    }
+  };
+  renderProgressSummaries();
+
   const markDiscovered = (id) => {
     if (!TRACKED_DISCOVERIES.includes(id) || discovered.has(id)) return;
     discovered.add(id);
-    const n = discovered.size, total = TRACKED_DISCOVERIES.length;
-    discoveryCounter.textContent = n === total ? `🏆 وسام اللوفر ${total}/${total}` : `الكنوز: ${n} / ${total}`;
-    mapProgressSummary.textContent = n === total
-      ? `🏆 مبروك! اكتشفت جميع كنوز وتحف متحف اللوفر الـ ${total} بالكامل!`
-      : `اكتشفت ${n} من ${total} كنوز داخل باريس ومتحف اللوفر — اضغط على أي محطة للتنقل الفوري!`;
-    if (n === total) {
+    renderProgressSummaries();
+    if (discovered.size === TRACKED_DISCOVERIES.length) {
       audio.chime();
-      showToast('🏆 مبروك! حصلت على «وسام مستكشف متحف اللوفر الملكي» لاكتشاف كل الكنوز الـ 7! 🎂✨', 6000);
+      showToast('🏆 مبروك. حصلت على «وسام مستكشف متحف اللوفر الملكي» لاكتشاف كل الكنوز السبعة. ✨', 6000);
     }
   };
 
@@ -323,8 +347,11 @@ function bootstrap() {
   document.querySelectorAll('.museum-modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) closeModal(m.id); }));
   window.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllModals(); });
 
-  // ==================== BUILD AAA 3D PARIS & LOUVRE WORLD ====================
+  // ==================== BUILD SILKY 60FPS PARIS & LOUVRE 3D WORLD ====================
   const world = new LouvreParisWorld3D(document.getElementById('louvre-canvas'), SITE_CONFIG, {
+    onReady() {
+      window.setTimeout(dismissPreloader, 260);
+    },
     onWaypointChange(idx, wp) {
       if (questLabel) questLabel.textContent = `🐾 اتبع القطة • ${idx + 1} / ${STORY_WAYPOINTS.length} — ${wp.labelAr}`;
       if (catGuideText) catGuideText.textContent = wp.tipAr;
@@ -348,29 +375,120 @@ function bootstrap() {
       document.body.classList.toggle('cinema-mode', active);
       document.getElementById('cinema-exit-bar').setAttribute('aria-hidden', String(!active));
     },
+    onZoomChange(zoomed) {
+      if (zoomTopBtn) {
+        zoomTopBtn.setAttribute('aria-pressed', String(zoomed));
+        zoomTopBtn.textContent = zoomed ? '🔭 تقريب 2×' : '🔭 تقريب';
+      }
+      if (zoomTrayBtn) {
+        zoomTrayBtn.setAttribute('aria-pressed', String(zoomed));
+        zoomTrayBtn.textContent = zoomed ? '🔭 عدسة التقريب البصري: 2× مفعّلة' : '🔭 عدسة التقريب البصري: 1×';
+      }
+    },
     onFootstep(surface) {
       audio.footstep(surface);
     },
     onEnterLouvre() {
       audio.chime();
-      showToast('🏛️ أهلاً بك داخل القاعة الكبرى لمتحف اللوفر! جرّب الرسم على الحامل الذهبي 🎨 وعدسة الأسرار 🔍 ✨', 6400);
+      showToast('🏛️ أهلاً بك داخل القاعة الكبرى لمتحف اللوفر. جرّب المرسم الذهبي والأختام المخفية وعدسة الأسرار. ✨', 6000);
     },
     onTimeChange(mode) {
-      const shortMap = { sunset: '🌇 غروب', day: '☀️ نهار', night: '🌙 ليل' };
+      const shortMap = { sunset: '🌇 غروب', day: '☀️ نهار', night: '🌙 ليل', gallery: '🏛️ أتيليه' };
       timeBtn.textContent = shortMap[mode] || '🌇 غروب';
     },
     onCatPet() {
       audio.meow(); catGuideCard.classList.remove('folded');
-      const txt = 'برررر.. بحب الطبطبة أوي! 💛🐾 كمّل المشي ورايا جوه متحف اللوفر عشان نكتشف كل التحف ونوصل لتورتة الـ 19!';
+      const txt = 'صوت خفّي دافئ من القطة الذهبية. 💛🐾 تابع المسير معي داخل القاعات لاكتشاف التحف والأختام حتى تورتة الـ 19.';
       catGuideText.textContent = txt; audio.speakAr(txt);
     },
     onInteract(id) { handleInteract(id); },
   });
 
+  // ==================== LIVE INTERACTIVE LOUVRE MINI-MAP RADAR (~10FPS THROTTLED) ====================
+  const miniCanvas = document.getElementById('louvre-minimap');
+  const mctx = miniCanvas ? miniCanvas.getContext('2d') : null;
+  const minimapWidget = document.getElementById('minimap-widget');
+  if (minimapWidget) minimapWidget.addEventListener('click', () => openModal('map-modal'));
+
+  const drawMiniMap = () => {
+    if (!mctx || document.body.classList.contains('portal-open') || document.body.classList.contains('cinema-mode')) return;
+    if (window.innerWidth <= 760) return;
+    const W = miniCanvas.width, H = miniCanvas.height;
+    const toMX = (wx) => W * 0.5 + (wx / 18) * (W * 0.42);
+    const toMZ = (wz) => ((wz + 104) / 176) * (H - 16) + 8;
+
+    mctx.clearRect(0, 0, W, H);
+    mctx.fillStyle = '#120d09';
+    mctx.fillRect(0, 0, W, H);
+
+    // Paris Boulevard (south)
+    mctx.fillStyle = 'rgba(232, 194, 104, 0.12)';
+    mctx.fillRect(toMX(-10), toMZ(14), toMX(10) - toMX(-10), toMZ(68) - toMZ(14));
+
+    // Cour Napoléon + Glass Pyramid diamond
+    const px0 = toMX(0), pz0 = toMZ(7);
+    mctx.strokeStyle = 'rgba(154, 224, 248, 0.72)';
+    mctx.lineWidth = 1.4;
+    mctx.beginPath();
+    mctx.moveTo(px0, pz0 - 8); mctx.lineTo(px0 + 9, pz0);
+    mctx.lineTo(px0, pz0 + 8); mctx.lineTo(px0 - 9, pz0);
+    mctx.closePath(); mctx.stroke();
+
+    // Louvre Grande Galerie Hall
+    mctx.fillStyle = 'rgba(130, 32, 46, 0.34)';
+    mctx.fillRect(toMX(-7.5), toMZ(-82), toMX(7.5) - toMX(-7.5), toMZ(-7) - toMZ(-82));
+    mctx.strokeStyle = 'rgba(238, 210, 138, 0.42)';
+    mctx.lineWidth = 1;
+    mctx.strokeRect(toMX(-7.5), toMZ(-82), toMX(7.5) - toMX(-7.5), toMZ(-7) - toMZ(-82));
+
+    // Grand Rotunda Circle (Cake 19)
+    mctx.beginPath();
+    mctx.arc(toMX(0), toMZ(-93), 13, 0, Math.PI * 2);
+    mctx.fillStyle = 'rgba(232, 194, 104, 0.24)';
+    mctx.fill();
+    mctx.stroke();
+
+    // Uncollected Hidden Golden Wax Seals (pulsing crimson-gold dots)
+    const tel = world.getMiniMapTelemetry();
+    for (const s of tel.seals) {
+      if (s.collected) continue;
+      mctx.beginPath();
+      mctx.arc(toMX(s.x), toMZ(s.z), 3.1, 0, Math.PI * 2);
+      mctx.fillStyle = '#ff6b6b';
+      mctx.fill();
+      mctx.strokeStyle = '#ffe596';
+      mctx.lineWidth = 1;
+      mctx.stroke();
+    }
+
+    // Golden Persian Cat Guide Dot
+    mctx.beginPath();
+    mctx.arc(toMX(tel.cx), toMZ(tel.cz), 3.3, 0, Math.PI * 2);
+    mctx.fillStyle = '#ffcb6b';
+    mctx.fill();
+
+    // Player Directional Arrow
+    const ux = toMX(tel.px), uz = toMZ(tel.pz);
+    mctx.save();
+    mctx.translate(ux, uz);
+    mctx.rotate(-tel.yaw);
+    mctx.fillStyle = '#ffffff';
+    mctx.beginPath();
+    mctx.moveTo(0, -5.5);
+    mctx.lineTo(4, 4.5);
+    mctx.lineTo(0, 2.2);
+    mctx.lineTo(-4, 4.5);
+    mctx.closePath();
+    mctx.fill();
+    mctx.restore();
+  };
+  window.setInterval(drawMiniMap, 110);
+
   // ==================== FEATURE #1: LIVE 3D PAINTING STUDIO ON LOUVRE WALL ====================
   const paintCanvas = document.getElementById('lw-paint-canvas');
   const pctx = paintCanvas.getContext('2d');
-  let brushColor = '#f2cc6e', symmetry8 = true, painting = false, lastPt = null;
+  const brushSizeInput = document.getElementById('lw-brush-size');
+  let brushColor = '#f2cc6e', brushWidth = 4.2, symmetry8 = true, painting = false, lastPt = null;
 
   const resetPaintCanvas = () => {
     const g = pctx.createRadialGradient(320, 220, 30, 320, 240, 390);
@@ -380,7 +498,6 @@ function bootstrap() {
   };
   resetPaintCanvas();
 
-  // Restore saved Louvre Wall Painting if present!
   try {
     const savedUrl = window.localStorage.getItem(WALL_PAINTING_KEY);
     if (savedUrl && savedUrl.startsWith('data:image/png')) {
@@ -390,14 +507,18 @@ function bootstrap() {
     }
   } catch { /* ignore */ }
 
+  if (brushSizeInput) {
+    brushSizeInput.addEventListener('input', () => { brushWidth = Math.max(2, Math.min(14, Number(brushSizeInput.value) || 4)); });
+  }
+
   const getCanvasPt = (e) => {
     const r = paintCanvas.getBoundingClientRect();
     return { x: ((e.clientX - r.left) / r.width) * 640, y: ((e.clientY - r.top) / r.height) * 480 };
   };
   const strokeSeg = (p0, p1) => {
     pctx.save();
-    pctx.strokeStyle = brushColor; pctx.lineWidth = 4.2; pctx.lineCap = 'round';
-    pctx.shadowColor = brushColor; pctx.shadowBlur = 6;
+    pctx.strokeStyle = brushColor; pctx.lineWidth = brushWidth; pctx.lineCap = 'round';
+    pctx.shadowColor = brushColor; pctx.shadowBlur = 5;
     if (!symmetry8) {
       pctx.beginPath(); pctx.moveTo(p0.x, p0.y); pctx.lineTo(p1.x, p1.y); pctx.stroke();
     } else {
@@ -448,16 +569,35 @@ function bootstrap() {
     try { window.localStorage.setItem(WALL_PAINTING_KEY, paintCanvas.toDataURL('image/png')); } catch { /* ignore */ }
     markDiscovered('easel');
     closeModal('studio-wall-modal');
-    world.teleportToWaypoint(3); // Frame the newly hung Louvre wall masterpiece!
+    world.teleportToWaypoint(3);
     audio.chime();
-    showToast('🖼️✨ تم تعليق لوحتك مباشرة داخل الإطار الذهبي على جدار متحف اللوفر أمامك!', 5600);
+    showToast('🖼️ تم تعليق لوحتك مباشرة داخل الإطار الذهبي على جدار متحف اللوفر أمامك. ✨', 5600);
   });
   document.getElementById('lw-download-btn').addEventListener('click', () => {
     const a = document.createElement('a');
     a.download = 'Yomna-Louvre-Masterpiece.png'; a.href = paintCanvas.toDataURL('image/png'); a.click();
   });
 
-  // ==================== FEATURE #2: COUR NAPOLÉON WISHING COIN FOUNTAIN ====================
+  // ==================== LIVE PARIS & LOUVRE EVENTS ====================
+  const triggerSkyLanternsEvent = () => {
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    if (world.playerPos.z < 2) world.teleportToWaypoint(1);
+    world.targetPitch = 0.24;
+    world.releaseBirthdayLanterns();
+    audio.sparkleChime();
+    showToast('🏮 تم إطلاق 19 فانوس أمنيات مضيئاً في سماء باريس حول هرم اللوفر الزجاجي احتفاءً بعام يمنى الـ 19. ✨', 6000);
+  };
+
+  const triggerEiffelSparkleEvent = () => {
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    if (world.playerPos.z < 12) world.teleportToWaypoint(0);
+    world.targetYaw = 0.28;
+    world.targetPitch = 0.16;
+    world.triggerEiffelSparkleShow();
+    audio.sparkleChime();
+    showToast('✨ بدأ عرض أضواء برج إيفل المتلألئ مع الكشّاف الدوار وفوانيس باريس الذهبية.', 6000);
+  };
+
   const triggerCoinFountain = () => {
     world.tossWishingCoin();
     audio.coinSplash();
@@ -468,7 +608,6 @@ function bootstrap() {
     audio.speakAr(msg);
   };
 
-  // ==================== FEATURE #3: CURATOR UV SECRET LOUPE ====================
   const toggleUV = () => {
     const next = !world.uvMode;
     world.setUVMode(next);
@@ -478,13 +617,20 @@ function bootstrap() {
     audio.chime();
     showToast(
       next
-        ? '🔍 تم تشغيل «عدسة الأسرار»! انظر للوحات الأربع داخل اللوفر لتقرأ الرسائل السرية المضيئة فوقها!'
+        ? '🔍 تم تشغيل عدسة الأسرار. انظر للوحات الأربع داخل القاعة لقراءة الرسائل الخفية المضيئة فوقها.'
         : 'تم إغلاق عدسة الأسرار والعودة لإضاءة المتحف الطبيعية.',
-      4800
+      4600
     );
   };
   uvTopBtn.addEventListener('click', toggleUV);
   uvTrayBtn.addEventListener('click', toggleUV);
+
+  const toggleZoom = () => {
+    world.setZoom(!world.zoomed);
+    audio.chime();
+  };
+  if (zoomTopBtn) zoomTopBtn.addEventListener('click', toggleZoom);
+  if (zoomTrayBtn) zoomTrayBtn.addEventListener('click', toggleZoom);
 
   // ==================== MUSEUM CURATOR GUIDE MODAL ====================
   const wmTitle = document.getElementById('wm-title');
@@ -499,7 +645,7 @@ function bootstrap() {
   document.getElementById('wm-start-drone-btn').addEventListener('click', () => { closeModal('welcome-museum-modal'); world.startDroneTour(); audio.chime(); });
   document.getElementById('wm-start-free-btn').addEventListener('click', () => { closeModal('welcome-museum-modal'); audio.meow(); });
 
-  // ==================== INTERACTION ROUTER ====================
+  // ==================== INTERACTION ROUTER (ARTIFACTS + 5 HIDDEN SEALS + EVENTS) ====================
   function openArtifactModal(chapterId) {
     const ch = SITE_CONFIG.chapters.find((c) => c.id === chapterId);
     if (!ch) return;
@@ -526,7 +672,7 @@ function bootstrap() {
       box.append(el('strong', '', `✦ بطاقة الحلم القادم: ${SITE_CONFIG.dreamPass.institutionAr}`), el('p', '', `${SITE_CONFIG.artistName} — ${SITE_CONFIG.dreamPass.statusAr} (${SITE_CONFIG.dreamPass.serialNo})`));
       extra.appendChild(box);
     } else if (ch.id === 'passion') {
-      const btn = el('button', 'btn-royal-gold compact', '🎨 ارسم وعلّق لوحتك على جدار اللوفر الآن!');
+      const btn = el('button', 'btn-royal-gold compact', '🎨 ارسم وعلّق لوحتك على جدار اللوفر الآن');
       btn.type = 'button';
       btn.addEventListener('click', () => { closeModal('artifact-modal'); openModal('studio-wall-modal'); });
       extra.appendChild(btn);
@@ -549,7 +695,7 @@ function bootstrap() {
     if (activeRole.isHonoree) {
       vmInbox.classList.remove('panel-hidden'); vmSender.classList.add('panel-hidden');
       vmTitle.textContent = 'صندوق رسائل عائلتكِ داخل متحف اللوفر 💌';
-      vmSub.textContent = 'كل رسالة يرسلها أفراد عائلتكِ تصل فوراً سحابياً داخل هذا الصندوق الملكي!';
+      vmSub.textContent = 'كل رسالة يرسلها أفراد عائلتكِ تصل فوراً سحابياً داخل هذا الصندوق الملكي.';
       vmInbox.replaceChildren(...familyRoles.map((r) => {
         const entry = vaultStore.getEntry(r), card = el('article', 'vm-env-card');
         card.append(el('strong', '', `${r.displayFullAr}${entry.isCustom ? ' ✦ (رسالة جديدة وصلت لكِ)' : ''}`), el('p', '', entry.message));
@@ -558,7 +704,7 @@ function bootstrap() {
     } else {
       vmInbox.classList.add('panel-hidden'); vmSender.classList.remove('panel-hidden');
       vmTitle.textContent = 'أرسل رسالتك لصندوق يمنى داخل متحف اللوفر 💌';
-      vmSub.textContent = 'اكتب تهنئتك وتشجيعك ليمنى لتصل فوراً سحابياً إلى صندوقها الخاص في المتحف!';
+      vmSub.textContent = 'اكتب تهنئتك وتشجيعك ليمنى لتصل فوراً سحابياً إلى صندوقها الخاص في المتحف.';
       vmSenderName.textContent = activeRole.displayFullAr;
       vmTextarea.value = vaultStore.getEntry(activeRole).message;
       vmPresets.replaceChildren(...(activeRole.cardPresets || []).map((txt) => {
@@ -578,7 +724,7 @@ function bootstrap() {
     const res = await cloudVault.publishWish(activeRole.id, msg);
     vmSendBtn.disabled = false; audio.chime();
     vmDeliveryMsg.textContent = res.ok
-      ? '✅ وصلت رسالتك سحابياً في نفس اللحظة إلى صندوق يمنى داخل متحف اللوفر!'
+      ? '✅ وصلت رسالتك سحابياً في نفس اللحظة إلى صندوق يمنى داخل متحف اللوفر.'
       : '✅ تم حفظ رسالتك في الصندوق — يمكنك أيضاً مشاركتها على واتساب:';
     const token = encodeGiftToken(activeRole.id, msg);
     latestGiftUrl = `${window.location.origin}${window.location.pathname}?gift=${encodeURIComponent(token)}`;
@@ -588,7 +734,7 @@ function bootstrap() {
 
   vmCopyBtn.addEventListener('click', async () => {
     if (!latestGiftUrl) return;
-    try { await navigator.clipboard.writeText(latestGiftUrl); vmCopyBtn.textContent = '✓ تم النسخ!'; } catch { /* ignore */ }
+    try { await navigator.clipboard.writeText(latestGiftUrl); vmCopyBtn.textContent = '✓ تم النسخ'; } catch { /* ignore */ }
   });
 
   vmPngBtn.addEventListener('click', () => {
@@ -610,7 +756,7 @@ function bootstrap() {
     ({ senderId, message }) => { vaultStore.save(senderId, message); renderVaultModal(); },
     (connected) => {
       vmCloudStatus.textContent = connected
-        ? '🟢 متصل سحابياً الآن (Firebase Cloud Firestore) — الرسائل تظهر لحظياً في صندوق يمنى!'
+        ? '🟢 متصل سحابياً الآن (Firebase Cloud Firestore) — الرسائل تظهر لحظياً في صندوق يمنى.'
         : '🔒 وضع الحفظ المحلي + رابط واتساب جاهز.';
     }
   );
@@ -632,7 +778,7 @@ function bootstrap() {
   document.getElementById('mm-pledge-btn').addEventListener('click', (e) => {
     const btn = e.currentTarget, on = btn.getAttribute('aria-pressed') !== 'true';
     btn.setAttribute('aria-pressed', String(on));
-    document.getElementById('mm-pledge-msg').textContent = on ? '✦ شكراً لك! الدعم الهادئ والإيمان بالشغف هما أجمل هدية ليمنى ✦' : '';
+    document.getElementById('mm-pledge-msg').textContent = on ? '✦ شكراً لك. الدعم الهادئ والإيمان بالشغف هما أجمل هدية ليمنى. ✦' : '';
     if (on) audio.chime();
   });
 
@@ -664,7 +810,7 @@ function bootstrap() {
     if (micStream) { micStream.getTracks().forEach((t) => t.stop()); micStream = null; }
     if (micCtx) { micCtx.close().catch(() => {}); micCtx = null; }
     world.setCandleWind(0); micBtn.setAttribute('aria-pressed', 'false');
-    micLbl.textContent = '🎙️ أو انفخي في المايكروفون لإطفاء الشمعتين!';
+    micLbl.textContent = '🎙️ أو انفخي في المايكروفون لإطفاء الشمعتين';
   };
   micBtn.addEventListener('click', async () => {
     if (micOn) { stopMic(); return; }
@@ -673,7 +819,7 @@ function bootstrap() {
       const Ctx = window.AudioContext || window.webkitAudioContext; micCtx = new Ctx();
       const an = micCtx.createAnalyser(); an.fftSize = 256; micCtx.createMediaStreamSource(micStream).connect(an);
       const data = new Uint8Array(an.frequencyBinCount); micOn = true; let charge = 0;
-      micBtn.setAttribute('aria-pressed', 'true'); micLbl.textContent = '💨 انفخي الآن نحو المايكروفون! (إلغاء)';
+      micBtn.setAttribute('aria-pressed', 'true'); micLbl.textContent = '💨 انفخي الآن نحو المايكروفون (إلغاء)';
       const loop = () => {
         if (!micOn) return; an.getByteFrequencyData(data);
         let sum = 0; for (let i = 1; i <= 18; i++) sum += data[i];
@@ -688,7 +834,22 @@ function bootstrap() {
   });
 
   function handleInteract(id) {
-    if (['childhood', 'passion', 'thanaweya', 'fine-arts'].includes(id)) openArtifactModal(id);
+    if (typeof id === 'string' && id.startsWith('seal-')) {
+      const collected = world.collectHiddenSeal(id);
+      if (collected) {
+        foundSeals.add(collected.id);
+        renderProgressSummaries();
+        audio.sparkleChime();
+        if (foundSeals.size === HIDDEN_SEALS_DATA.length) {
+          world.releaseBirthdayLanterns();
+          world.launchFireworks();
+          showToast(`🏆 نلتِ «وسام أمينة متحف اللوفر الشرفي» بعد جمع الأختام الذهبية الخمسة بالكامل. «${collected.quoteAr}»`, 7000);
+        } else {
+          showToast(`🏅 تم جمع ${collected.labelAr} (${foundSeals.size} / ${HIDDEN_SEALS_DATA.length}): «${collected.quoteAr}»`, 6000);
+        }
+        audio.speakAr(collected.quoteAr);
+      }
+    } else if (['childhood', 'passion', 'thanaweya', 'fine-arts'].includes(id)) openArtifactModal(id);
     else if (id === 'fountain') triggerCoinFountain();
     else if (id === 'easel') { audio.chime(); openModal('studio-wall-modal'); }
     else if (id === 'vault') { markDiscovered('vault'); renderVaultModal(); audio.chime(); openModal('vault-modal'); }
@@ -697,14 +858,20 @@ function bootstrap() {
   }
   proximityBtn.addEventListener('click', () => { if (activeInteractId) handleInteract(activeInteractId); });
 
-  // ==================== PRO TOOLS TRAY CONTROLS ====================
-  const timeModes = ['sunset', 'day', 'night'];
+  // ==================== PRO LIVE EVENTS & TOOLS TRAY CONTROLS ====================
+  const timeModes = ['sunset', 'day', 'night', 'gallery'];
   let timeIdx = 0;
   timeBtn.addEventListener('click', () => {
     timeIdx = (timeIdx + 1) % timeModes.length;
     const mode = timeModes[timeIdx];
     world.setTimeOfDay(mode); audio.chime();
-    showToast(mode === 'night' ? '🌙 ليل باريس الساحر: القمر والنجوم وكشّاف برج إيفل!' : mode === 'day' ? '☀️ نهار باريس المشمس!' : '🌇 غروب باريس الذهبي!', 3400);
+    const msgs = {
+      sunset: '🌇 إضاءة غروب باريس الذهبي.',
+      day: '☀️ إضاءة نهار باريس الصافي.',
+      night: '🌙 ليل باريس الساحر مع القمر والنجوم وكشّاف برج إيفل.',
+      gallery: '🏛️ أجواء الأتيليه الملكي الدافئة.',
+    };
+    showToast(msgs[mode] || msgs.sunset, 3400);
   });
 
   document.getElementById('gt-tools-btn').addEventListener('click', (e) => {
@@ -718,13 +885,17 @@ function bootstrap() {
     }
   });
 
+  document.getElementById('gt-lanterns-btn').addEventListener('click', triggerSkyLanternsEvent);
+  document.getElementById('gt-sparkle-btn').addEventListener('click', triggerEiffelSparkleEvent);
   document.getElementById('gt-paint-wall-btn').addEventListener('click', () => openModal('studio-wall-modal'));
   document.getElementById('gt-drone-btn').addEventListener('click', () => {
-    toolsTray.classList.remove('open'); world.startDroneTour(); audio.chime();
-    showToast('🚁 جولة الدرون السينمائية فوق باريس واللوفر — اضغط «العودة للتحكم الحر» في أي وقت!', 4500);
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    world.startDroneTour(); audio.chime();
+    showToast('🚁 جولة الدرون السينمائية فوق باريس واللوفر — اضغط «العودة للتحكم الحر» في أي وقت.', 4500);
   });
   document.getElementById('gt-fountain-btn').addEventListener('click', () => {
-    toolsTray.classList.remove('open'); world.teleportToWaypoint(1); setTimeout(triggerCoinFountain, 350);
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    world.teleportToWaypoint(1); setTimeout(triggerCoinFountain, 320);
   });
 
   const voiceBtn = document.getElementById('gt-voice-btn');
@@ -744,9 +915,9 @@ function bootstrap() {
   });
 
   const qualityModes = [
-    { id: 'auto', label: '⚡ الأداء: تلقائي (Bloom + ظلال)' },
-    { id: 'smooth', label: '🚀 الأداء: خفيف بدون تهنيج' },
-    { id: 'ultra', label: '💎 الأداء: فائق Ultra 4K' },
+    { id: 'smooth60', label: '⚡ الأداء: سلس 60FPS (افتراضي)' },
+    { id: 'eco', label: '🚀 الأداء: خفيف جداً للأجهزة الاقتصادية' },
+    { id: 'ultra', label: '💎 الأداء: فائق HDR Bloom' },
   ];
   let qIdx = 0;
   const qualityBtn = document.getElementById('gt-quality-btn');
@@ -758,7 +929,7 @@ function bootstrap() {
   });
 
   document.getElementById('gt-cinema-btn').addEventListener('click', () => {
-    toolsTray.classList.remove('open');
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
     document.body.classList.add('cinema-mode');
     document.getElementById('cinema-exit-bar').setAttribute('aria-hidden', 'false');
   });
@@ -794,10 +965,10 @@ function bootstrap() {
   autoFollowBtn.addEventListener('click', () => { const next = !world.autoFollow; world.setAutoFollow(next); if (next) audio.meow(); });
   document.getElementById('next-stop-btn').addEventListener('click', () => { world.teleportToWaypoint((world.currentWaypointIdx + 1) % STORY_WAYPOINTS.length); audio.meow(); });
   document.getElementById('cat-lick-btn').addEventListener('click', () => {
-    world.triggerCatAction('groom'); catGuideText.textContent = 'ثواني ألحس كفّي بهدوء وأنضّف فروي الذهبي عشان أفضل شيك في متحف اللوفر! 👅🐾';
+    world.triggerCatAction('groom'); catGuideText.textContent = 'لحظة هادئة للعناية بالفرو الذهبي قبل استكمال جولة قاعات متحف اللوفر. 👅🐾';
   });
   document.getElementById('cat-play-btn').addEventListener('click', () => {
-    world.triggerCatAction('play'); audio.meow(); catGuideText.textContent = 'كرة الخيط الذهبية الـ 3D نزلت قدامي! مياو 🧶✨';
+    world.triggerCatAction('play'); audio.meow(); catGuideText.textContent = 'استراحة قصيرة مع كرة الخيط الذهبية الـ 3D ثم نكمل الجولة معاً. 🧶✨';
   });
 
   const mapGrid = document.getElementById('map-stations-grid');
@@ -811,7 +982,7 @@ function bootstrap() {
   function refreshMapActive(activeIdx) { mapBtns.forEach((b, i) => b.classList.toggle('active', i === activeIdx)); }
   document.getElementById('gt-map-btn').addEventListener('click', () => openModal('map-modal'));
 
-  // ==================== EXACT 2-STEP CLASSIC RECEPTION PORTAL + PERSONALIZED LETTERS ====================
+  // ==================== EXACT 2-STEP RECEPTION PORTAL + PERSONALIZED LETTERS ====================
   const portal = document.getElementById('louvre-portal');
   const shell = document.getElementById('lp-shell');
   const stepSelect = document.getElementById('portal-step-select');
@@ -858,7 +1029,6 @@ function bootstrap() {
   renderVaultModal();
   refreshWelcomeCopy();
 
-  // Step A -> Step B (Reveal Exact Personalized Letter!)
   document.getElementById('lp-continue-btn').addEventListener('click', () => {
     populatePersonalLetter(activeRole);
     stepSelect.classList.remove('active');
@@ -873,17 +1043,17 @@ function bootstrap() {
     stepSelect.classList.add('active');
   });
 
-  // Step B -> Enter 3D World (+ Show Louvre Museum Experience Briefing on First Entry!)
   document.getElementById('lp-enter-btn').addEventListener('click', () => {
     portal.classList.add('hidden');
     document.body.classList.remove('portal-open');
+    world.setPortalPaused(false);
     audio.chime();
     if (!shownWelcomeOnce) {
       shownWelcomeOnce = true;
       refreshWelcomeCopy();
       openModal('welcome-museum-modal');
     } else {
-      window.setTimeout(() => audio.meow(), 400);
+      window.setTimeout(() => audio.meow(), 350);
     }
   });
 
@@ -892,6 +1062,7 @@ function bootstrap() {
     stepSelect.classList.add('active');
     portal.classList.remove('hidden');
     document.body.classList.add('portal-open');
+    world.setPortalPaused(true);
     world.setAutoFollow(false);
     world.stopDroneTour();
   });
