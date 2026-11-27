@@ -1,18 +1,17 @@
 /**
  * =========================================================================
- *  SILKY 60FPS PARIS & MUSÉE DU LOUVRE 3D ENGINE (louvre-world.js v24)
- *  - Ultra-Smooth Performance Architecture:
- *      * 15FPS low-power preview while Reception Portal is open -> instant 60FPS on entry
- *      * Zero-cost Static Baked Sun Shadows (shadowMap.autoUpdate = false)
- *      * Single-pass native ACES rendering default + Opt-in Ultra HDR Bloom
- *      * Distance-culled Mocap Human Visitors (5 Desktop / 3 Mobile) + 512px Scanned PBR
- *  - Live Interactive Museum Events:
- *      * 19 Glowing Birthday Sky Lanterns Rising Over Paris & Louvre
- *      * Paris Eiffel Tower Champagne Sparkle Show + Rotating Searchlight
- *      * 5 Hidden Collectible Golden Wax Seals Hunt Across Paris & Louvre
- *      * Cour Napoléon Wishing Coin Fountain + Open-Portal Automatic Glass Doors
- *  - Pro Tools Support: Live Mini-Map Telemetry, Telephoto Zoom (1x / 2x),
- *    4 Lighting Atmospheres, UV Secret Loupe, Live 3D Wall Art Easel & Drone Tour
+ *  600M OPEN-WORLD PARIS BOULEVARD & MUSÉE DU LOUVRE 3D ENGINE (v26)
+ *  - Zero Ground Z-Fighting: Strictly non-overlapping Z zones + polygonOffset
+ *  - 525m+ Living Paris Metropolis: Arc de Triomphe, Champs-Élysées, Galeries
+ *    Paris Luxury Mall, Apartments & Real Estate, Police Precinct, Metro Arch,
+ *    128m Eiffel Tower Vista, 3 Working Traffic Light Intersections & 5 Real
+ *    CC0 Kenney 3D Vehicles (Police w/ Flashing Strobes, Taxi, Sedans, SUV)
+ *  - Dual Custom 3D Tour Guides:
+ *      * القطة بوبس (40-Bone Golden Persian Cat) for family guests
+ *      * أنس حبيب (Custom Curly-Hair & Striped-Jersey Mocap Guide) for يوسف
+ *  - True Pause-and-Explain Guided Tour State Machine (walking -> explaining)
+ *  - Live Paris Weather (Clear / Rain + Wet Road Shimmer / Spring Petals),
+ *    Boulevard Express Cruise, 19 Sky Lanterns, Eiffel Sparkle Show & 5 Seals
  *  - Designed & Developed by ENG / Mohamed Tarek • HEY Edition
  * =========================================================================
  */
@@ -29,7 +28,13 @@ import {
   createGlowTexture,
   createLightBeamTexture,
   createCloudTexture,
+  createParisAsphaltRoadTexture,
   createHaussmannFacadePBR,
+  createModernApartmentTowerPBR,
+  createParisMallFacadePBR,
+  createDistrictSignTexture,
+  createAnasJerseyTexture,
+  createGuideBadgeTexture,
   createLouvrePalacePBR,
   createMansardRoofPBR,
   createEiffelLatticeTexture,
@@ -40,69 +45,195 @@ import {
   createDefaultCustomLouvreCanvas,
   createLouvreSignTexture,
   createPawPrintTexture,
-} from './louvre-assets.js?v=24';
+} from './louvre-assets.js?v=26';
 
 export const STORY_WAYPOINTS = [
   {
-    id: 'paris',
-    labelAr: 'شارع باريس وبرج إيفل',
-    x: 0, z: 56, catX: -0.65, catZ: 51.5,
-    tipAr: 'أهلاً بك في شوارع باريس بجانب برج إيفل. اتبع خطوات القطة الذهبية نحو ساحة نابليون وهرم متحف اللوفر.',
+    id: 'champs-elysees',
+    zoneAr: 'الشانزليزيه • بداية جولة الـ 500 متر',
+    labelAr: 'شارع الشانزليزيه وقوس النصر',
+    x: 0, z: 378, guideX: -1.4, guideZ: 374, lookAtX: -12, lookAtY: 16, lookAtZ: 220,
+    bobsSlides: [
+      'أهلاً بك في قلب باريس، أنا القطة بوبس وسأرافقك خطوة بخطوة في جولة حقيقية بطول أكثر من 500 متر حتى قاعات متحف اللوفر.',
+      'انظر حولك: خلفك قوس النصر، وأمامك بوليفارد الشانزليزيه بالسيارات وإشارات المرور الحية، وبرج إيفل يرتفع شامخاً في الأفق الغربي ليرافقنا طول الطريق.',
+    ],
+    anasSlides: [
+      'أهلاً يا يوسف يا بطل، أنا أنس حبيب المرشد السياحي الخاص بك اليوم في باريس عشان نعمل أجمل جولة لعيد ميلاد يمنى الـ 19.',
+      'خلفنا قوس النصر وقدامنا طريق باريس كله بالعربيات وإشارات المرور الحقيقية وبرج إيفل باين في السما. لما تخلص فرجة اضغط أكمل الجولة عشان نتحرك للمول.',
+    ],
+    funFactAr: 'معلومة باريسية: يمتد المحور التاريخي الشهير في باريس في خط مستقيم من قوس النصر عبر الشانزليزيه وحتى هرم متحف اللوفر.',
+  },
+  {
+    id: 'paris-mall',
+    zoneAr: 'حي التسوق والعقارات الباريسية',
+    labelAr: 'جاليري باريس مول والعقارات الفاخرة',
+    x: 2.2, z: 282, guideX: 3.4, guideZ: 278.5, lookAtX: 32, lookAtY: 9, lookAtZ: 285,
+    bobsSlides: [
+      'توقفنا هنا أمام «جاليري باريس مول» بقبته الزجاجية وواجهاته المضيئة، وحوله العمارات السكنية الباريسية والشقق الفاخرة ذات الشرفات الحديدية.',
+      'لاحظ كيف تتوقف السيارات أمام إشارة المرور الحمراء في التقاطع وتتحرك بسلاسة فور إضاءة اللون الأخضر. كل تفصيلة هنا صُمّمت لتعيش أجواء باريس الحقيقية.',
+    ],
+    anasSlides: [
+      'بص على يمينك يا يوسف: ده «جاليري باريس مول» بالقبة الزجاجية بتاعته، وقدامه الشقق والعقارات الباريسية الفاخرة والكافيهات.',
+      'وركز في تقاطع الإشارات هنا، العربيات والتاكسيات بتقف أول ما الإشارة تحمر وتمشي لما تخضر. جاهز نكمل ناحية ميدان الكونكورد وشرطة باريس؟',
+    ],
+    funFactAr: 'معلومة معمارية: تتميز شقق باريس الهوسمانية بشرفات الحديد المشغول وأسقف الزنك المائلة التي تمنح المدينة هويتها الفريدة.',
+  },
+  {
+    id: 'police-plaza',
+    zoneAr: 'ميدان الكونكورد • شرطة باريس',
+    labelAr: 'ميدان الكونكورد وقسم شرطة باريس',
+    x: -2.2, z: 174, guideX: -3.4, guideZ: 170.5, lookAtX: -30, lookAtY: 7, lookAtZ: 170,
+    bobsSlides: [
+      'وصلنا إلى ميدان الكونكورد حيث يتمركز قسم شرطة باريس الوطني ودوريات الشرطة بأضوائها الحمراء والزرقاء لتنظيم حركة البوليفارد.',
+      'من هنا أيضاً يقترب برج إيفل بوضوح ساحر على يسارك. يمكنك استخدام عدسة التقريب البصري لتأمل تفاصيله الهندسية الدقيقة.',
+    ],
+    anasSlides: [
+      'هنا ميدان الكونكورد وقسم شرطة باريس على شمالك، وعربيات البوليس بتلف في الشارع بفلاشرها الأحمر والأزرق.',
+      'ومن النقطة دي بالذات برج إيفل بقى واضح جداً قدامنا. لو حابب تشغّل عرض أضواء برج إيفل من قائمة الأحداث هيعجبك جداً قبل ما نكمل للوفر.',
+    ],
+    funFactAr: 'معلومة سياحية: يتجاوز ارتفاع برج إيفل 300 متر، ويتلألأ بآلاف المصابيح الذهبية كل مساء ليضيء سماء باريس.',
+  },
+  {
+    id: 'rivoli-cafes',
+    zoneAr: 'شارع ريفولي • مترو باريس',
+    labelAr: 'شارع ريفولي ومترو باريس وبرج إيفل',
+    x: 0, z: 68, guideX: -1.4, guideZ: 64.2, lookAtX: -18, lookAtY: 14, lookAtZ: 28,
+    bobsSlides: [
+      'هنا شارع ريفولي العريق بمدخل مترو باريس الأخضر التاريخي والمقاهي الدافئة، ولم يتبقَّ سوى خطوات قليلة حتى بوابة متحف اللوفر.',
+      'تأمل الإطلالة المفتوحة على هرم اللوفر الزجاجي أمامك وبرج إيفل على يسارك. عند استعدادك اضغط لنعبر معاً إلى ساحة نابليون.',
+    ],
+    anasSlides: [
+      'وصلنا شارع ريفولي ومدخل مترو باريس التاريخي، وكده فاضل لنا خطوات بسيطة ونكون قدام هرم متحف اللوفر مباشرة.',
+      'الجو هنا حكاية بين الكافيهات والناس اللي بتتمشى في الشارع. يلا بينا ندخل ساحة نابليون ونجرب نافورة الأمنيات.',
+    ],
+    funFactAr: 'لمسة فنية: صُممت بوابات مترو باريس بأسلوب الفن الجديد «آرت نوفو» لتتحول شوارع المدينة نفسها إلى متحف مفتوح.',
   },
   {
     id: 'pyramid',
+    zoneAr: 'ساحة نابليون • بوابة اللوفر',
     labelAr: 'ساحة نابليون، النافورة وبوابة الهرم',
-    x: 0, z: 16.5, catX: 0.0, catZ: 12.2, interactId: 'fountain',
-    tipAr: 'هنا ساحة هرم اللوفر الزجاجي. يمكنك إلقاء عملة أمنية في النافورة على يمينك، والعبور عبر الأبواب الزجاجية الأوتوماتيكية إلى القاعة الكبرى.',
+    x: 0, z: 18, guideX: 0.4, guideZ: 14.5, lookAtX: 0, lookAtY: 5.5, lookAtZ: 6, interactId: 'fountain',
+    bobsSlides: [
+      'مرحباً بك في ساحة نابليون أمام الهرم الزجاجي الأيقوني لمتحف اللوفر. على يمينك نافورة الأمنيات الذهبية، وعلى يسارك أول ختم مخفي في التحدي.',
+      'ألقِ عملة أمنية ليمنى في النافورة أو أطلق 19 فانوساً في سماء باريس، وعند الاقتراب من الهرم ستنفتح أبوابه الزجاجية تلقائياً لنعبر إلى القاعة الكبرى.',
+    ],
+    anasSlides: [
+      'أهلاً بيك يا يوسف في ساحة هرم اللوفر الزجاجي. قبل ما ندخل القاعة الكبرى تقدر ترمي عملة أمنية ليمنى في النافورة على يمينك وتجمع الختم الذهبي على شمالك.',
+      'وأول ما نقرب من باب الهرم الزجاجي هيفتح أوتوماتيك قدامنا عشان نبدأ رحلة قصة يمنى جوه المتحف.',
+    ],
+    funFactAr: 'معلومة عن اللوفر: يتكون هرم اللوفر الزجاجي الشهير من مئات الألواح الزجاجية المتماسكة بإطار معدني دقيق يعكس سماء باريس.',
   },
   {
     id: 'artifact-1',
+    zoneAr: 'القاعة الكبرى • الجناح الأول',
     labelAr: 'التحفة 01 • البدايات والطفولة',
-    x: -1.4, z: -19, catX: -2.4, catZ: -20.0, interactId: 'childhood',
-    tipAr: 'التحفة الأولى في معرض رحلة يمنى. اضغط على الورقة الذهبية لاستكشاف حكاية البدايات، أو جرّب عدسة الأسرار لقراءة الرسائل المخفية.',
+    x: -1.4, z: -19, guideX: -2.4, guideZ: -20.2, lookAtX: -6.5, lookAtY: 2.6, lookAtZ: -20, interactId: 'childhood',
+    bobsSlides: [
+      'دخلنا القاعة الكبرى لمتحف اللوفر، وهنا تقف التحفة الأولى في حكاية يمنى: «البدايات والطفولة» حيث وُلد حب الألوان والخطوط منذ الصغر.',
+      'افتح الورقة الذهبية لاستعراض تفاصيل اللوحة والقصة، وجرّب عدسة الأسرار UV لتقرأ الرسالة السرية المضيئة فوق اللوحة.',
+    ],
+    anasSlides: [
+      'جوه القاعة الكبرى دلوقتي يا يوسف، ودي أول تحفة في معرض يمنى: «البدايات والطفولة» اللي بدأت منها موهبتها في الرسم.',
+      'اضغط على زر الاستكشاف عشان تفتح الورقة الذهبية وتقرأ الحكاية كاملة، وبعدها نكمل على المرسم الحي.',
+    ],
+    funFactAr: 'تلميح القيّم الفني: شغّل «عدسة الأسرار UV» من الشريط العلوي لتكشف رسائل خفية مضيئة على جميع اللوحات الأربع.',
   },
   {
     id: 'easel',
+    zoneAr: 'القاعة الكبرى • مرسم الزوار الحي',
     labelAr: 'مرسم الزوار • علّق لوحتك باللوفر',
-    x: 1.8, z: -26.8, catX: 2.2, catZ: -27.4, interactId: 'easel',
-    tipAr: 'مرسم متحف اللوفر التفاعلي. اضغط على الحامل الذهبي لرسم لوحة أو توقيع تذكاري ليُعلّق مباشرة داخل الإطار الباروكي على جدار المتحف.',
+    x: 1.8, z: -26.8, guideX: 2.5, guideZ: -27.8, lookAtX: 7.5, lookAtY: 3.1, lookAtZ: -27, interactId: 'easel',
+    bobsSlides: [
+      'توقفنا أمام الحامل الذهبي لمرسم اللوفر التفاعلي. هنا لا تكتفي بالمشاهدة فقط، بل يمكنك أن تكون فناناً داخل المتحف.',
+      'افتح المرسم وارسم زخرفة متماثلة أو اختم تهنئة تذكارية ليمنى، وستُعلّق لوحتك فوراً داخل الإطار الباروكي الذهبي على جدار اللوفر أمامك.',
+    ],
+    anasSlides: [
+      'دي محطة جامدة جداً يا يوسف: الحامل الذهبي ده بيخليك ترسم أو توقّع لوحة تذكارية ليمنى وتلاقيها اتعلّقت فوراً على جدار متحف اللوفر بالـ 3D.',
+      'جرّب افتح المرسم وارسم لمستك وعلّقها على الحائط، ولما تخلص اضغط نكمل للمحطة اللي بعدها.',
+    ],
+    funFactAr: 'ميزة تفاعلية: تُحفظ لوحتك المرسومة تلقائياً على جهازك وتظل معلّقة داخل الإطار الذهبي على جدار اللوفر.',
   },
   {
     id: 'artifact-2',
+    zoneAr: 'القاعة الكبرى • جناح الأتيليه',
     labelAr: 'التحفة 02 • روح الأتيليه والشغف',
-    x: 1.4, z: -34, catX: 2.4, catZ: -35.0, interactId: 'passion',
-    tipAr: 'التحفة الثانية وتوثّق نضج شغف الرسم والأتيليه. اضغط عليها لمطالعة تفاصيلها الفنية.',
+    x: 1.4, z: -34, guideX: 2.4, guideZ: -35.2, lookAtX: 6.5, lookAtY: 2.6, lookAtZ: -34, interactId: 'passion',
+    bobsSlides: [
+      'هنا التحفة الثانية: «روح الأتيليه والشغف»، حيث يتحول الرسم من هواية جميلة إلى هوية فنية تنضج بالهدوء والصبر والتمرين اليومي.',
+      'تأمل المجسم الهندسي المذهب واللوحة المعلقة على اليمين، وافتح بطاقة التحفة لقراءة قصتها الكاملة.',
+    ],
+    anasSlides: [
+      'المحطة دي بتحكي عن شغف يمنى الحقيقي بالرسم والأتيليه، إزاي الموهبة لما بتتغذّى بحب كل يوم بتكبر وتبقى أسلوب حياة.',
+      'افتح تفاصيل التحفة دي واتفرج على اللوحة، وهتلاقي قريب منها ختم ذهبي مخفي لو دورت كويس.',
+    ],
+    funFactAr: 'حكمة فنية: الفنان الحقيقي لا ينتظر الإلهام فحسب، بل يصنعه بحبّه للتجربة والعمل اليومي الهادئ.',
   },
   {
     id: 'artifact-3',
+    zoneAr: 'القاعة الكبرى • محطة الثبات',
     labelAr: 'التحفة 03 • تالتة ثانوي وبداية الطريق',
-    x: -1.4, z: -48, catX: -2.4, catZ: -49.0, interactId: 'thanaweya',
-    tipAr: 'الساعة الرملية الذهبية لمحطة تالتة ثانوي. افتح الورقة الذهبية لقراءة رسالة الطمأنينة المختومة.',
+    x: -1.4, z: -48, guideX: -2.4, guideZ: -49.2, lookAtX: -6.5, lookAtY: 2.6, lookAtZ: -48, interactId: 'thanaweya',
+    bobsSlides: [
+      'أمامنا الساعة الرملية الذهبية التي ترمز لمحطة تالتة ثانوي: مرحلة عابرة يمر بها الإنسان بثقة وهدوء بينما يظل الشغف أكبر من أي رقم.',
+      'افتح هذه التحفة لقراءة رسالة الطمأنينة المختومة والمخصّصة ليمنى في هذه السنة المهمة.',
+    ],
+    anasSlides: [
+      'محطة تالتة ثانوي يا يوسف.. الساعة الرملية الذهبية دي بتفكّرنا إن السنة دي مجرد جسر قصير بيعدي، ودورنا كعيلة وإخوات نكون سند وهدوء ليمنى طول الطريق.',
+      'افتح الورقة الذهبية هنا عشان تقرأ رسالة الطمأنينة المكتوبة لها.',
+    ],
+    funFactAr: 'تذكير مهم: الهدوء النفسي وتشجيع العائلة يمنحان الطالب طاقة أكبر بكثير من القلق أو الضغط.',
   },
   {
     id: 'artifact-4',
+    zoneAr: 'القاعة الكبرى • أفق الفنون الجميلة',
     labelAr: 'التحفة 04 • تمثال الرخام وحلم الفنون الجميلة',
-    x: 1.4, z: -62, catX: 2.4, catZ: -63.0, interactId: 'fine-arts',
-    tipAr: 'المنحوتة الكلاسيكية من رخام كارارا وبوابة حلم كلية الفنون الجميلة. اضغط لاستعراض بطاقة الحلم الرسمية.',
+    x: 1.4, z: -62, guideX: 2.4, guideZ: -63.2, lookAtX: 6.5, lookAtY: 2.6, lookAtZ: -62, interactId: 'fine-arts',
+    bobsSlides: [
+      'وصلنا إلى المنحوتة الكلاسيكية من رخام كارارا وبوابة الأفق القادم: كلية الفنون الجميلة، حيث تتلاقى الموهبة مع الدراسة الأكاديمية.',
+      'استعرض بطاقة الحلم الرسمية المخصّصة للفنانة يمنى، ثم ننتقل معاً إلى قلب المتحف: صندوق العائلة والرسالة الأهم.',
+    ],
+    anasSlides: [
+      'هنا المنحوتة الكلاسيكية وحلم كلية الفنون الجميلة بإذن الله. افتح بطاقة الحلم الرسمية ليمنى وشوف تفاصيلها.',
+      'فاضل محطتين بس في الجولة: صندوق رسائل العيلة السحابي والرسالة الأهم، وبعدها مفاجأة القبة الملكية وتورتة الـ 19.',
+    ],
+    funFactAr: 'تلميح القاعة: لا تنسَ تفقد الأختام الذهبية الخمسة المخفية للحصول على وسام أمينة متحف اللوفر الشرفي.',
   },
   {
     id: 'vault-manifesto',
+    zoneAr: 'قلب المتحف • الصندوق والمسلّة',
     labelAr: 'صندوق العيلة والرسالة الأهم ★',
-    x: 0, z: -74, catX: -1.8, catZ: -75.0, interactId: 'vault',
-    tipAr: 'على يسارك صندوق رسائل العائلة السحابي ليمنى، وعلى يمينك مسلّة الرسالة الأهم في ختام الرحلة.',
+    x: 0, z: -74, guideX: -1.6, guideZ: -75.2, lookAtX: 0, lookAtY: 2.0, lookAtZ: -75, interactId: 'vault',
+    bobsSlides: [
+      'على يسارك صندوق رسائل العائلة السحابي المتصل لحظياً، حيث تصل كل تهنئة يكتبها الأهل إلى يمنى مباشرة داخل المتحف.',
+      'وعلى يمينك مسلّة «الرسالة الأهم» التي يهمّنا أن يقرأها الجميع بتركيز في ختام هذه الرحلة مع كبسولة الطمأنينة اليومية.',
+    ],
+    anasSlides: [
+      'وصلنا أهم وقفة في المتحف يا يوسف: على شمالك صندوق رسائل العيلة اللي تقدر تبعت فيه رسالتك ليمنى وتوصل لها فوراً، وعلى يمينك مسلّة الرسالة الأهم لكل العيلة.',
+      'افتح الصندوق واكتب كلمتك الحلوة ليمنى، واقرأ الرسالة الأهم قبل ما ندخل تحت القبة الملكية.',
+    ],
+    funFactAr: 'رسالة سحابية: أي رسالة يرسلها فرد من العائلة تُحفظ لحظياً في صندوق يمنى وتظهر لها فور فتح المتحف.',
   },
   {
     id: 'cake',
+    zoneAr: 'القبة الملكية • ختام العام التاسع عشر',
     labelAr: 'القبة الملكية وتورتة الـ 19',
-    x: 0, z: -87.2, catX: 2.2, catZ: -90.8, interactId: 'cake',
-    tipAr: 'وصلنا إلى القبة الملكية وتورتة العام التاسع عشر بشمعتي 1 و 9. اضغط على التورتة للاحتفال وإطلاق الألعاب النارية.',
+    x: 0, z: -87.2, guideX: 2.2, guideZ: -90.4, lookAtX: 0, lookAtY: 2.9, lookAtZ: -93, interactId: 'cake',
+    bobsSlides: [
+      'وصلنا إلى ختام رحلتنا تحت القبة الملكية لمتحف اللوفر أمام تورتة العام التاسع عشر بشمعتي «1» و«9» المضيئتين.',
+      'اضغط للاحتفال وإطفاء الشمعتين بالزر أو بالنفخ في المايكروفون وإطلاق الألعاب النارية وتحميل شهادة فخر العام الـ 19. كل عامٍ ويمنى بخير.',
+    ],
+    anasSlides: [
+      'ختامها مسك يا يوسف تحت القبة الملكية لمتحف اللوفر قدام تورتة الـ 19 بشمعتي 1 و 9.',
+      'تقدر تفتح الاحتفال وتولّع الألعاب النارية وتحفظ شهادة الفخر التذكارية ليمنى. شرّفتني جداً في الجولة النهارده يا بطل.',
+    ],
+    funFactAr: 'الختام الملكي: يمكنك إطفاء شمعتي 1 و 9 بالضغط على الزر أو بالنفخ الحقيقي في مايكروفون جهازك.',
   },
 ];
 
 export const HIDDEN_SEALS_DATA = [
-  { id: 'seal-1', x: -5.4, z: 10.6, labelAr: 'ختم ساحة اللوفر', quoteAr: 'كل خطوة هادئة نحو الحلم تصنع أثراً يبقى مدى الحياة.' },
-  { id: 'seal-2', x: -6.0, z: -15.5, labelAr: 'ختم ألوان البداية', quoteAr: 'الفن الحقيقي يبدأ بعينٍ تلاحظ الجمال حيث يغفل الآخرون.' },
-  { id: 'seal-3', x: 5.8, z: -29.5, labelAr: 'ختم مرسم الأتيليه', quoteAr: 'الفرشاة الصادقة تحكي ما تعجز الكلمات عن وصفه.' },
+  { id: 'seal-1', x: 5.4, z: 282, labelAr: 'ختم جاليري باريس مول', quoteAr: 'المدن العظيمة تُلهم العين، والروح الشغوفة تحوّل كل مشهد إلى لوحة.' },
+  { id: 'seal-2', x: -5.4, z: 10.6, labelAr: 'ختم ساحة هرم اللوفر', quoteAr: 'كل خطوة هادئة نحو الحلم تصنع أثراً يبقى مدى الحياة.' },
+  { id: 'seal-3', x: -6.0, z: -15.5, labelAr: 'ختم ألوان البداية', quoteAr: 'الفن الحقيقي يبدأ بعينٍ تلاحظ الجمال حيث يغفل الآخرون.' },
   { id: 'seal-4', x: -6.0, z: -53.5, labelAr: 'ختم الطمأنينة والثبات', quoteAr: 'ثانوية عامة جسرٌ تعبرينه بهدوءٍ وثقة، وعائلتكِ سندكِ الدائم.' },
   { id: 'seal-5', x: 5.2, z: -90.5, labelAr: 'ختم القبة الملكية', quoteAr: 'عامكِ التاسع عشر بداية إشراقة جديدة نحو كلية الفنون الجميلة.' },
 ];
@@ -111,38 +242,38 @@ const TIME_PRESETS = {
   sunset: {
     labelAr: '🌇 غروب باريس',
     skyTop: 0x162244, skyMid: 0x724058, skyHorizon: 0xf4a05c, sunGlow: 0xffe49e,
-    sunColor: 0xffc880, sunIntensity: 2.55, sunPos: new THREE.Vector3(-42, 26, -64),
-    hemiSky: 0xffe2be, hemiGround: 0x2c2224, hemiIntensity: 1.18,
-    fogColor: 0x2b2029, fogDensity: 0.0044, exposure: 1.08, bloomStrength: 0.34,
+    sunColor: 0xffc880, sunIntensity: 2.55, sunPos: new THREE.Vector3(-48, 28, -40),
+    hemiSky: 0xffe2be, hemiGround: 0x2c2224, hemiIntensity: 1.2,
+    fogColor: 0x2b2029, fogDensity: 0.0018, exposure: 1.08, bloomStrength: 0.34,
     starsOpacity: 0.4, cloudTint: 0xffd2a8, cloudOpacity: 0.56,
-    windowEmissive: 0.85, lampOpacity: 0.82, showSun: true, showMoon: false, searchlightOpacity: 0.0,
+    windowEmissive: 0.85, lampOpacity: 0.82, showSun: true, showMoon: false, searchlightOpacity: 0.08,
   },
   day: {
     labelAr: '☀️ نهار باريس',
     skyTop: 0x286bc2, skyMid: 0x6ca6e4, skyHorizon: 0xd9ecfa, sunGlow: 0xfff8e2,
-    sunColor: 0xfff4dd, sunIntensity: 3.05, sunPos: new THREE.Vector3(-34, 62, -40),
-    hemiSky: 0xeaf4ff, hemiGround: 0x5c5348, hemiIntensity: 1.4,
-    fogColor: 0xb7cde0, fogDensity: 0.0026, exposure: 1.02, bloomStrength: 0.2,
+    sunColor: 0xfff4dd, sunIntensity: 3.05, sunPos: new THREE.Vector3(-34, 68, -20),
+    hemiSky: 0xeaf4ff, hemiGround: 0x5c5348, hemiIntensity: 1.42,
+    fogColor: 0xb7cde0, fogDensity: 0.0011, exposure: 1.02, bloomStrength: 0.2,
     starsOpacity: 0.0, cloudTint: 0xffffff, cloudOpacity: 0.78,
-    windowEmissive: 0.1, lampOpacity: 0.14, showSun: true, showMoon: false, searchlightOpacity: 0.0,
+    windowEmissive: 0.12, lampOpacity: 0.14, showSun: true, showMoon: false, searchlightOpacity: 0.0,
   },
   night: {
     labelAr: '🌙 ليل باريس',
     skyTop: 0x050918, skyMid: 0x0f1a38, skyHorizon: 0x262542, sunGlow: 0xaac4ff,
-    sunColor: 0x8eaef0, sunIntensity: 0.95, sunPos: new THREE.Vector3(36, 46, -65),
-    hemiSky: 0x5571a8, hemiGround: 0x1b1614, hemiIntensity: 0.88,
-    fogColor: 0x101426, fogDensity: 0.0048, exposure: 1.16, bloomStrength: 0.46,
+    sunColor: 0x8eaef0, sunIntensity: 0.98, sunPos: new THREE.Vector3(36, 48, -50),
+    hemiSky: 0x5571a8, hemiGround: 0x1b1614, hemiIntensity: 0.9,
+    fogColor: 0x101426, fogDensity: 0.0021, exposure: 1.16, bloomStrength: 0.46,
     starsOpacity: 0.96, cloudTint: 0x4b5c82, cloudOpacity: 0.32,
-    windowEmissive: 1.38, lampOpacity: 1.0, showSun: false, showMoon: true, searchlightOpacity: 0.46,
+    windowEmissive: 1.4, lampOpacity: 1.0, showSun: false, showMoon: true, searchlightOpacity: 0.52,
   },
   gallery: {
     labelAr: '🏛️ أتيليه دافئ',
     skyTop: 0x201512, skyMid: 0x4c2d22, skyHorizon: 0xc28149, sunGlow: 0xffdf99,
-    sunColor: 0xffd28e, sunIntensity: 2.2, sunPos: new THREE.Vector3(-20, 42, -52),
+    sunColor: 0xffd28e, sunIntensity: 2.25, sunPos: new THREE.Vector3(-24, 44, -35),
     hemiSky: 0xffebd0, hemiGround: 0x332419, hemiIntensity: 1.32,
-    fogColor: 0x231813, fogDensity: 0.0038, exposure: 1.12, bloomStrength: 0.3,
+    fogColor: 0x231813, fogDensity: 0.0015, exposure: 1.12, bloomStrength: 0.3,
     starsOpacity: 0.25, cloudTint: 0xf4c28e, cloudOpacity: 0.44,
-    windowEmissive: 1.05, lampOpacity: 0.92, showSun: true, showMoon: false, searchlightOpacity: 0.14,
+    windowEmissive: 1.05, lampOpacity: 0.92, showSun: true, showMoon: false, searchlightOpacity: 0.16,
   },
 };
 
@@ -153,12 +284,19 @@ export class LouvreParisWorld3D {
     this.callbacks = callbacks;
 
     this.isMobile = window.innerWidth < 900;
-    this.qualityMode = 'smooth60'; // 'smooth60' (Default 1-pass 60FPS!) | 'ultra' (HDR Bloom) | 'eco'
+    this.qualityMode = 'smooth60';
     this.timeOfDay = 'sunset';
+    this.weatherMode = 'clear'; // 'clear' | 'rain' | 'petals'
     this.uvMode = false;
     this.zoomed = false;
-    this.portalPaused = true; // Throttles background render to 15FPS while portal is open for zero entry lag!
+    this.portalPaused = true;
     this.portalTickAccum = 0;
+
+    // Guide & Tour State Machine ('bobs' | 'anas', phase: 'idle' | 'walking' | 'explaining')
+    this.activeGuideType = 'bobs';
+    this.guidePhase = 'idle';
+    this.cruiseFast = false;
+    this.cabRideActive = false;
 
     this.droneActive = false;
     this.droneTime = 0;
@@ -166,17 +304,17 @@ export class LouvreParisWorld3D {
     this.disposed = false;
     this.isHidden = false;
 
-    this.playerPos = new THREE.Vector3(0, 1.68, 63);
+    // Start on Champs-Élysées 525m Boulevard looking straight toward Louvre & Eiffel Tower!
+    this.playerPos = new THREE.Vector3(0, 1.68, 384);
     this.playerYaw = 0;
-    this.playerPitch = 0.02;
+    this.playerPitch = 0.03;
     this.targetYaw = 0;
-    this.targetPitch = 0.02;
+    this.targetPitch = 0.03;
     this.baseFov = window.innerWidth / Math.max(1, window.innerHeight) < 0.85 ? 64 : 53;
     this.walkBobPhase = 0;
     this.footstepAccum = 0;
     this.moveInput = { forward: 0, strafe: 0 };
     this.keys = {};
-    this.autoFollow = false;
     this.currentWaypointIdx = 0;
     this.enteredLouvreOnce = false;
 
@@ -188,16 +326,28 @@ export class LouvreParisWorld3D {
     this.hiddenSeals = [];
     this.uvSecretMeshes = [];
 
+    // Live Paris Traffic & Intersections
+    this.intersections = [];
+    this.trafficVehicles = [];
+    this.policeLightBars = [];
+    this.asphaltMat = null;
+    this.cobbleMat = null;
+
     this.isLooking = false;
     this.lookStart = { x: 0, y: 0 };
     this.dragMoved = 0;
     this.interactables = [];
     this.nearestInteractable = null;
 
-    // 40-Bone Golden Persian Cat
-    this.catRoot = new THREE.Group();
-    this.catPos = new THREE.Vector3(-0.65, 0, 57.5);
-    this.catYaw = Math.PI;
+    // Unified Tour Guide Root (contains bobsGroup & anasGroup — seamlessly swapped!)
+    this.guideRoot = new THREE.Group();
+    this.guidePos = new THREE.Vector3(-1.4, 0, 378);
+    this.guideYaw = Math.PI;
+    this.bobsGroup = new THREE.Group();
+    this.anasGroup = new THREE.Group();
+    this.anasGroup.visible = false;
+
+    // Bobs Cat 40-bone rig
     this.catMixer = null;
     this.catBoneInfo = {};
     this.catLoaded = false;
@@ -208,6 +358,13 @@ export class LouvreParisWorld3D {
     this.catStateDur = 10;
     this.pawPrints = [];
     this.pawIdx = 0;
+
+    // Anas Habib Mocap Human Guide rig
+    this.anasMixer = null;
+    this.anasWalkAction = null;
+    this.anasIdleAction = null;
+    this.anasCurAnim = 'idle';
+    this.anasLoaded = false;
 
     this.humanVisitors = [];
     this.candlesLit = true;
@@ -222,11 +379,12 @@ export class LouvreParisWorld3D {
     this.lampHalos = [];
     this.cloudSprites = [];
     this.fallingLeaves = [];
+    this.rainDrops = null;
+    this.rainPositions = null;
     this.eiffelSparkles = [];
     this.fountainRings = [];
     this.emissiveBuildingMats = [];
 
-    // Pre-allocated scratch math objects (ZERO per-frame GC stalls!)
     this.raycaster = new THREE.Raycaster();
     this._ndc = new THREE.Vector2();
     this._qDelta = new THREE.Quaternion();
@@ -236,14 +394,13 @@ export class LouvreParisWorld3D {
     this.init();
   }
 
-  /* ==================== INIT ULTRA-SMOOTH 60FPS RENDERER ==================== */
+  /* ==================== INIT SILKY 60FPS ZERO-Z-FIGHTING RENDERER ==================== */
   init() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
       antialias: !this.isMobile,
       powerPreference: 'high-performance',
     });
-    // Baked Static Shadows on Desktop (0.0ms per-frame cost!), contact shadows on Mobile!
     this.renderer.shadowMap.enabled = !this.isMobile;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.autoUpdate = false;
@@ -252,13 +409,13 @@ export class LouvreParisWorld3D {
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.FogExp2(0x2b2029, 0.0044);
+    this.scene.fog = new THREE.FogExp2(0x2b2029, 0.0018);
 
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     this.baseFov = aspect < 0.85 ? 64 : 53;
-    this.camera = new THREE.PerspectiveCamera(this.baseFov, aspect, 0.12, 460);
+    // Near=0.30 gives ~2.5x stronger depth precision across 600m -> zero ground flicker!
+    this.camera = new THREE.PerspectiveCamera(this.baseFov, aspect, 0.3, 1050);
 
-    // Lazy-allocated HDR Bloom Composer (only instantiated if user picks Ultra Bloom!)
     this.composer = null;
     this.bloomPass = null;
     this.applyQualitySettings();
@@ -270,8 +427,8 @@ export class LouvreParisWorld3D {
     this.gltfLoader = new GLTFLoader();
     const aniso = Math.min(this.renderer.capabilities.getMaxAnisotropy(), this.isMobile ? 2 : 6);
 
-    // Compressed 512px CC0 Photogrammetry Scanned PBR Maps (397KB total!)
-    this.cobbleScan = loadRealPBRSet(this.texLoader, './assets/textures/cobble_diff.jpg', './assets/textures/cobble_nor.jpg', './assets/textures/cobble_rough.jpg', 14, 34, aniso);
+    this.cobbleScan = loadRealPBRSet(this.texLoader, './assets/textures/cobble_diff.jpg', './assets/textures/cobble_nor.jpg', './assets/textures/cobble_rough.jpg', 5, 110, aniso);
+    this.plazaCobbleScan = loadRealPBRSet(this.texLoader, './assets/textures/cobble_diff.jpg', './assets/textures/cobble_nor.jpg', './assets/textures/cobble_rough.jpg', 14, 14, aniso);
     this.parquetScan = loadRealPBRSet(this.texLoader, './assets/textures/parquet_diff.jpg', './assets/textures/parquet_nor.jpg', './assets/textures/parquet_rough.jpg', 6, 24, aniso);
     this.marbleScan = loadRealPBRSet(this.texLoader, './assets/textures/marble_diff.jpg', './assets/textures/marble_nor.jpg', null, 2, 2, aniso);
     this.stoneScan = loadRealPBRSet(this.texLoader, './assets/textures/stone_diff.jpg', './assets/textures/stone_nor.jpg', null, 4, 2, aniso);
@@ -280,22 +437,42 @@ export class LouvreParisWorld3D {
     this.beamTex = createLightBeamTexture();
     this.cloudTex = createCloudTexture();
     this.pawTex = createPawPrintTexture();
+    this.asphaltTex = createParisAsphaltRoadTexture(aniso);
     this.haussmannPBR = createHaussmannFacadePBR(aniso);
+    this.modernAptPBR = createModernApartmentTowerPBR(aniso);
+    this.mallPBR = createParisMallFacadePBR(aniso);
     this.louvrePBR = createLouvrePalacePBR(aniso);
     this.mansardTex = createMansardRoofPBR(aniso);
     this.eiffelLatticeTex = createEiffelLatticeTexture(aniso);
     this.foliageTex = createTreeFoliageTexture();
     this.wallPanelTex = createLouvreWallPanelPBR(aniso);
 
+    // Helper for zero-z-fighting floor overlay materials (carpets, stripes, shadows, runners)
+    const overlayMat = (opts) => new THREE.MeshStandardMaterial({
+      polygonOffset: true,
+      polygonOffsetFactor: -2,
+      polygonOffsetUnits: -2,
+      ...opts,
+    });
+
     this.mats = {
       gold: new THREE.MeshStandardMaterial({ color: 0xefc86a, metalness: 0.9, roughness: 0.18 }),
+      goldOverlay: overlayMat({ color: 0xefc86a, metalness: 0.85, roughness: 0.22 }),
       goldGlow: new THREE.MeshStandardMaterial({ color: 0xfff0be, emissive: 0xe6a02e, emissiveIntensity: 0.82, metalness: 0.7, roughness: 0.2 }),
       waxCrimson: new THREE.MeshStandardMaterial({ color: 0xa11e2b, emissive: 0x5c0e16, emissiveIntensity: 0.45, roughness: 0.3, metalness: 0.2 }),
       marble: new THREE.MeshStandardMaterial({ map: this.marbleScan.map, normalMap: this.marbleScan.normalMap, normalScale: new THREE.Vector2(0.35, 0.35), color: 0xfbf6ef, roughness: 0.18, metalness: 0.04 }),
-      limestoneScanned: new THREE.MeshStandardMaterial({ map: this.stoneScan.map, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.5, 0.5), color: 0xe4d4bc, roughness: 0.74, metalness: 0.02 }),
+      limestoneScanned: new THREE.MeshStandardMaterial({ map: this.stoneScan.map, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.45, 0.45), color: 0xe4d4bc, roughness: 0.74, metalness: 0.02 }),
       haussmann: new THREE.MeshStandardMaterial({
         map: this.haussmannPBR.map, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.25, 0.25),
         emissive: new THREE.Color(0xffc773), emissiveMap: this.haussmannPBR.emissiveMap, emissiveIntensity: 0.85, roughness: 0.72, metalness: 0.04,
+      }),
+      modernApt: new THREE.MeshStandardMaterial({
+        map: this.modernAptPBR.map, emissive: new THREE.Color(0xffce7a), emissiveMap: this.modernAptPBR.emissiveMap,
+        emissiveIntensity: 0.85, roughness: 0.42, metalness: 0.18,
+      }),
+      mallFacade: new THREE.MeshStandardMaterial({
+        map: this.mallPBR.map, emissive: new THREE.Color(0xffd486), emissiveMap: this.mallPBR.emissiveMap,
+        emissiveIntensity: 0.92, roughness: 0.22, metalness: 0.35,
       }),
       louvrePalace: new THREE.MeshStandardMaterial({
         map: this.louvrePBR.map, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.3, 0.3),
@@ -303,9 +480,13 @@ export class LouvreParisWorld3D {
       }),
       mansard: new THREE.MeshStandardMaterial({ map: this.mansardTex, roughness: 0.44, metalness: 0.36 }),
       ironDark: new THREE.MeshStandardMaterial({ color: 0x232428, metalness: 0.84, roughness: 0.3 }),
+      metroGreen: new THREE.MeshStandardMaterial({ color: 0x1e5c45, metalness: 0.65, roughness: 0.32 }),
+      policeBlue: new THREE.MeshStandardMaterial({ color: 0x163875, roughness: 0.42, metalness: 0.28 }),
       eiffelSteel: new THREE.MeshStandardMaterial({ color: 0x5d483a, metalness: 0.76, roughness: 0.34 }),
       eiffelLattice: new THREE.MeshStandardMaterial({ map: this.eiffelLatticeTex, alphaTest: 0.35, side: THREE.DoubleSide, metalness: 0.74, roughness: 0.36 }),
-      velvetRed: new THREE.MeshStandardMaterial({ color: 0x6f1623, roughness: 0.88 }),
+      velvetRed: overlayMat({ color: 0x6f1623, roughness: 0.88 }),
+      runnerOverlay: overlayMat({ color: 0x3b2316, roughness: 0.68 }),
+      crosswalkStripe: overlayMat({ color: 0xf0eadc, roughness: 0.72 }),
       woodDark: new THREE.MeshStandardMaterial({ color: 0x3b2314, roughness: 0.5 }),
       lampGlow: new THREE.MeshBasicMaterial({ color: 0xfff2c6 }),
       lanternPaper: new THREE.MeshStandardMaterial({ color: 0xffdca0, emissive: 0xffa638, emissiveIntensity: 1.25, roughness: 0.4, transparent: true, opacity: 0.92 }),
@@ -328,11 +509,12 @@ export class LouvreParisWorld3D {
       macaronGold: new THREE.MeshStandardMaterial({ color: 0xe6be68, roughness: 0.3, metalness: 0.38 }),
       candleNumber: new THREE.MeshStandardMaterial({ color: 0xfff4d9, emissive: 0x5c370c, emissiveIntensity: 0.28, roughness: 0.26, metalness: 0.24 }),
     };
-    this.emissiveBuildingMats.push(this.mats.haussmann, this.mats.louvrePalace);
+    this.emissiveBuildingMats.push(this.mats.haussmann, this.mats.modernApt, this.mats.mallFacade, this.mats.louvrePalace);
 
     this.setupLighting();
     this.buildDynamicParisSkySunMoonClouds();
-    this.buildParisRueDeRivoliAndCafes();
+    this.buildGrand525mParisBoulevardAndDistricts();
+    this.buildWorkingTrafficLightsAndIntersections();
     this.buildArchitecturalEiffelTower();
     this.buildOpenPortalLouvrePyramidAndFountain();
     this.buildLouvreGrandGalleryInterior();
@@ -341,10 +523,11 @@ export class LouvreParisWorld3D {
     this.buildFiveHiddenMuseumSeals();
     this.buildRoyalFamilyVaultAndManifesto();
     this.buildGrandRotundaAndRealisticCake();
-    this.loadOptimizedMocapHumanVisitors();
-    this.buildGoldenAutumnLeaves();
+    this.loadRealCC0ParisTrafficVehicles();
+    this.loadOptimizedMocapHumanVisitorsAndAnasGuide();
+    this.buildWeatherParticles();
     this.buildPawPrintPool();
-    this.loadAnatomicallyFixed40BonePersianCat();
+    this.loadAnatomicallyFixedBobsPersianCat();
 
     this.setTimeOfDay('sunset');
     this.bindEvents();
@@ -382,7 +565,7 @@ export class LouvreParisWorld3D {
   setQualityMode(mode) {
     this.qualityMode = mode;
     this.applyQualitySettings();
-    if (this.leafInst) this.leafInst.visible = mode !== 'eco';
+    if (this.leafInst) this.leafInst.visible = mode !== 'eco' && this.weatherMode !== 'rain';
   }
 
   setPortalPaused(paused) {
@@ -395,26 +578,56 @@ export class LouvreParisWorld3D {
     if (this.callbacks.onZoomChange) this.callbacks.onZoomChange(this.zoomed);
   }
 
-  /* ==================== LIGHTING + ZERO-COST BAKED STATIC SHADOWS ==================== */
+  setActiveGuide(type) {
+    this.activeGuideType = type === 'anas' ? 'anas' : 'bobs';
+    this.bobsGroup.visible = this.activeGuideType === 'bobs';
+    this.anasGroup.visible = this.activeGuideType === 'anas';
+    if (this.callbacks.onGuideTypeChange) this.callbacks.onGuideTypeChange(this.activeGuideType);
+  }
+
+  setCruiseFast(fast) {
+    this.cruiseFast = Boolean(fast);
+  }
+
+  setWeather(mode) {
+    this.weatherMode = ['clear', 'rain', 'petals'].includes(mode) ? mode : 'clear';
+    const isRain = this.weatherMode === 'rain';
+    if (this.rainDrops) this.rainDrops.visible = isRain;
+    if (this.leafInst) {
+      this.leafInst.visible = !isRain && this.qualityMode !== 'eco';
+      this.leafInst.material.color.setHex(this.weatherMode === 'petals' ? 0xffb7cf : 0xf6cf76);
+    }
+    if (this.asphaltMat) {
+      this.asphaltMat.roughness = isRain ? 0.14 : 0.72;
+      this.asphaltMat.metalness = isRain ? 0.36 : 0.08;
+    }
+    if (this.cobbleMat) {
+      this.cobbleMat.roughness = isRain ? 0.2 : 0.78;
+      this.cobbleMat.metalness = isRain ? 0.28 : 0.08;
+    }
+    if (this.callbacks.onWeatherChange) this.callbacks.onWeatherChange(this.weatherMode);
+  }
+
+  /* ==================== LIGHTING + BAKED STATIC SHADOWS ==================== */
   setupLighting() {
-    this.hemiLight = new THREE.HemisphereLight(0xffe2be, 0x2c2224, 1.18);
+    this.hemiLight = new THREE.HemisphereLight(0xffe2be, 0x2c2224, 1.2);
     this.scene.add(this.hemiLight);
 
     this.sunLight = new THREE.DirectionalLight(0xffc880, 2.55);
-    this.sunLight.position.set(-42, 32, 24);
+    this.sunLight.position.set(-60, 48, 120);
     this.sunLight.castShadow = !this.isMobile;
     this.sunLight.shadow.mapSize.set(1024, 1024);
-    this.sunLight.shadow.camera.near = 4;
-    this.sunLight.shadow.camera.far = 160;
-    this.sunLight.shadow.camera.left = -42;
-    this.sunLight.shadow.camera.right = 42;
-    this.sunLight.shadow.camera.top = 66;
-    this.sunLight.shadow.camera.bottom = -42;
+    this.sunLight.shadow.camera.near = 10;
+    this.sunLight.shadow.camera.far = 360;
+    this.sunLight.shadow.camera.left = -90;
+    this.sunLight.shadow.camera.right = 90;
+    this.sunLight.shadow.camera.top = 180;
+    this.sunLight.shadow.camera.bottom = -120;
     this.sunLight.shadow.bias = -0.0007;
     this.scene.add(this.sunLight);
 
-    this.fillLight = new THREE.DirectionalLight(0x8ea8e6, 0.52);
-    this.fillLight.position.set(35, 22, 48);
+    this.fillLight = new THREE.DirectionalLight(0x8ea8e6, 0.56);
+    this.fillLight.position.set(55, 28, 180);
     this.scene.add(this.fillLight);
 
     this.playerLantern = new THREE.PointLight(0xffdca0, 15, 28, 1.45);
@@ -469,45 +682,45 @@ export class LouvreParisWorld3D {
         }
       `,
     });
-    this.skyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(260, 28, 18), skyMat));
+    this.skyGroup.add(new THREE.Mesh(new THREE.SphereGeometry(520, 28, 18), skyMat));
 
     this.sunGroup = new THREE.Group();
-    const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(7.2, 18, 14), new THREE.MeshBasicMaterial({ color: 0xfff9e6, fog: false }));
+    const sunDisc = new THREE.Mesh(new THREE.SphereGeometry(12, 18, 14), new THREE.MeshBasicMaterial({ color: 0xfff9e6, fog: false }));
     const sunCorona = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd282, transparent: true, opacity: 0.94, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    sunCorona.scale.set(58, 58, 1);
+    sunCorona.scale.set(95, 95, 1);
     this.sunGroup.add(sunDisc, sunCorona);
     this.skyGroup.add(this.sunGroup);
 
     this.moonGroup = new THREE.Group();
-    const moonDisc = new THREE.Mesh(new THREE.SphereGeometry(5.2, 18, 14), new THREE.MeshBasicMaterial({ color: 0xf4f7ff, fog: false }));
+    const moonDisc = new THREE.Mesh(new THREE.SphereGeometry(9, 18, 14), new THREE.MeshBasicMaterial({ color: 0xf4f7ff, fog: false }));
     const moonHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0x9ec0ff, transparent: true, opacity: 0.68, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
-    moonHalo.scale.set(36, 36, 1);
+    moonHalo.scale.set(60, 60, 1);
     this.moonGroup.add(moonDisc, moonHalo);
-    this.moonGroup.position.set(58, 78, -175);
+    this.moonGroup.position.set(110, 140, -320);
     this.skyGroup.add(this.moonGroup);
 
-    const starCount = this.isMobile ? 180 : 320;
+    const starCount = this.isMobile ? 200 : 360;
     const pos = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount; i++) {
-      const th = Math.random() * Math.PI * 2, ph = 0.18 + Math.random() * 1.15;
-      pos[i * 3] = Math.cos(th) * Math.cos(ph) * 230;
-      pos[i * 3 + 1] = Math.sin(ph) * 200 + 16;
-      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * 230;
+      const th = Math.random() * Math.PI * 2, ph = 0.16 + Math.random() * 1.15;
+      pos[i * 3] = Math.cos(th) * Math.cos(ph) * 460;
+      pos[i * 3 + 1] = Math.sin(ph) * 380 + 24;
+      pos[i * 3 + 2] = Math.sin(th) * Math.cos(ph) * 460;
     }
     const sGeo = new THREE.BufferGeometry();
     sGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.starsMat = new THREE.PointsMaterial({ size: 2.0, map: this.glowTex, color: 0xfff5dc, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+    this.starsMat = new THREE.PointsMaterial({ size: 3.6, map: this.glowTex, color: 0xfff5dc, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
     this.skyGroup.add(new THREE.Points(sGeo, this.starsMat));
 
     const cloudCount = this.isMobile ? 10 : 16;
     for (let i = 0; i < cloudCount; i++) {
       const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.cloudTex, color: 0xffd2a8, transparent: true, opacity: 0.56, depthWrite: false, fog: false }));
       const ang = (i / cloudCount) * Math.PI * 2 + Math.random() * 0.25;
-      const dist = 125 + (i % 3) * 32, h = 36 + (i % 4) * 16, w = 52 + (i % 5) * 18;
+      const dist = 240 + (i % 3) * 58, h = 68 + (i % 4) * 28, w = 96 + (i % 5) * 30;
       sp.position.set(Math.cos(ang) * dist, h, Math.sin(ang) * dist);
       sp.scale.set(w, w * 0.42, 1);
       this.skyGroup.add(sp);
-      this.cloudSprites.push({ sprite: sp, ang, dist, h, speed: 0.004 + (i % 4) * 0.0015 });
+      this.cloudSprites.push({ sprite: sp, ang, dist, h, speed: 0.003 + (i % 4) * 0.0012 });
     }
     this.scene.add(this.skyGroup);
   }
@@ -521,7 +734,7 @@ export class LouvreParisWorld3D {
     this.skyUniforms.uSunGlow.value.setHex(p.sunGlow);
     this.skyUniforms.uSunDir.value.copy(p.sunPos).normalize();
     this.sunGroup.visible = p.showSun;
-    this.sunGroup.position.copy(p.sunPos).normalize().multiplyScalar(225);
+    this.sunGroup.position.copy(p.sunPos).normalize().multiplyScalar(430);
     this.moonGroup.visible = p.showMoon;
     this.starsMat.opacity = p.starsOpacity;
     this.cloudSprites.forEach((c) => { c.sprite.material.color.setHex(p.cloudTint); c.sprite.material.opacity = p.cloudOpacity; });
@@ -553,28 +766,22 @@ export class LouvreParisWorld3D {
     this.setTimeOfDay(this.timeOfDay);
   }
 
-  /* ==================== LIVE EVENTS: 19 BIRTHDAY SKY LANTERNS & EIFFEL SPARKLE SHOW ==================== */
   releaseBirthdayLanterns() {
-    // Launch 19 warm glowing sky lanterns ascending around Cour Napoléon & Louvre Glass Pyramid!
-    const geo = new THREE.CylinderGeometry(0.32, 0.24, 0.58, 10);
+    const geo = new THREE.CylinderGeometry(0.36, 0.26, 0.64, 10);
+    const centerZ = Math.max(16, this.playerPos.z - 12);
     for (let i = 0; i < 19; i++) {
       const grp = new THREE.Group();
       const body = new THREE.Mesh(geo, this.mats.lanternPaper);
-      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffc660, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false }));
-      halo.scale.set(2.2, 2.2, 1);
+      const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffc660, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false }));
+      halo.scale.set(2.4, 2.4, 1);
       grp.add(body, halo);
-
-      const ang = (i / 19) * Math.PI * 2 + Math.random() * 0.2;
-      const rad = 5.5 + Math.random() * 14;
-      grp.position.set(Math.cos(ang) * rad, 1.5 + Math.random() * 3.5, 16 + Math.sin(ang) * rad);
+      const ang = (i / 19) * Math.PI * 2 + Math.random() * 0.25;
+      const rad = 5.5 + Math.random() * 16;
+      grp.position.set(Math.cos(ang) * rad, 1.8 + Math.random() * 4, centerZ + Math.sin(ang) * rad);
       this.scene.add(grp);
       this.skyLanterns.push({
-        mesh: grp,
-        baseX: grp.position.x,
-        vy: 1.05 + Math.random() * 0.85,
-        phase: Math.random() * Math.PI * 2,
-        life: 0,
-        maxLife: 24 + Math.random() * 6,
+        mesh: grp, baseX: grp.position.x, vy: 1.1 + Math.random() * 0.85,
+        phase: Math.random() * Math.PI * 2, life: 0, maxLife: 24 + Math.random() * 6,
       });
     }
   }
@@ -586,217 +793,502 @@ export class LouvreParisWorld3D {
     this.releaseBirthdayLanterns();
   }
 
-  /* ==================== PARIS BOULEVARD & HAUSSMANN BUILDINGS ==================== */
-  buildParisRueDeRivoliAndCafes() {
-    const cobbleMat = new THREE.MeshStandardMaterial({
-      map: this.cobbleScan.map, normalMap: this.cobbleScan.normalMap, normalScale: new THREE.Vector2(0.85, 0.85),
-      roughnessMap: this.cobbleScan.roughnessMap, roughness: 0.78, metalness: 0.1,
-    });
-    const street = new THREE.Mesh(new THREE.PlaneGeometry(82, 112), cobbleMat);
-    street.rotation.x = -Math.PI / 2; street.position.set(0, 0, 36); street.receiveShadow = true;
-    this.scene.add(street);
+  /* ==================== 525M PARIS GRAND BOULEVARD, MALL, APARTMENTS & POLICE ==================== */
+  buildGrand525mParisBoulevardAndDistricts() {
+    // STRICTLY NON-OVERLAPPING GROUND SURFACES (z: +456 down to +32 -> zero z-fighting!)
+    const len = 424; // z = +32 to +456 (center z = +244)
+    const midZ = 244;
 
-    const runner = new THREE.Mesh(new THREE.PlaneGeometry(3.0, 74), new THREE.MeshStandardMaterial({ color: 0x3a2215, roughness: 0.68 }));
-    runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.015, 34); runner.receiveShadow = true;
+    this.cobbleMat = new THREE.MeshStandardMaterial({
+      map: this.cobbleScan.map, normalMap: this.cobbleScan.normalMap, normalScale: new THREE.Vector2(0.75, 0.75),
+      roughnessMap: this.cobbleScan.roughnessMap, roughness: 0.78, metalness: 0.08,
+    });
+    const centralPromenade = new THREE.Mesh(new THREE.PlaneGeometry(16, len), this.cobbleMat);
+    centralPromenade.rotation.x = -Math.PI / 2;
+    centralPromenade.position.set(0, 0, midZ);
+    centralPromenade.receiveShadow = true;
+    this.scene.add(centralPromenade);
+
+    // Golden-trimmed Royal Pedestrian Runner (polygonOffset + clean y=0.045 -> ZERO flicker!)
+    const runner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, len - 8), this.mats.runnerOverlay);
+    runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.045, midZ);
     this.scene.add(runner);
-    [-1.56, 1.56].forEach((x) => {
-      const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 74), this.mats.goldGlow);
-      trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.02, 34);
+    [-1.68, 1.68].forEach((x) => {
+      const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.1, len - 8), this.mats.goldOverlay);
+      trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.052, midZ);
       this.scene.add(trim);
     });
 
-    [-10.8, 10.8].forEach((x) => {
-      const curb = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.18, 56), this.mats.limestoneScanned);
-      curb.position.set(x, 0.09, 48); curb.receiveShadow = true;
+    // Two-Way Parisian Asphalt Avenues flanking BOTH sides of the Promenade (x = -24..-8 & +8..+24)
+    this.asphaltMat = new THREE.MeshStandardMaterial({ map: this.asphaltTex, roughness: 0.72, metalness: 0.08 });
+    [-16, 16].forEach((rx) => {
+      const road = new THREE.Mesh(new THREE.PlaneGeometry(16, len), this.asphaltMat);
+      road.rotation.x = -Math.PI / 2;
+      road.position.set(rx, 0, midZ);
+      road.receiveShadow = true;
+      this.scene.add(road);
+    });
+
+    // Outer District Sidewalks (x = -64..-24 and +24..+64, strictly non-overlapping!)
+    [-44, 44].forEach((sx) => {
+      const sw = new THREE.Mesh(new THREE.PlaneGeometry(40, len), this.mats.limestoneScanned);
+      sw.rotation.x = -Math.PI / 2;
+      sw.position.set(sx, 0, midZ);
+      sw.receiveShadow = true;
+      this.scene.add(sw);
+    });
+
+    // Raised Stone Curbs separating Promenade & Avenues
+    [-8.1, 8.1, -24.1, 24.1].forEach((cx) => {
+      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.22, len), this.mats.limestoneScanned);
+      curb.position.set(cx, 0.11, midZ);
       this.scene.add(curb);
     });
 
-    const buildHaussmannBuilding = (x, z, rotY) => {
+    // ---- ICONIC ARC DE TRIOMPHE AT SOUTH CHAMS-ÉLYSÉES HORIZON (z = +444) ----
+    const arc = new THREE.Group();
+    arc.position.set(0, 0, 444);
+    [-10, 10].forEach((px) => {
+      const pier = new THREE.Mesh(new THREE.BoxGeometry(9.5, 28, 12), this.mats.limestoneScanned);
+      pier.position.set(px, 14, 0);
+      arc.add(pier);
+    });
+    const arcTop = new THREE.Mesh(new THREE.BoxGeometry(30, 11, 12.6), this.mats.limestoneScanned);
+    arcTop.position.set(0, 33, 0);
+    const arcCornice = new THREE.Mesh(new THREE.BoxGeometry(31.5, 1.4, 13.4), this.mats.gold);
+    arcCornice.position.set(0, 38.6, 0);
+    const arcRing = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.48, 10, 32, Math.PI), this.mats.goldGlow);
+    arcRing.position.set(0, 22, -6.1);
+    const arcSign = new THREE.Mesh(new THREE.PlaneGeometry(18, 3.6), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('قوس النصر • بوليفارد باريس', 'ARC DE TRIOMPHE • CHAMPS-ÉLYSÉES • HEY') }));
+    arcSign.position.set(0, 33, -6.45);
+    arcSign.rotation.y = Math.PI;
+    arc.add(arcTop, arcCornice, arcRing, arcSign);
+    this.scene.add(arc);
+
+    // ---- GALERIES PARIS LUXURY SHOPPING MALL (East Side z = +290, x = +35) ----
+    const mall = new THREE.Group();
+    mall.position.set(35, 0, 290);
+    const mallBody = new THREE.Mesh(new THREE.BoxGeometry(16, 19, 44), this.mats.mallFacade);
+    mallBody.position.set(0, 9.5, 0);
+    const mallRoofFrame = new THREE.Mesh(new THREE.BoxGeometry(16.8, 1.1, 45), this.mats.gold);
+    mallRoofFrame.position.set(0, 19.3, 0);
+    const mallDome = new THREE.Mesh(new THREE.SphereGeometry(11.5, 22, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), this.mats.glassPyramid);
+    mallDome.position.set(-1, 19.6, 0);
+    const mallDomeRibs = new THREE.Mesh(new THREE.SphereGeometry(11.7, 16, 8, 0, Math.PI * 2, 0, Math.PI * 0.5), new THREE.MeshStandardMaterial({ color: 0xe8c268, metalness: 0.85, roughness: 0.25, wireframe: true }));
+    mallDomeRibs.position.copy(mallDome.position);
+    const mallCanopy = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.45, 26), this.mats.goldGlow);
+    mallCanopy.position.set(-9.5, 5.2, 0);
+    const mallSign = new THREE.Mesh(new THREE.PlaneGeometry(24, 5.0), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('جاليري باريس مول • تسوّق وأزياء', 'GALERIES PARIS MALL • LUXURY BOUTIQUES') }));
+    mallSign.position.set(-8.2, 16.2, 0);
+    mallSign.rotation.y = -Math.PI / 2;
+    mall.add(mallBody, mallRoofFrame, mallDome, mallDomeRibs, mallCanopy, mallSign);
+    this.scene.add(mall);
+
+    // ---- COMMISSARIAT DE POLICE (Paris Police Precinct, West Side z = +170, x = -34) ----
+    const policeHQ = new THREE.Group();
+    policeHQ.position.set(-34, 0, 170);
+    const pBody = new THREE.Mesh(new THREE.BoxGeometry(14, 14.5, 28), this.mats.limestoneScanned);
+    pBody.position.set(0, 7.25, 0);
+    const pBand = new THREE.Mesh(new THREE.BoxGeometry(14.4, 2.4, 28.4), this.mats.policeBlue);
+    pBand.position.set(0, 13.6, 0);
+    const pRoof = new THREE.Mesh(new THREE.BoxGeometry(13.6, 3.2, 27.6), this.mats.mansard);
+    pRoof.position.set(0, 16.4, 0);
+    const pSign = new THREE.Mesh(new THREE.PlaneGeometry(18, 3.8), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('قسم شرطة باريس الوطني', 'COMMISSARIAT DE POLICE • PARIS', '#6bb6ff', '#0c1b36') }));
+    pSign.position.set(7.25, 11.2, 0);
+    pSign.rotation.y = Math.PI / 2;
+    // French tricolor pillars on police entrance
+    const triColors = [0x1c4ed8, 0xf8fafc, 0xdc2626];
+    triColors.forEach((hex, idx) => {
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.35, 5.6, 0.9), new THREE.MeshBasicMaterial({ color: hex }));
+      strip.position.set(7.15, 2.8, -5.5 + idx * 0.95);
+      policeHQ.add(strip);
+    });
+    const pAwning = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.35, 12), this.mats.policeBlue);
+    pAwning.position.set(8.4, 4.6, 0);
+    policeHQ.add(pBody, pBand, pRoof, pSign, pAwning);
+    this.scene.add(policeHQ);
+
+    // ---- PARIS HAUSSMANN APARTMENTS & MODERN REAL-ESTATE TOWERS (z = +415 .. +45) ----
+    // Leave a deliberate open Eiffel Tower vista gap on West side around z = 115..152 & z = 205..240!
+    const buildApartmentBlock = (x, z, rotY, isModern = false, hasRealEstateSign = false) => {
       const b = new THREE.Group(); b.position.set(x, 0, z); b.rotation.y = rotY;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(15.2, 14.2, 8.2), this.mats.haussmann);
-      body.position.y = 7.1; body.castShadow = true; body.receiveShadow = true;
-      const corniceTop = new THREE.Mesh(new THREE.BoxGeometry(15.8, 0.45, 8.8), this.mats.limestoneScanned); corniceTop.position.y = 14.25;
-      const balconyLedge = new THREE.Mesh(new THREE.BoxGeometry(15.6, 0.26, 8.6), this.mats.limestoneScanned); balconyLedge.position.y = 7.5;
-      const roof = new THREE.Mesh(new THREE.BoxGeometry(15.0, 3.2, 7.2), this.mats.mansard); roof.position.y = 15.9;
-      const roofCap = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.2, 7.4), this.mats.gold); roofCap.position.y = 17.55;
-      [-7.2, -2.4, 2.4, 7.2].forEach((px) => {
-        const pil = new THREE.Mesh(new THREE.BoxGeometry(0.42, 14.0, 0.35), this.mats.limestoneScanned);
-        pil.position.set(px, 7.0, 4.18); b.add(pil);
-      });
-      const awning = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.18, 2.3), this.mats.velvetRed);
-      awning.position.set(0, 3.65, 5.1); awning.rotation.x = 0.26;
-      const awningFringe = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.22, 0.08), this.mats.gold); awningFringe.position.set(0, 3.25, 6.18);
-      b.add(body, corniceTop, balconyLedge, roof, roofCap, awning, awningFringe);
-      [-4.0, 0, 4.0].forEach((tx) => {
-        const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.06, 12), this.mats.marble); tableTop.position.set(tx, 0.96, 5.35);
-        const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.18, 0.78, 8), this.mats.ironDark); tableLeg.position.set(tx, 0.56, 5.35);
-        b.add(tableTop, tableLeg);
-      });
+      const h = isModern ? 22 : 14.5;
+      const body = new THREE.Mesh(new THREE.BoxGeometry(24, h, 11), isModern ? this.mats.modernApt : this.mats.haussmann);
+      body.position.y = h * 0.5;
+      b.add(body);
+      if (isModern) {
+        const crown = new THREE.Mesh(new THREE.BoxGeometry(24.6, 0.8, 11.6), this.mats.gold);
+        crown.position.y = h + 0.4;
+        const penthouse = new THREE.Mesh(new THREE.BoxGeometry(16, 3.6, 8), this.mats.glassPyramid);
+        penthouse.position.y = h + 2.2;
+        b.add(crown, penthouse);
+      } else {
+        const cornice = new THREE.Mesh(new THREE.BoxGeometry(24.8, 0.55, 11.8), this.mats.limestoneScanned);
+        cornice.position.y = h + 0.25;
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(23.4, 3.6, 9.6), this.mats.mansard);
+        roof.position.y = h + 2.1;
+        b.add(cornice, roof);
+      }
+      if (hasRealEstateSign) {
+        const reSign = new THREE.Mesh(new THREE.PlaneGeometry(13.5, 2.9), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('عقارات وشقق باريس الفاخرة', 'IMMOBILIER PARIS • RÉSIDENCE ROYALE') }));
+        reSign.position.set(0, 5.2, 5.7);
+        b.add(reSign);
+      }
       this.scene.add(b);
     };
 
-    [66, 50, 34].forEach((z) => buildHaussmannBuilding(18.2, z, -Math.PI / 2));
-    [66, 50].forEach((z) => buildHaussmannBuilding(-18.2, z, Math.PI / 2));
+    const eastSlots = [
+      { z: 405, modern: false, sign: false },
+      { z: 365, modern: true, sign: true },
+      { z: 332, modern: false, sign: false },
+      // z=290 reserved for Galeries Paris Mall!
+      { z: 242, modern: true, sign: true },
+      { z: 205, modern: false, sign: false },
+      { z: 168, modern: true, sign: false },
+      { z: 130, modern: false, sign: true },
+      { z: 92, modern: false, sign: false },
+      { z: 54, modern: false, sign: false },
+    ];
+    eastSlots.forEach((s) => buildApartmentBlock(34, s.z, -Math.PI / 2, s.modern, s.sign));
 
-    const poleGeo = new THREE.CylinderGeometry(0.065, 0.13, 4.4, 10);
-    const baseGeo = new THREE.CylinderGeometry(0.18, 0.28, 0.75, 10);
-    const lanternGlassGeo = new THREE.CylinderGeometry(0.24, 0.16, 0.52, 8);
-    const lanternCapGeo = new THREE.ConeGeometry(0.32, 0.28, 8);
-    const leafCardMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.8 });
-    const leafCardGeo = new THREE.PlaneGeometry(2.6, 2.6);
+    const westSlots = [
+      { z: 405, modern: true, sign: true },
+      { z: 365, modern: false, sign: false },
+      { z: 326, modern: true, sign: false },
+      { z: 286, modern: false, sign: true },
+      { z: 248, modern: false, sign: false },
+      // z=170 reserved for Paris Police Precinct, z=205..215 & z=118..140 open skyline vista toward Eiffel Tower!
+      { z: 96, modern: false, sign: false },
+      { z: 56, modern: false, sign: false },
+    ];
+    westSlots.forEach((s) => buildApartmentBlock(-34, s.z, Math.PI / 2, s.modern, s.sign));
 
-    const createBotanicalParisTree = (tx, tz) => {
-      const tree = new THREE.Group(); tree.position.set(tx, 0, tz);
-      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.22, 2.8, 8), this.mats.woodDark);
-      trunk.position.y = 1.4; trunk.castShadow = true; tree.add(trunk);
-      [[0, 3.85, 0, 0, 0], [0, 3.85, 0, 0, Math.PI / 2], [0, 3.9, 0, 0, Math.PI / 4], [0.65, 3.45, 0.45, 0.25, 0.6], [-0.65, 3.55, -0.4, -0.22, 1.9], [0.25, 4.45, -0.3, 0.35, 1.1]].forEach(([lx, ly, lz, rx, ry]) => {
-        const card = new THREE.Mesh(leafCardGeo, leafCardMat);
-        card.position.set(lx, ly, lz); card.rotation.set(rx, ry, 0); card.castShadow = true;
-        tree.add(card);
-      });
-      this.circleColliders.push({ x: tx, z: tz, r: 0.65 });
-      this.scene.add(tree);
-    };
+    // ---- ART NOUVEAU MÉTRO PARISIEN ENTRANCE AT RUE DE RIVOLI (z = +64, x = +6.4) ----
+    const metro = new THREE.Group();
+    metro.position.set(5.8, 0, 64);
+    [-1.4, 1.4].forEach((px) => {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 3.2, 10), this.mats.metroGreen);
+      post.position.set(px, 1.6, 0);
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 8), this.mats.lampGlow);
+      globe.position.set(px, 3.3, 0);
+      metro.add(post, globe);
+    });
+    const mArch = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.72, 0.18), this.mats.metroGreen);
+    mArch.position.set(0, 3.05, 0);
+    const mSign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.56), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('مترو باريس • ريفولي', 'MÉTROPOLITAIN', '#ffdf86', '#164533') }));
+    mSign.position.set(0, 3.05, 0.11);
+    const mSignBack = mSign.clone(); mSignBack.position.z = -0.11; mSignBack.rotation.y = Math.PI;
+    metro.add(mArch, mSign, mSignBack);
+    this.circleColliders.push({ x: 5.8, z: 64, r: 1.5 });
+    this.scene.add(metro);
 
-    let idx = 0;
-    for (let z = 66; z >= 20; z -= 11) {
-      [-7.2, 7.2].forEach((x) => {
-        const lamp = new THREE.Group(); lamp.position.set(x, 0, z);
-        const base = new THREE.Mesh(baseGeo, this.mats.ironDark); base.position.y = 0.38;
-        const pole = new THREE.Mesh(poleGeo, this.mats.ironDark); pole.position.y = 2.25; pole.castShadow = true;
-        const glass = new THREE.Mesh(lanternGlassGeo, this.mats.lampGlow); glass.position.y = 4.65;
-        const cap = new THREE.Mesh(lanternCapGeo, this.mats.ironDark); cap.position.y = 5.02;
-        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd27a, transparent: true, opacity: 0.82, blending: THREE.AdditiveBlending, depthWrite: false }));
-        halo.scale.set(2.9, 2.9, 1); halo.position.y = 4.65;
-        this.lampHalos.push(halo);
-        lamp.add(base, pole, glass, cap, halo);
-        this.circleColliders.push({ x, z, r: 0.45 });
-        this.scene.add(lamp);
-        if (idx % 2 === 0 && z > 24 && !(x < 0 && z < 44)) createBotanicalParisTree(x + Math.sign(x) * 2.3, z - 5.2);
-        idx++;
-      });
+    // ---- INSTANCED PARIS STREET LAMPS & TREES ACROSS ALL 525 METERS (SINGLE DRAW CALLS!) ----
+    const lampPositions = [];
+    for (let z = 420; z >= 40; z -= 24) {
+      lampPositions.push([-7.2, z], [7.2, z], [-25.2, z], [25.2, z]);
     }
+    const postInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07, 0.12, 4.6, 8), this.mats.ironDark, lampPositions.length);
+    const globeInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.26, 10, 8), this.mats.lampGlow, lampPositions.length);
+    const dummy = new THREE.Object3D();
+    lampPositions.forEach(([x, z], i) => {
+      dummy.position.set(x, 2.3, z); dummy.updateMatrix(); postInst.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(x, 4.7, z); dummy.updateMatrix(); globeInst.setMatrixAt(i, dummy.matrix);
+      if (i % 2 === 0) {
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd584, transparent: true, opacity: 0.78, blending: THREE.AdditiveBlending, depthWrite: false }));
+        halo.scale.set(3.4, 3.4, 1); halo.position.set(x, 4.7, z);
+        this.scene.add(halo); this.lampHalos.push(halo);
+      }
+    });
+    this.scene.add(postInst, globeInst);
+
+    const treePositions = [];
+    for (let z = 412; z >= 48; z -= 28) {
+      if (Math.abs(z - 290) < 16 || Math.abs(z - 170) < 16 || Math.abs(z - 65) < 14) continue;
+      treePositions.push([-6.2, z], [6.2, z]);
+    }
+    const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.18, 0.28, 3.4, 8), this.mats.woodDark, treePositions.length);
+    const leafMat = new THREE.MeshStandardMaterial({ map: this.foliageTex, alphaTest: 0.35, side: THREE.DoubleSide, roughness: 0.8 });
+    const leafPlaneGeo = new THREE.PlaneGeometry(4.8, 4.8);
+    treePositions.forEach(([x, z], i) => {
+      dummy.position.set(x, 1.7, z); dummy.rotation.set(0, 0, 0); dummy.updateMatrix();
+      trunkInst.setMatrixAt(i, dummy.matrix);
+      const canopy = new THREE.Group(); canopy.position.set(x, 4.7, z);
+      for (let k = 0; k < 2; k++) {
+        const card = new THREE.Mesh(leafPlaneGeo, leafMat);
+        card.rotation.y = (k * Math.PI) / 2 + i * 0.4;
+        canopy.add(card);
+      }
+      this.scene.add(canopy);
+      this.circleColliders.push({ x, z, r: 0.55 });
+    });
+    this.scene.add(trunkInst);
   }
 
-  /* ==================== TOWERING ARCHITECTURAL EIFFEL TOWER ==================== */
-  buildArchitecturalEiffelTower() {
-    const tower = new THREE.Group();
-    tower.position.set(-30, 0, -20);
-    tower.scale.setScalar(1.32);
-
-    const profile = [
-      { y: 0.0, r: 6.8 }, { y: 5.5, r: 4.8 }, { y: 11.0, r: 3.55 },
-      { y: 16.5, r: 2.55 }, { y: 21.5, r: 1.85 }, { y: 29.0, r: 1.18 }, { y: 38.0, r: 0.62 },
+  /* ==================== 3 WORKING TRAFFIC LIGHT INTERSECTIONS (RED / YELLOW / GREEN) ==================== */
+  buildWorkingTrafficLightsAndIntersections() {
+    const interZList = [
+      { z: 290, offset: 0 },
+      { z: 170, offset: 6.5 },
+      { z: 65, offset: 12.2 },
     ];
-    const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
-    const sideDirs = [{ ax: 0, az: 1, ry: 0 }, { ax: 0, az: -1, ry: Math.PI }, { ax: 1, az: 0, ry: Math.PI / 2 }, { ax: -1, az: 0, ry: -Math.PI / 2 }];
+    const redOff = new THREE.MeshBasicMaterial({ color: 0x3b1010 });
+    const yelOff = new THREE.MeshBasicMaterial({ color: 0x3f300c });
+    const grnOff = new THREE.MeshBasicMaterial({ color: 0x0d361c });
 
-    for (let s = 0; s < profile.length - 1; s++) {
-      const a = profile[s], b = profile[s + 1], dy = b.y - a.y, thick = Math.max(0.18, 0.52 - s * 0.06);
-      corners.forEach(([sx, sz]) => {
-        const p0 = new THREE.Vector3(sx * a.r, a.y, sz * a.r), p1 = new THREE.Vector3(sx * b.r, b.y, sz * b.r);
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(thick, p0.distanceTo(p1), thick), this.mats.eiffelSteel);
-        leg.position.copy(p0).lerp(p1, 0.5);
-        leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p1.clone().sub(p0).normalize());
+    interZList.forEach(({ z, offset }) => {
+      // Zebra crosswalk stripes on BOTH West & East boulevards (polygonOffset -> ZERO flicker!)
+      [-16, 16].forEach((rx) => {
+        for (let sx = -6.2; sx <= 6.2; sx += 1.8) {
+          const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 3.8), this.mats.crosswalkStripe);
+          stripe.rotation.x = -Math.PI / 2;
+          stripe.position.set(rx + sx, 0.048, z);
+          this.scene.add(stripe);
+        }
+      });
+
+      const rMat = new THREE.MeshBasicMaterial({ color: 0xff3b30 });
+      const yMat = new THREE.MeshBasicMaterial({ color: 0xffcc00 });
+      const gMat = new THREE.MeshBasicMaterial({ color: 0x22e568 });
+      const lights = [];
+
+      // Place Parisian traffic light poles on BOTH sides of West & East avenues
+      [[-8.3, -1], [8.3, 1]].forEach(([px, dir]) => {
+        const pole = new THREE.Group();
+        pole.position.set(px, 0, z + dir * 4.5);
+        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.14, 5.8, 10), this.mats.ironDark);
+        mast.position.y = 2.9;
+        const arm = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.14, 0.14), this.mats.ironDark);
+        arm.position.set(dir * 2.7, 5.55, 0);
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.65, 1.85, 0.55), this.mats.ironDark);
+        box.position.set(dir * 4.5, 5.0, 0);
+
+        const makeLens = (ly, mat, sideZ) => {
+          const m = new THREE.Mesh(new THREE.CircleGeometry(0.2, 14), mat);
+          m.position.set(dir * 4.5, 5.0 + ly, sideZ);
+          if (sideZ < 0) m.rotation.y = Math.PI;
+          return m;
+        };
+        const r1 = makeLens(0.54, rMat, 0.29), r2 = makeLens(0.54, rMat, -0.29);
+        const y1 = makeLens(0.0, yMat, 0.29), y2 = makeLens(0.0, yMat, -0.29);
+        const g1 = makeLens(-0.54, gMat, 0.29), g2 = makeLens(-0.54, gMat, -0.29);
+        const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0x22e568, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
+        halo.scale.set(2.4, 2.4, 1);
+        halo.position.set(dir * 4.5, 4.46, 0);
+
+        pole.add(mast, arm, box, r1, r2, y1, y2, g1, g2, halo);
+        this.scene.add(pole);
+        lights.push({ r: [r1, r2], y: [y1, y2], g: [g1, g2], halo, baseY: 5.0 });
+      });
+
+      this.intersections.push({
+        z,
+        timer: offset,
+        state: 'green', // 'green' (9.5s) -> 'yellow' (2.2s) -> 'red' (7.5s)
+        lights,
+        mats: { rMat, yMat, gMat, redOff, yelOff, grnOff },
+      });
+    });
+  }
+
+  /* ==================== REAL CC0 KENNEY 3D CARS & FLASHING PARIS POLICE CRUISERS ==================== */
+  loadRealCC0ParisTrafficVehicles() {
+    const modelPaths = {
+      police: './assets/models/cars/police.glb',
+      taxi: './assets/models/cars/taxi.glb',
+      sedan: './assets/models/cars/sedan.glb',
+      sports: './assets/models/cars/sedan-sports.glb',
+      suv: './assets/models/cars/suv.glb',
+    };
+    const keys = Object.keys(modelPaths);
+    Promise.all(keys.map((k) => this.gltfLoader.loadAsync(modelPaths[k]))).then((gltfs) => {
+      const bank = {};
+      keys.forEach((k, i) => { bank[k] = gltfs[i].scene; });
+
+      const shadowGeo = new THREE.PlaneGeometry(2.3, 4.4);
+      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.42, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      const hlMat = new THREE.MeshBasicMaterial({ color: 0xfff3cc });
+      const tlMat = new THREE.MeshBasicMaterial({ color: 0xff2b2b });
+
+      const spawnCar = (type, laneX, z, dirZ, maxSpeed, parked = false) => {
+        const root = new THREE.Group();
+        const mesh = bank[type].clone(true);
+        const wheels = [];
+        mesh.traverse((o) => {
+          if (o.isMesh) { o.castShadow = false; o.receiveShadow = false; }
+          if (/wheel/i.test(o.name || '')) wheels.push(o);
+        });
+        mesh.scale.setScalar(1.48);
+        root.add(mesh);
+
+        const sh = new THREE.Mesh(shadowGeo, shadowMat);
+        sh.rotation.x = -Math.PI / 2; sh.position.y = 0.04;
+        root.add(sh);
+
+        // Headlights (+Z front) & Taillights (-Z back)
+        [-0.62, 0.62].forEach((lx) => {
+          const hl = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.08), hlMat);
+          hl.position.set(lx, 0.62, 1.98);
+          const tl = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.16, 0.08), tlMat);
+          tl.position.set(lx, 0.65, -1.96);
+          root.add(hl, tl);
+        });
+
+        // Flashing Red & Blue Roof Strobe Lightbars on Police Nationale Cruisers!
+        if (type === 'police') {
+          const redGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff2838, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+          redGlow.scale.set(2.4, 2.4, 1); redGlow.position.set(-0.36, 2.05, 0.15);
+          const blueGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0x2884ff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }));
+          blueGlow.scale.set(2.4, 2.4, 1); blueGlow.position.set(0.36, 2.05, 0.15);
+          root.add(redGlow, blueGlow);
+          this.policeLightBars.push({ redGlow, blueGlow, phase: Math.random() * 6 });
+        }
+
+        root.position.set(laneX, 0, z);
+        root.rotation.y = dirZ > 0 ? 0 : Math.PI;
+        this.scene.add(root);
+        if (!parked) {
+          this.trafficVehicles.push({ root, wheels, laneX, z, dirZ, speed: maxSpeed * 0.7, maxSpeed });
+        }
+      };
+
+      // Parked Flashing Police Cruiser right outside Paris Police Station (z = +176, x = -25.8)
+      spawnCar('police', -25.8, 176, -1, 0, true);
+      // Parked Parisian Taxi right outside Galeries Paris Mall (z = +296, x = +25.8)
+      spawnCar('taxi', 25.8, 296, 1, 0, true);
+
+      // 4 Live Moving Lanes (14 cars Desktop / 8 Mobile) obeying Red/Yellow/Green Traffic Lights!
+      const allSpecs = [
+        // West Ave Northbound (x = -19.5, dirZ = -1)
+        ['police', -19.5, 415, -1, 13.5],
+        ['taxi', -19.5, 315, -1, 11.8],
+        ['sedan', -19.5, 200, -1, 11.2],
+        ['suv', -19.5, 95, -1, 12.0],
+        // West Ave Southbound (x = -12.6, dirZ = +1)
+        ['sports', -12.6, 65, 1, 13.8],
+        ['sedan', -12.6, 190, 1, 11.5],
+        ['taxi', -12.6, 330, 1, 12.2],
+        // East Ave Northbound (x = +12.6, dirZ = -1)
+        ['sedan', 12.6, 420, -1, 12.0],
+        ['sports', 12.6, 265, -1, 13.6],
+        ['police', 12.6, 130, -1, 13.2],
+        // East Ave Southbound (x = +19.5, dirZ = +1)
+        ['taxi', 19.5, 58, 1, 11.8],
+        ['suv', 19.5, 165, 1, 12.2],
+        ['sedan', 19.5, 285, 1, 11.4],
+        ['sports', 19.5, 385, 1, 13.4],
+      ];
+      const chosen = this.isMobile ? allSpecs.filter((_, idx) => idx % 2 === 0) : allSpecs;
+      chosen.forEach(([t, lx, z, dz, spd]) => spawnCar(t, lx, z, dz, spd, false));
+    }).catch(() => { /* ignore if offline */ });
+  }
+
+  /* ==================== MASSIVE 128M EIFFEL TOWER SKYLINE LANDMARK ==================== */
+  buildArchitecturalEiffelTower() {
+    // Positioned at (-86, 0, +135) & scaled grandly (128m tall!) so Eiffel Tower is CLEARLY visible across ALL 500m!
+    const tower = new THREE.Group();
+    tower.position.set(-86, 0, 135);
+    tower.scale.setScalar(1.42);
+    const legs = [[-10.5, -10.5], [10.5, -10.5], [10.5, 10.5], [-10.5, 10.5]];
+
+    legs.forEach(([lx, lz]) => {
+      const p0 = new THREE.Vector3(lx, 0, lz), p1 = new THREE.Vector3(lx * 0.48, 22, lz * 0.48), p2 = new THREE.Vector3(lx * 0.24, 42, lz * 0.24);
+      [[p0, p1, 1.35, 0.92], [p1, p2, 0.88, 0.54]].forEach(([a, b, r1, r2]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(r2, r1, a.distanceTo(b), 6), this.mats.eiffelSteel);
+        leg.position.copy(a).lerp(b, 0.5);
+        leg.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
         tower.add(leg);
       });
-      if (s >= 1) {
-        const hwB = a.r, hwT = b.r, slopeLen = Math.hypot(dy, a.r - b.r), tilt = Math.atan2(a.r - b.r, dy), hh = slopeLen * 0.5;
-        const trapGeo = new THREE.BufferGeometry();
-        trapGeo.setAttribute('position', new THREE.Float32BufferAttribute([-hwB, -hh, 0, hwB, -hh, 0, hwT, hh, 0, -hwB, -hh, 0, hwT, hh, 0, -hwT, hh, 0], 3));
-        trapGeo.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1], 2));
-        trapGeo.computeVertexNormals();
-        sideDirs.forEach((sd) => {
-          const panel = new THREE.Mesh(trapGeo, this.mats.eiffelLattice);
-          const midR = (a.r + b.r) * 0.5;
-          panel.position.set(sd.ax * midR, (a.y + b.y) * 0.5, sd.az * midR);
-          panel.rotation.order = 'YXZ'; panel.rotation.y = sd.ry; panel.rotation.x = -tilt;
-          tower.add(panel);
-        });
-      }
-    }
-    for (let i = 0; i < 4; i++) {
-      const ang = (i * Math.PI) / 2;
-      const arch = new THREE.Mesh(new THREE.TorusGeometry(4.4, 0.24, 8, 28, Math.PI), this.mats.eiffelSteel);
-      arch.position.set(Math.sin(ang) * 5.4, 3.8, Math.cos(ang) * 5.4); arch.rotation.y = ang;
+    });
+
+    [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rot) => {
+      const panel = new THREE.Mesh(new THREE.PlaneGeometry(15.5, 21), this.mats.eiffelLattice);
+      panel.position.set(Math.sin(rot) * 7.6, 11, Math.cos(rot) * 7.6);
+      panel.rotation.y = rot;
+      panel.rotation.x = -0.22;
+      tower.add(panel);
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(6.8, 0.45, 8, 24, Math.PI), this.mats.eiffelSteel);
+      arch.position.set(Math.sin(rot) * 9.8, 5.2, Math.cos(rot) * 9.8);
+      arch.rotation.y = rot;
       tower.add(arch);
-    }
-    [{ y: 11.0, w: 7.9, h: 1.05 }, { y: 21.5, w: 4.3, h: 0.85 }, { y: 38.0, w: 1.75, h: 0.9 }].forEach((d) => {
-      const deck = new THREE.Mesh(new THREE.BoxGeometry(d.w, d.h, d.w), this.mats.eiffelSteel); deck.position.y = d.y;
-      const cornice = new THREE.Mesh(new THREE.BoxGeometry(d.w + 0.22, 0.16, d.w + 0.22), this.mats.goldGlow); cornice.position.y = d.y + d.h * 0.25;
-      tower.add(deck, cornice);
     });
 
-    const cupola = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.72, 1.3, 12), this.mats.eiffelSteel); cupola.position.y = 39.1;
-    const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.18, 4.4, 10), this.mats.gold); spire.position.y = 41.9;
-    const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe69c, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, depthWrite: false }));
-    beacon.scale.set(6.4, 6.4, 1); beacon.position.y = 44.1;
-    this.eiffelBeacon = beacon;
+    const d1 = new THREE.Mesh(new THREE.BoxGeometry(14.8, 2.2, 14.8), this.mats.eiffelSteel); d1.position.y = 22.4;
+    const d1Rim = new THREE.Mesh(new THREE.BoxGeometry(15.2, 0.36, 15.2), this.mats.goldGlow); d1Rim.position.y = 23.6;
+    const d2 = new THREE.Mesh(new THREE.BoxGeometry(8.6, 1.8, 8.6), this.mats.eiffelSteel); d2.position.y = 42.4;
+    const d2Rim = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.32, 9.0), this.mats.goldGlow); d2Rim.position.y = 43.4;
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 3.2, 36, 4), this.mats.eiffelLattice); spire.rotation.y = Math.PI / 4; spire.position.y = 61;
+    const d3 = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.1, 3.5), this.mats.goldGlow); d3.position.y = 80;
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.42, 11, 8), this.mats.gold); ant.position.y = 86;
+    tower.add(d1, d1Rim, d2, d2Rim, spire, d3, ant);
 
-    this.eiffelSearchlightRig = new THREE.Group();
-    this.eiffelSearchlightRig.position.y = 39.4;
-    this.eiffelSearchlightMat = new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff0c4, transparent: true, opacity: 0.0, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
-    [-1, 1].forEach((dir) => {
-      const beam = new THREE.Mesh(new THREE.ConeGeometry(4.2, 42, 12, 1, true), this.eiffelSearchlightMat);
-      beam.rotation.z = dir * (Math.PI * 0.44); beam.position.set(dir * 21, -2.5, 0);
-      this.eiffelSearchlightRig.add(beam);
+    const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe49e, transparent: true, opacity: 0.96, blending: THREE.AdditiveBlending, depthWrite: false }));
+    beacon.scale.set(10, 10, 1); beacon.position.y = 89.5;
+    this.eiffelBeacon = beacon; tower.add(beacon);
+
+    this.eiffelSearchlightRig = new THREE.Group(); this.eiffelSearchlightRig.position.y = 88.5;
+    this.eiffelSearchlightMat = new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff1c4, transparent: true, opacity: 0.16, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
+    [0, Math.PI].forEach((rot) => {
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(16, 145, 16, 1, true), this.eiffelSearchlightMat);
+      cone.rotation.z = Math.PI / 2 - 0.14; cone.rotation.y = rot;
+      cone.position.set(Math.cos(rot) * 70, -8, Math.sin(rot) * 70);
+      this.eiffelSearchlightRig.add(cone);
     });
-    tower.add(cupola, spire, beacon, this.eiffelSearchlightRig);
+    tower.add(this.eiffelSearchlightRig);
 
     for (let i = 0; i < 36; i++) {
-      const f = Math.random(), y = 5 + f * 33, r = THREE.MathUtils.lerp(4.8, 0.55, f), a = Math.random() * Math.PI * 2;
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xfff6d2, transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false }));
-      sp.position.set(Math.cos(a) * r, y, Math.sin(a) * r); sp.scale.set(1.2, 1.2, 1);
+      const h = 10 + (i / 36) * 72, r = THREE.MathUtils.lerp(9.6, 1.3, h / 82), ang = i * 1.45;
+      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe6a6, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+      sp.position.set(Math.cos(ang) * r, h, Math.sin(ang) * r); sp.scale.set(1.5, 1.5, 1);
       tower.add(sp);
-      this.eiffelSparkles.push({ sprite: sp, phase: Math.random() * Math.PI * 2, speed: 3.5 + Math.random() * 5.0 });
+      this.eiffelSparkles.push({ sprite: sp, phase: i * 0.7, speed: 3.0 + (i % 4) * 1.2 });
     }
     this.scene.add(tower);
   }
 
-  /* ==================== OPEN-PORTAL LOUVRE PYRAMID + SLIDING DOORS + FOUNTAIN ==================== */
+  /* ==================== COUR NAPOLÉON, OPEN-PORTAL PYRAMID & FOUNTAIN ==================== */
   buildOpenPortalLouvrePyramidAndFountain() {
-    [-10.2, 10.2].forEach((x) => {
-      const poolBorder = new THREE.Mesh(new THREE.BoxGeometry(7.8, 0.3, 14.2), this.mats.marble);
-      poolBorder.position.set(x, 0.15, 7.5); poolBorder.receiveShadow = true;
-      const water = new THREE.Mesh(new THREE.PlaneGeometry(7.1, 13.5), this.mats.waterPool);
-      water.rotation.x = -Math.PI / 2; water.position.set(x, 0.3, 7.5);
-      this.scene.add(poolBorder, water);
-      this.boxColliders.push({ minX: x - 4.15, maxX: x + 4.15, minZ: 0.2, maxZ: 14.8 });
+    // Strictly non-overlapping Cour Napoléon Cobble Plaza: z = +32 down to z = -6 (length 38, center z = +13)
+    const plazaMat = new THREE.MeshStandardMaterial({
+      map: this.plazaCobbleScan.map, normalMap: this.plazaCobbleScan.normalMap, normalScale: new THREE.Vector2(0.75, 0.75),
+      roughnessMap: this.plazaCobbleScan.roughnessMap, roughness: 0.76, metalness: 0.08,
+    });
+    const plazaFloor = new THREE.Mesh(new THREE.PlaneGeometry(76, 38), plazaMat);
+    plazaFloor.rotation.x = -Math.PI / 2;
+    plazaFloor.position.set(0, 0, 13);
+    plazaFloor.receiveShadow = true;
+    this.scene.add(plazaFloor);
 
-      [-3.4, 3.4].forEach((fz, fi) => {
-        const ring = new THREE.Mesh(new THREE.RingGeometry(0.25, 0.42, 22), new THREE.MeshBasicMaterial({ color: 0xfff1cc, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-        ring.rotation.x = -Math.PI / 2; ring.position.set(x, 0.315, 7.5 + fz);
-        this.scene.add(ring);
-        this.fountainRings.push({ mesh: ring, phase: fi * 1.8 + (x > 0 ? 0.9 : 0) });
-      });
+    // Royal central runner cleanly continuing through Cour Napoléon to Louvre door (z = +32..-6)
+    const plazaRunner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 38), this.mats.runnerOverlay);
+    plazaRunner.rotation.x = -Math.PI / 2; plazaRunner.position.set(0, 0.045, 13);
+    this.scene.add(plazaRunner);
 
-      const miniPyr = new THREE.Group(); miniPyr.position.set(x, 0.31, 12.2);
-      const mg = new THREE.Mesh(new THREE.ConeGeometry(1.75, 1.8, 4, 1, true), this.mats.glassPyramid); mg.rotation.y = Math.PI / 4; mg.position.y = 0.9;
-      const mw = new THREE.Mesh(new THREE.ConeGeometry(1.78, 1.82, 4, 3, true), new THREE.MeshStandardMaterial({ color: 0xdcc07a, metalness: 0.88, roughness: 0.2, wireframe: true })); mw.rotation.y = Math.PI / 4; mw.position.y = 0.91;
-      miniPyr.add(mg, mw); this.scene.add(miniPyr);
+    // Reflecting Pools + Wishing Coin Fountain
+    [-10.2, 10.2].forEach((px) => {
+      const pool = new THREE.Group(); pool.position.set(px, 0, 9.4);
+      const basin = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.36, 12.0), this.mats.marble); basin.position.y = 0.18;
+      const water = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 11.4), this.mats.waterPool); water.rotation.x = -Math.PI / 2; water.position.y = 0.37;
+      pool.add(basin, water);
+      for (let r = 0; r < 2; r++) {
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.28, 24), new THREE.MeshBasicMaterial({ color: 0xffe49e, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+        ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.385, -1.5 + r * 3.0);
+        pool.add(ring); this.fountainRings.push({ mesh: ring, phase: r * 1.6 + (px > 0 ? 0.5 : 0) });
+      }
+      this.boxColliders.push({ minX: px - 3.6, maxX: px + 3.6, minZ: 3.2, maxZ: 15.6 });
+      this.scene.add(pool);
     });
 
-    const wishUrn = new THREE.Group(); wishUrn.position.set(5.4, 0, 11.2);
-    const urnPed = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 1.05, 16), this.mats.marble); urnPed.position.y = 0.525; urnPed.castShadow = true;
-    const urnBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.32, 0.28, 18), this.mats.gold); urnBowl.position.y = 1.14;
-    const floatingCoin = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.045, 22), this.mats.goldGlow); floatingCoin.rotation.x = Math.PI / 2; floatingCoin.position.y = 1.62;
-    this.floatingProps.push({ mesh: floatingCoin, baseY: 1.62, speed: 2.2 });
-    const fHit = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.8, 2.6), new THREE.MeshBasicMaterial({ visible: false }));
-    fHit.position.y = 1.2; fHit.userData.interactId = 'fountain';
-    wishUrn.add(urnPed, urnBowl, floatingCoin, fHit);
-    this.scene.add(wishUrn);
-    this.circleColliders.push({ x: 5.4, z: 11.2, r: 0.72 });
+    const fHit = new THREE.Mesh(new THREE.BoxGeometry(6.6, 2.4, 6.6), new THREE.MeshBasicMaterial({ visible: false }));
+    fHit.position.set(9.8, 1.2, 10.0); fHit.userData.interactId = 'fountain'; this.scene.add(fHit);
     this.interactables.push({
-      id: 'fountain',
-      titleAr: 'نافورة الأمنيات الذهبية بمتحف اللوفر',
-      badgeAr: '🪙 اضغط لإلقاء عملة أمنية ذهبية ليمنى في نافورة اللوفر',
-      mesh: fHit,
-      worldPos: new THREE.Vector3(5.4, 1.4, 11.2),
-      radius: 7.5,
+      id: 'fountain', titleAr: 'نافورة أمنيات ساحة اللوفر',
+      badgeAr: '🪙 اضغط لإلقاء عملة أمنية ليمنى في نافورة اللوفر',
+      mesh: fHit, worldPos: new THREE.Vector3(6.8, 1.2, 11.2), radius: 7.4,
     });
 
+    // Open-Portal Louvre Glass Pyramid with Automatic Sliding Glass Doors
+    const B = 5.4, H = 7.9, doorHW = 1.65, doorH = 3.35;
     const pyrGroup = new THREE.Group(); pyrGroup.position.set(0, 0, 7.0);
-    const B = 5.2, H = 6.8, doorHW = 1.7, doorH = 3.2;
 
     [-1, 1].forEach((signX) => {
       const geo = new THREE.BufferGeometry();
@@ -845,7 +1337,7 @@ export class LouvreParisWorld3D {
       const p0 = new THREE.Vector3(cx, 0, cz), p1 = new THREE.Vector3(0, H, 0);
       const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.08, p0.distanceTo(p1), 8), this.mats.gold);
       beam.position.copy(p0).lerp(p1, 0.5); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p1.clone().sub(p0).normalize());
-      beam.castShadow = true; pyrGroup.add(beam);
+      pyrGroup.add(beam);
     });
     const apexHalo = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffd88a, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
     apexHalo.scale.set(7.5, 7.5, 1); apexHalo.position.y = 4.2; pyrGroup.add(apexHalo);
@@ -854,7 +1346,7 @@ export class LouvreParisWorld3D {
     const facade = new THREE.Group(); facade.position.set(0, 0, -7);
     [-14.5, 14.5].forEach((x) => {
       const wing = new THREE.Mesh(new THREE.BoxGeometry(19, 13.8, 3.6), this.mats.louvrePalace);
-      wing.position.set(x, 6.9, 0); wing.castShadow = true; wing.receiveShadow = true;
+      wing.position.set(x, 6.9, 0);
       const wingRoof = new THREE.Mesh(new THREE.BoxGeometry(19.2, 3.2, 3.1), this.mats.mansard); wingRoof.position.set(x, 15.4, -0.1);
       facade.add(wing, wingRoof);
       for (let cx = -7.5; cx <= 7.5; cx += 5.0) {
@@ -874,9 +1366,9 @@ export class LouvreParisWorld3D {
     facade.add(topEntablature, goldCornice, pediment, pavDome, pavCrown, archTrim, signPlaque);
 
     [-22.5, 22.5].forEach((wx) => {
-      const sideWing = new THREE.Mesh(new THREE.BoxGeometry(3.6, 13.6, 26), this.mats.louvrePalace);
-      sideWing.position.set(wx, 6.8, 13); sideWing.castShadow = true; sideWing.receiveShadow = true;
-      const sideRoof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 26), this.mats.mansard); sideRoof.position.set(wx, 15.1, 13);
+      const sideWing = new THREE.Mesh(new THREE.BoxGeometry(3.6, 13.6, 28), this.mats.louvrePalace);
+      sideWing.position.set(wx, 6.8, 14);
+      const sideRoof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 28), this.mats.mansard); sideRoof.position.set(wx, 15.1, 14);
       facade.add(sideWing, sideRoof);
     });
     this.scene.add(facade);
@@ -890,37 +1382,47 @@ export class LouvreParisWorld3D {
     this.flyingCoins.push({ mesh: coin, t: 0, p0: new THREE.Vector3(5.6, 1.65, 11.2), p1: new THREE.Vector3(9.8, 0.32, 9.4) });
   }
 
-  /* ==================== LOUVRE GRANDE GALERIE INTERIOR ==================== */
+  /* ==================== LOUVRE GRANDE GALERIE INTERIOR (STRICTLY z: -6 .. -80.4) ==================== */
   buildLouvreGrandGalleryInterior() {
+    const hallLen = 74.4; // z = -6.0 down to z = -80.4 (center z = -43.2) -> ZERO overlap with Cour Napoléon OR Rotunda!
+    const hallMidZ = -43.2;
+
     const parquetMat = new THREE.MeshStandardMaterial({
       map: this.parquetScan.map, normalMap: this.parquetScan.normalMap, normalScale: new THREE.Vector2(0.55, 0.55),
       roughnessMap: this.parquetScan.roughnessMap, roughness: 0.42, metalness: 0.06,
     });
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(18.0, 78), parquetMat);
-    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, -45); floor.receiveShadow = true;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(18.0, hallLen), parquetMat);
+    floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, hallMidZ); floor.receiveShadow = true;
     this.scene.add(floor);
 
-    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 78), this.mats.velvetRed);
-    carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, 0.012, -45); carpet.receiveShadow = true;
+    const carpet = new THREE.Mesh(new THREE.PlaneGeometry(3.2, hallLen - 0.6), this.mats.velvetRed);
+    carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, 0.045, hallMidZ);
     this.scene.add(carpet);
     [-1.66, 1.66].forEach((x) => {
-      const b = new THREE.Mesh(new THREE.PlaneGeometry(0.08, 78), this.mats.gold);
-      b.rotation.x = -Math.PI / 2; b.position.set(x, 0.016, -45); this.scene.add(b);
+      const b = new THREE.Mesh(new THREE.PlaneGeometry(0.08, hallLen - 0.6), this.mats.goldOverlay);
+      b.rotation.x = -Math.PI / 2; b.position.set(x, 0.052, hallMidZ); this.scene.add(b);
+    });
+
+    // Raised Gilded Marble Threshold Beams cleanly framing the floor transitions at z=-6 and z=-80.4
+    [-6.0, -80.4].forEach((tz) => {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.08, 0.36), this.mats.gold);
+      bar.position.set(0, 0.04, tz);
+      this.scene.add(bar);
     });
 
     const galleryWallMat = new THREE.MeshStandardMaterial({ map: this.wallPanelTex, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.65 });
-    const wallGeo = new THREE.BoxGeometry(0.8, 9.8, 78);
+    const wallGeo = new THREE.BoxGeometry(0.8, 9.8, hallLen + 1);
     [-8.8, 8.8].forEach((x) => {
-      const wall = new THREE.Mesh(wallGeo, galleryWallMat); wall.position.set(x, 4.9, -45);
-      const cornice = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.4, 78), this.mats.gold); cornice.position.set(x, 9.45, -45);
+      const wall = new THREE.Mesh(wallGeo, galleryWallMat); wall.position.set(x, 4.9, hallMidZ);
+      const cornice = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.4, hallLen + 1), this.mats.gold); cornice.position.set(x, 9.45, hallMidZ);
       this.scene.add(wall, cornice);
     });
 
     [-6.0, 6.0].forEach((x) => {
-      const ceilSide = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.45, 78), this.mats.marble); ceilSide.position.set(x, 9.7, -45); this.scene.add(ceilSide);
+      const ceilSide = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.45, hallLen + 1), this.mats.marble); ceilSide.position.set(x, 9.7, hallMidZ); this.scene.add(ceilSide);
     });
-    const skylight = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 78), new THREE.MeshBasicMaterial({ color: 0xffe8b8, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-    skylight.rotation.x = Math.PI / 2; skylight.position.set(0, 9.85, -45); this.scene.add(skylight);
+    const skylight = new THREE.Mesh(new THREE.PlaneGeometry(5.6, hallLen), new THREE.MeshBasicMaterial({ color: 0xffe8b8, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
+    skylight.rotation.x = Math.PI / 2; skylight.position.set(0, 9.85, hallMidZ); this.scene.add(skylight);
 
     const colPositions = [];
     for (let z = -12; z >= -78; z -= 9.5) colPositions.push([-7.5, z], [7.5, z]);
@@ -951,7 +1453,7 @@ export class LouvreParisWorld3D {
     });
   }
 
-  /* ==================== 5 HIDDEN COLLECTIBLE GOLDEN WAX SEALS HUNT ==================== */
+  /* ==================== 5 HIDDEN COLLECTIBLE GOLDEN WAX SEALS ==================== */
   buildFiveHiddenMuseumSeals() {
     const discGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.08, 22);
     const rimGeo = new THREE.TorusGeometry(0.32, 0.035, 8, 28);
@@ -962,7 +1464,7 @@ export class LouvreParisWorld3D {
       const rim = new THREE.Mesh(rimGeo, this.mats.goldGlow);
       const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe084, transparent: true, opacity: 0.72, blending: THREE.AdditiveBlending, depthWrite: false }));
       glow.scale.set(1.3, 1.3, 1);
-      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+      const hit = new THREE.Mesh(new THREE.SphereGeometry(0.95, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
       hit.userData.interactId = s.id;
       grp.add(disc, rim, glow, hit);
       this.scene.add(grp);
@@ -970,12 +1472,9 @@ export class LouvreParisWorld3D {
       const entry = { ...s, mesh: grp, hit, collected: false, phase: i * 1.3 };
       this.hiddenSeals.push(entry);
       this.interactables.push({
-        id: s.id,
-        titleAr: s.labelAr,
+        id: s.id, titleAr: s.labelAr,
         badgeAr: `🏅 اضغط لجمع الختم الذهبي المخفي — ${s.labelAr}`,
-        mesh: hit,
-        worldPos: new THREE.Vector3(s.x, 1.35, s.z),
-        radius: 4.5,
+        mesh: hit, worldPos: new THREE.Vector3(s.x, 1.35, s.z), radius: 5.0,
       });
     });
   }
@@ -1047,8 +1546,8 @@ export class LouvreParisWorld3D {
       const frontRope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.36, 8), this.mats.velvetRed);
       frontRope.rotation.z = Math.PI / 2; frontRope.position.set(0, 0.76, 1.18); grp.add(frontRope);
 
-      const ring = new THREE.Mesh(new THREE.RingGeometry(1.32, 1.44, 32), new THREE.MeshBasicMaterial({ color: 0xf7d882, transparent: true, opacity: 0.56, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-      ring.rotation.x = -Math.PI / 2; ring.position.y = 0.022; grp.add(ring);
+      const ring = new THREE.Mesh(new THREE.RingGeometry(1.32, 1.44, 32), new THREE.MeshBasicMaterial({ color: 0xf7d882, transparent: true, opacity: 0.56, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+      ring.rotation.x = -Math.PI / 2; ring.position.y = 0.055; grp.add(ring);
 
       const artCenter = new THREE.Group(); artCenter.position.y = 2.08;
       if (idx === 0) {
@@ -1118,8 +1617,8 @@ export class LouvreParisWorld3D {
     const tray = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.08, 0.18), this.mats.gold); tray.position.set(0, 0.98, 0.14);
     const miniBoard = new THREE.Mesh(new THREE.BoxGeometry(1.18, 0.88, 0.05), this.mats.gold); miniBoard.position.set(0, 1.46, 0.04); miniBoard.rotation.x = -0.14;
     const miniArt = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 0.78), new THREE.MeshBasicMaterial({ map: this.customPaintingTex })); miniArt.position.set(0, 1.46, 0.072); miniArt.rotation.x = -0.14;
-    const eRing = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.18, 30), new THREE.MeshBasicMaterial({ color: 0xffe28a, transparent: true, opacity: 0.65, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-    eRing.rotation.x = -Math.PI / 2; eRing.position.y = 0.022;
+    const eRing = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.18, 30), new THREE.MeshBasicMaterial({ color: 0xffe28a, transparent: true, opacity: 0.65, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    eRing.rotation.x = -Math.PI / 2; eRing.position.y = 0.055;
     const eHit = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.8, 2.6), new THREE.MeshBasicMaterial({ visible: false })); eHit.position.y = 1.4; eHit.userData.interactId = 'easel';
     easel.add(backLeg, tray, miniBoard, miniArt, eRing, eHit);
     this.circleColliders.push({ x: 4.2, z: -27, r: 0.95 }); this.scene.add(easel);
@@ -1152,8 +1651,8 @@ export class LouvreParisWorld3D {
     }
     this.floatingProps.push({ mesh: envOrbit, baseY: 2.48, speed: 1.5 });
 
-    const vRing = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.48, 32), new THREE.MeshBasicMaterial({ color: 0xffd87a, transparent: true, opacity: 0.72, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-    vRing.rotation.x = -Math.PI / 2; vRing.position.y = 0.022;
+    const vRing = new THREE.Mesh(new THREE.RingGeometry(1.35, 1.48, 32), new THREE.MeshBasicMaterial({ color: 0xffd87a, transparent: true, opacity: 0.72, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    vRing.rotation.x = -Math.PI / 2; vRing.position.y = 0.055;
     const vHit = new THREE.Mesh(new THREE.BoxGeometry(2.7, 3.2, 2.5), new THREE.MeshBasicMaterial({ visible: false })); vHit.position.y = 1.6; vHit.userData.interactId = 'vault';
     vaultGrp.add(ped, cloth, boxBody, boxRim, boxLid, envOrbit, vRing, vHit);
     this.circleColliders.push({ x: -4.0, z: -75, r: 1.3 }); this.scene.add(vaultGrp);
@@ -1206,11 +1705,12 @@ export class LouvreParisWorld3D {
   }
 
   buildGrandRotundaAndRealisticCake() {
+    // Strictly meets Grande Galerie at z = -80.4 (center z = -93, radius 12.6 -> ZERO coplanar overlap!)
     const rotunda = new THREE.Group(); rotunda.position.set(0, 0, -93);
     this.circleColliders.push({ x: 0, z: -93, r: 3.3 });
 
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(12.6, 44), this.mats.marble); floor.rotation.x = -Math.PI / 2; floor.position.y = 0.015;
-    const goldInlay = new THREE.Mesh(new THREE.RingGeometry(4.2, 4.48, 44), this.mats.goldGlow); goldInlay.rotation.x = -Math.PI / 2; goldInlay.position.y = 0.022;
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(12.6, 44), this.mats.marble); floor.rotation.x = -Math.PI / 2; floor.position.y = 0;
+    const goldInlay = new THREE.Mesh(new THREE.RingGeometry(4.2, 4.48, 44), this.mats.goldOverlay); goldInlay.rotation.x = -Math.PI / 2; goldInlay.position.y = 0.05;
     const rotWall = new THREE.Mesh(new THREE.CylinderGeometry(12.5, 12.5, 10.6, 32, 1, true, Math.PI * 0.18, Math.PI * 1.64), new THREE.MeshStandardMaterial({ map: this.wallPanelTex, roughness: 0.65, side: THREE.BackSide })); rotWall.position.y = 5.3;
     const dome = new THREE.Mesh(new THREE.SphereGeometry(12.6, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.48), new THREE.MeshStandardMaterial({ color: 0xf4cf7c, metalness: 0.78, roughness: 0.22, wireframe: true, transparent: true, opacity: 0.48 })); dome.position.y = 9.6;
     rotunda.add(floor, goldInlay, rotWall, dome);
@@ -1279,8 +1779,8 @@ export class LouvreParisWorld3D {
     this.scene.add(rotunda);
   }
 
-  /* ==================== OPTIMIZED DISTANCE-CULLED MOCAP HUMAN VISITORS (5 DESKTOP / 3 MOBILE) ==================== */
-  loadOptimizedMocapHumanVisitors() {
+  /* ==================== REAL MOCAP VISITORS, PARIS POLICE OFFICER & CUSTOM ANAS HABIB 3D GUIDE ==================== */
+  loadOptimizedMocapHumanVisitorsAndAnasGuide() {
     Promise.all([
       this.gltfLoader.loadAsync('./assets/models/visitor-rpm.glb'),
       this.gltfLoader.loadAsync('./assets/models/anim-walk.glb'),
@@ -1297,33 +1797,131 @@ export class LouvreParisWorld3D {
         });
       }
 
+      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.36, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      const shadowGeo = new THREE.CircleGeometry(0.42, 14);
+
+      // ---- 1. BUILD CUSTOM 3D «أنس حبيب» TOUR GUIDE FOR يوسف (Curly Hair + Chinstrap Beard + White Striped Jersey!) ----
+      const anas = SkeletonUtils.clone(avatarGltf.scene);
+      const jerseyTex = createAnasJerseyTexture();
+      let headBone = null;
+
+      anas.traverse((o) => {
+        if (o.isBone && o.name === 'Head') headBone = o;
+        if (o.isMesh) {
+          o.castShadow = false; o.receiveShadow = false; o.frustumCulled = false;
+          // Hide cap/hat so his iconic voluminous curly hair crown is clearly visible!
+          if (o.name === 'Mesh' || o.material?.name === 'Wolf3D_Headwear') o.visible = false;
+          // Distinctive slim dark chinstrap beard along his jawline (matching all 3 photos!)
+          if (o.name === 'Wolf3D_Beard') {
+            o.visible = true;
+            o.material = o.material.clone();
+            o.material.color.setHex(0x1f1713);
+            o.material.roughness = 0.85;
+          }
+          // Light-olive youthful skin tone
+          if (o.material?.name === 'Wolf3D_Skin') {
+            o.material = o.material.clone();
+            o.material.color.setHex(0xf2d4bd);
+          }
+          // Crisp white athletic jersey with black collar & 3 dark shoulder stripes (Photo 3!)
+          if (o.material?.name === 'Wolf3D_Outfit_Top') {
+            o.material = o.material.clone();
+            o.material.map = jerseyTex;
+            o.material.color.setHex(0xffffff);
+            o.material.roughness = 0.65;
+            o.material.needsUpdate = true;
+          }
+          // Dark charcoal slim jeans
+          if (o.material?.name === 'Wolf3D_Outfit_Bottom') {
+            o.material = o.material.clone();
+            o.material.color.setHex(0x1a1d24);
+          }
+          // Crisp white streetwear sneakers
+          if (o.material?.name === 'Wolf3D_Outfit_Footwear') {
+            o.material = o.material.clone();
+            o.material.color.setHex(0xf4f5f7);
+          }
+        }
+      });
+
+      // Attach sculpted 34-ringlet dark brown Curly Hair cluster directly to Anas's Head bone!
+      if (headBone) {
+        const curlGrp = new THREE.Group();
+        const curlMat = new THREE.MeshStandardMaterial({ color: 0x1b130e, roughness: 0.92, metalness: 0.04 });
+        const curlGeo = new THREE.IcosahedronGeometry(0.036, 1);
+        const curlCoords = [
+          // Top voluminous curly crown
+          [0, 0.21, 0.02, 1.25], [-0.05, 0.20, 0.03, 1.15], [0.05, 0.20, 0.03, 1.15],
+          [-0.08, 0.17, 0.01, 1.1], [0.08, 0.17, 0.01, 1.1], [0, 0.21, -0.04, 1.2],
+          [-0.06, 0.19, -0.05, 1.15], [0.06, 0.19, -0.05, 1.15], [-0.09, 0.15, -0.04, 1.05],
+          [0.09, 0.15, -0.04, 1.05], [0, 0.17, -0.09, 1.15], [-0.05, 0.15, -0.09, 1.05],
+          [0.05, 0.15, -0.09, 1.05], [-0.09, 0.11, -0.06, 0.95], [0.09, 0.11, -0.06, 0.95],
+          [0, 0.12, -0.10, 1.0], [-0.06, 0.11, -0.09, 0.92], [0.06, 0.11, -0.09, 0.92],
+          // Signature loose forehead curls falling softly over brow (just like his 3 photos!)
+          [-0.055, 0.175, 0.082, 1.0], [-0.015, 0.185, 0.092, 1.05], [0.025, 0.182, 0.090, 1.02],
+          [0.062, 0.172, 0.078, 0.98], [-0.035, 0.152, 0.098, 0.85], [0.015, 0.154, 0.102, 0.82],
+          [0.048, 0.148, 0.094, 0.8], [-0.082, 0.145, 0.055, 0.92], [0.082, 0.145, 0.055, 0.92],
+          [-0.094, 0.12, 0.015, 0.85], [0.094, 0.12, 0.015, 0.85], [-0.02, 0.22, 0.06, 1.05],
+          [0.03, 0.22, 0.05, 1.05], [-0.07, 0.20, 0.06, 0.95], [0.07, 0.20, 0.06, 0.95],
+          [0, 0.23, -0.01, 1.1],
+        ];
+        curlCoords.forEach(([x, y, z, s], idx) => {
+          const m = new THREE.Mesh(curlGeo, curlMat);
+          m.position.set(x, y, z);
+          m.scale.set(s, s * 0.92, s);
+          m.rotation.set(idx * 0.7, idx * 1.1, idx * 0.4);
+          curlGrp.add(m);
+        });
+        headBone.add(curlGrp);
+      }
+
+      // Floating VIP Guide Nameplate above Anas Habib
+      const anasBadge = new THREE.Sprite(new THREE.SpriteMaterial({ map: createGuideBadgeTexture('أنس حبيب', 'المرشد السياحي الخاص ليوسف', '#76d0ff'), transparent: true, depthWrite: false }));
+      anasBadge.scale.set(1.55, 0.44, 1);
+      anasBadge.position.set(0, 2.28, 0);
+      const anasLight = new THREE.PointLight(0xfff1d6, 2.6, 5.5, 1.4);
+      anasLight.position.set(0, 1.9, 1.1);
+      const anasDisc = new THREE.Mesh(shadowGeo, shadowMat);
+      anasDisc.rotation.x = -Math.PI / 2; anasDisc.position.y = 0.045;
+      anas.scale.setScalar(1.04);
+      this.anasGroup.add(anas, anasBadge, anasLight, anasDisc);
+
+      this.anasMixer = new THREE.AnimationMixer(anas);
+      if (walkClip) {
+        this.anasWalkAction = this.anasMixer.clipAction(walkClip);
+        this.anasWalkAction.setEffectiveTimeScale(1.12);
+      }
+      if (idleClip) {
+        this.anasIdleAction = this.anasMixer.clipAction(idleClip);
+        this.anasIdleAction.play();
+      }
+      this.anasLoaded = true;
+
+      // ---- 2. PARIS PEDESTRIANS + UNIFORMED POLICE OFFICER (DISTANCE-CULLED FOR 60FPS!) ----
       const outfits = [
-        { top: 0x222c3d, bot: 0x181a20, hat: true, beard: false },
+        { top: 0x163875, bot: 0x0f1a33, hat: true, beard: false }, // Paris Police Officer outside Precinct!
         { top: 0x5c202a, bot: 0x1d1f26, hat: false, beard: false },
         { top: 0x9c7b56, bot: 0x24201c, hat: false, beard: true },
         { top: 0x2e4238, bot: 0x212328, hat: true, beard: true },
         { top: 0xd8cfc2, bot: 0x2a3140, hat: false, beard: false },
+        { top: 0x222c3d, bot: 0x181a20, hat: false, beard: false },
       ];
-
       const allSpecs = [
-        { x: -8.5, z0: 60, z1: 22, speed: 1.22, walking: true, scale: 1.0 },
-        { x: 5.2, z0: 18, z1: 52, speed: 1.15, walking: true, scale: 0.98 },
-        { x: -4.8, z0: 15, z1: 2.5, speed: 1.05, walking: true, scale: 0.96 },
+        { x: -24.8, z0: 169, z1: 169, rotY: Math.PI * 0.5, walking: false, scale: 1.02 }, // Police Officer!
+        { x: 5.0, z0: 365, z1: 270, speed: 1.35, walking: true, scale: 0.99 },
+        { x: -5.2, z0: 255, z1: 155, speed: 1.25, walking: true, scale: 0.98 },
+        { x: 5.0, z0: 110, z1: 22, speed: 1.2, walking: true, scale: 0.97 },
         { x: -6.1, z0: -19.5, z1: -19.5, rotY: -Math.PI * 0.48, walking: false, scale: 0.97 },
         { x: 6.1, z0: -61.5, z1: -61.5, rotY: Math.PI * 0.5, walking: false, scale: 0.96 },
       ];
-      const specs = this.isMobile ? [allSpecs[0], allSpecs[1], allSpecs[3]] : allSpecs;
-      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.36, depthWrite: false });
-      const shadowGeo = new THREE.CircleGeometry(0.4, 14);
+      const specs = this.isMobile ? [allSpecs[0], allSpecs[1], allSpecs[3], allSpecs[4]] : allSpecs;
 
       specs.forEach((sp, idx) => {
         const clone = SkeletonUtils.clone(avatarGltf.scene);
         const style = outfits[idx % outfits.length];
         clone.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = false; // Uses zero-cost contact shadow disc for locked 60FPS!
-            o.receiveShadow = false;
-            o.frustumCulled = false;
+            o.castShadow = false; o.receiveShadow = false; o.frustumCulled = false;
             if (o.name === 'Wolf3D_Beard') o.visible = style.beard;
             if (o.name === 'Mesh' || o.material?.name === 'Wolf3D_Headwear') o.visible = style.hat;
             if (o.material?.name === 'Wolf3D_Outfit_Top') { o.material = o.material.clone(); o.material.color.setHex(style.top); }
@@ -1331,7 +1929,7 @@ export class LouvreParisWorld3D {
           }
         });
         const disc = new THREE.Mesh(shadowGeo, shadowMat);
-        disc.rotation.x = -Math.PI / 2; disc.position.y = 0.02;
+        disc.rotation.x = -Math.PI / 2; disc.position.y = 0.045;
         clone.add(disc);
         clone.scale.setScalar(sp.scale);
         clone.position.set(sp.x, 0, sp.z0);
@@ -1351,48 +1949,78 @@ export class LouvreParisWorld3D {
     }).catch(() => { /* ignore if offline */ });
   }
 
-  buildGoldenAutumnLeaves() {
-    const count = this.isMobile ? 28 : 54;
-    this.leafInst = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.14, 0.14), new THREE.MeshBasicMaterial({ color: 0xf6cf76, side: THREE.DoubleSide, transparent: true, opacity: 0.7 }), count);
+  /* ==================== LIVE WEATHER PARTICLES (AUTUMN LEAVES / SPRING PETALS / PARIS RAIN) ==================== */
+  buildWeatherParticles() {
+    const count = this.isMobile ? 32 : 64;
+    this.leafInst = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.16, 0.16), new THREE.MeshBasicMaterial({ color: 0xf6cf76, side: THREE.DoubleSide, transparent: true, opacity: 0.72 }), count);
     this.leafDummy = new THREE.Object3D();
     for (let i = 0; i < count; i++) {
-      this.fallingLeaves.push({ x: (Math.random() - 0.5) * 26, y: 1 + Math.random() * 11, z: 68 - Math.random() * 160, spd: 0.35 + Math.random() * 0.6, ph: Math.random() * Math.PI * 2 });
+      this.fallingLeaves.push({ x: (Math.random() - 0.5) * 34, y: 1 + Math.random() * 14, z: (Math.random() - 0.5) * 60, spd: 0.4 + Math.random() * 0.65, ph: Math.random() * Math.PI * 2 });
     }
     this.scene.add(this.leafInst);
+
+    // 3D Parisian Raindrops (follows camera smoothly!)
+    const rCount = this.isMobile ? 220 : 420;
+    const rPos = new Float32Array(rCount * 6); // 2 vertices per rain streak
+    for (let i = 0; i < rCount; i++) {
+      const rx = (Math.random() - 0.5) * 44, ry = Math.random() * 22, rz = (Math.random() - 0.5) * 44;
+      rPos[i * 6] = rx; rPos[i * 6 + 1] = ry; rPos[i * 6 + 2] = rz;
+      rPos[i * 6 + 3] = rx; rPos[i * 6 + 4] = ry - 0.55; rPos[i * 6 + 5] = rz;
+    }
+    const rGeo = new THREE.BufferGeometry();
+    rGeo.setAttribute('position', new THREE.BufferAttribute(rPos, 3));
+    this.rainPositions = rPos;
+    this.rainDrops = new THREE.LineSegments(rGeo, new THREE.LineBasicMaterial({ color: 0xbcdcf5, transparent: true, opacity: 0.48 }));
+    this.rainDrops.visible = false;
+    this.scene.add(this.rainDrops);
   }
 
   buildPawPrintPool() {
     const geo = new THREE.PlaneGeometry(0.34, 0.34);
     for (let i = 0; i < 16; i++) {
-      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: this.pawTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+      const m = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: this.pawTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
       m.rotation.x = -Math.PI / 2; m.visible = false; this.scene.add(m);
       this.pawPrints.push({ mesh: m, life: 0 });
     }
   }
 
   spawnPawPrint(pos, yaw) {
+    if (this.activeGuideType !== 'bobs') return;
     const slot = this.pawPrints[this.pawIdx];
     this.pawIdx = (this.pawIdx + 1) % this.pawPrints.length;
     const side = (this.pawIdx % 2 === 0 ? 1 : -1) * 0.13;
-    slot.mesh.position.set(pos.x + Math.cos(yaw) * side, 0.03, pos.z - Math.sin(yaw) * side);
+    slot.mesh.position.set(pos.x + Math.cos(yaw) * side, 0.058, pos.z - Math.sin(yaw) * side);
     slot.mesh.rotation.set(-Math.PI / 2, 0, yaw);
     slot.life = 1.0; slot.mesh.visible = true;
   }
 
-  loadAnatomicallyFixed40BonePersianCat() {
-    this.catRoot.position.copy(this.catPos); this.scene.add(this.catRoot);
-    const catShadow = new THREE.Mesh(new THREE.CircleGeometry(0.46, 18), new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.38, depthWrite: false }));
-    catShadow.rotation.x = -Math.PI / 2; catShadow.position.y = 0.018;
-    const beaconRing = new THREE.Mesh(new THREE.RingGeometry(0.52, 0.6, 32), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.65, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false }));
-    beaconRing.rotation.x = -Math.PI / 2; beaconRing.position.y = 0.025;
-    this.catBeaconRing = beaconRing; this.catRoot.add(catShadow, beaconRing);
+  /* ==================== 40-BONE GOLDEN PERSIAN CAT «القطة بوبس» ==================== */
+  loadAnatomicallyFixedBobsPersianCat() {
+    this.guideRoot.position.copy(this.guidePos);
+    this.guideRoot.add(this.bobsGroup, this.anasGroup);
+    this.scene.add(this.guideRoot);
 
-    const catLight = new THREE.PointLight(0xffe9c2, 2.8, 5.4, 1.4); catLight.position.set(0, 1.25, 0.85); this.catRoot.add(catLight);
+    const beaconRing = new THREE.Mesh(new THREE.RingGeometry(0.56, 0.66, 32), new THREE.MeshBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.65, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    beaconRing.rotation.x = -Math.PI / 2; beaconRing.position.y = 0.055;
+    this.guideBeaconRing = beaconRing;
+    this.guideRoot.add(beaconRing);
+
+    const gHit = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 2.0, 10), new THREE.MeshBasicMaterial({ visible: false }));
+    gHit.position.y = 1.0; gHit.userData.interactId = 'guide';
+    this.guideRoot.add(gHit); this.guideHitMesh = gHit;
+
+    // Bobs Cat specific visuals
+    const catShadow = new THREE.Mesh(new THREE.CircleGeometry(0.46, 18), new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.38, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    catShadow.rotation.x = -Math.PI / 2; catShadow.position.y = 0.045;
+    const bobsBadge = new THREE.Sprite(new THREE.SpriteMaterial({ map: createGuideBadgeTexture('القطة بوبس', 'مرشدة جولة باريس واللوفر', '#f2cf78'), transparent: true, depthWrite: false }));
+    bobsBadge.scale.set(1.32, 0.38, 1); bobsBadge.position.set(0, 1.25, 0);
+    const catLight = new THREE.PointLight(0xffe9c2, 2.8, 5.4, 1.4); catLight.position.set(0, 1.25, 0.85);
+    this.bobsGroup.add(catShadow, bobsBadge, catLight);
 
     this.catYarn = new THREE.Group();
     this.catYarn.add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 10), new THREE.MeshStandardMaterial({ color: 0xe8b954, roughness: 0.72 })));
     for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.TorusGeometry(0.132, 0.016, 8, 18), this.mats.goldGlow); b.rotation.set(i * 0.8, i * 1.1, i * 0.5); this.catYarn.add(b); }
-    this.catYarn.position.set(0.28, 0.13, 0.62); this.catYarn.visible = false; this.catRoot.add(this.catYarn);
+    this.catYarn.position.set(0.28, 0.13, 0.62); this.catYarn.visible = false; this.bobsGroup.add(this.catYarn);
 
     const coatTex = this.texLoader.load('./assets/models/persian-cat-coat.jpg'); coatTex.colorSpace = THREE.SRGBColorSpace; coatTex.flipY = false;
 
@@ -1401,20 +2029,28 @@ export class LouvreParisWorld3D {
       const animatedBoneNames = new Set();
       if (gltf.animations?.[0]) gltf.animations[0].tracks.forEach((tr) => animatedBoneNames.add(tr.name.split('.')[0]));
 
-      model.scale.setScalar(2.0); this.catRoot.add(model); this.catRoot.updateMatrixWorld(true);
-      const rootWorldInv = this.catRoot.getWorldQuaternion(new THREE.Quaternion()).invert();
-      const worldQ = new THREE.Quaternion(), invLocalQ = new THREE.Quaternion();
+      const box = new THREE.Box3().setFromObject(model);
+      const size = box.getSize(new THREE.Vector3());
+      const scale = 0.86 / Math.max(0.01, size.y);
+      model.scale.setScalar(scale);
+      const box2 = new THREE.Box3().setFromObject(model);
+      const c2 = box2.getCenter(new THREE.Vector3());
+      model.position.set(-c2.x, -box2.min.y, -c2.z);
+      this.bobsGroup.add(model);
+      model.updateMatrixWorld(true);
 
+      const invWorldQ = new THREE.Quaternion(), worldQ = new THREE.Quaternion();
       model.traverse((obj) => {
-        if (obj.isBone || (obj.name && obj.name.startsWith('Wolf_'))) {
+        if (obj.isBone) {
           obj.getWorldQuaternion(worldQ);
-          invLocalQ.copy(rootWorldInv).multiply(worldQ).invert();
+          invWorldQ.copy(worldQ).invert();
           this.catBoneInfo[obj.name] = {
-            bone: obj, restQuat: obj.quaternion.clone(),
-            axisRight: new THREE.Vector3(1, 0, 0).applyQuaternion(invLocalQ).normalize(),
-            axisUp: new THREE.Vector3(0, 1, 0).applyQuaternion(invLocalQ).normalize(),
-            axisFwd: new THREE.Vector3(0, 0, 1).applyQuaternion(invLocalQ).normalize(),
+            bone: obj,
+            restQuat: obj.quaternion.clone(),
             isStatic: !animatedBoneNames.has(obj.name),
+            axisRight: new THREE.Vector3(1, 0, 0).applyQuaternion(invWorldQ).normalize(),
+            axisUp: new THREE.Vector3(0, 1, 0).applyQuaternion(invWorldQ).normalize(),
+            axisFwd: new THREE.Vector3(0, 0, 1).applyQuaternion(invWorldQ).normalize(),
           };
         }
         if (obj.isMesh) {
@@ -1442,8 +2078,6 @@ export class LouvreParisWorld3D {
         this.catMixer = new THREE.AnimationMixer(model);
         const act = this.catMixer.clipAction(gltf.animations[0]); act.setEffectiveTimeScale(0.88); act.play();
       }
-      const cHit = new THREE.Mesh(new THREE.SphereGeometry(0.74, 10, 10), new THREE.MeshBasicMaterial({ visible: false }));
-      cHit.position.y = 0.52; cHit.userData.interactId = 'cat'; this.catRoot.add(cHit); this.catHitMesh = cHit;
       this.catLoaded = true;
     });
   }
@@ -1458,10 +2092,11 @@ export class LouvreParisWorld3D {
 
   resolveCollisions(pos) {
     const playerR = 0.55;
-    const inRotunda = pos.z < -81, inLouvre = pos.z < -6 && !inRotunda;
-    const maxW = inRotunda ? 9.6 : inLouvre ? 6.3 : 12.4;
+    const inRotunda = pos.z < -81, inLouvre = pos.z < -6 && !inRotunda, inPlaza = pos.z >= -6 && pos.z <= 32;
+    // On the 525m Boulevard, keep pedestrian safely on the 15m wide Champs-Élysées promenade (x: -7.2..+7.2) so cars don't hit you!
+    const maxW = inRotunda ? 9.6 : inLouvre ? 6.3 : inPlaza ? 12.6 : 7.0;
     pos.x = Math.max(-maxW, Math.min(maxW, pos.x));
-    pos.z = Math.max(-101, Math.min(72, pos.z));
+    pos.z = Math.max(-101, Math.min(428, pos.z));
 
     for (const b of this.boxColliders) {
       const cx = Math.max(b.minX, Math.min(pos.x, b.maxX)), cz = Math.max(b.minZ, Math.min(pos.z, b.maxZ));
@@ -1477,35 +2112,102 @@ export class LouvreParisWorld3D {
     }
   }
 
-  startDroneTour() { this.droneActive = true; this.droneTime = 0; this.setAutoFollow(false); if (this.callbacks.onDroneChange) this.callbacks.onDroneChange(true); }
+  /* ==================== TRUE PAUSE-AND-EXPLAIN GUIDED TOUR API ==================== */
+  setGuidePhase(phase) {
+    this.guidePhase = phase;
+    if (phase !== 'idle') this.stopDroneTour();
+    if (this.callbacks.onGuidePhaseChange) this.callbacks.onGuidePhaseChange(phase, this.currentWaypointIdx, STORY_WAYPOINTS[this.currentWaypointIdx]);
+  }
+
+  startGuidedTour() {
+    this.cabRideActive = false;
+    const wp = STORY_WAYPOINTS[this.currentWaypointIdx];
+    const dist = Math.hypot(wp.x - this.playerPos.x, wp.z - this.playerPos.z);
+    if (dist < 4.5 && this.guidePhase !== 'explaining') {
+      // Already at this landmark -> pause & explain immediately!
+      this.enterExplainState(this.currentWaypointIdx);
+    } else {
+      this.setGuidePhase('walking');
+    }
+  }
+
+  advanceGuidedTour() {
+    this.cabRideActive = false;
+    if (this.currentWaypointIdx < STORY_WAYPOINTS.length - 1) {
+      this.currentWaypointIdx++;
+      if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(this.currentWaypointIdx, STORY_WAYPOINTS[this.currentWaypointIdx]);
+      this.setGuidePhase('walking');
+    } else {
+      this.setGuidePhase('idle');
+    }
+  }
+
+  pauseGuidedTour() {
+    this.cabRideActive = false;
+    this.setGuidePhase('idle');
+  }
+
+  enterExplainState(idx) {
+    const wp = STORY_WAYPOINTS[idx];
+    this.setGuidePhase('explaining');
+    // Smoothly orient camera toward the landmark & guide!
+    if (wp) {
+      const lx = wp.lookAtX !== undefined ? wp.lookAtX : wp.guideX;
+      const lz = wp.lookAtZ !== undefined ? wp.lookAtZ : wp.z - 5;
+      this.targetYaw = Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
+      this.targetPitch = idx <= 4 ? 0.06 : -0.01;
+      if (this.callbacks.onTourStopArrive) this.callbacks.onTourStopArrive(idx, wp);
+    }
+  }
+
+  startBoulevardCabRide() {
+    this.stopDroneTour();
+    this.setGuidePhase('idle');
+    this.cabRideActive = true;
+    if (this.playerPos.z < 55) this.playerPos.set(0, 1.68, 392);
+    this.targetYaw = 0; this.targetPitch = 0.04;
+    if (this.callbacks.onCabRideChange) this.callbacks.onCabRideChange(true);
+  }
+
+  stopBoulevardCabRide() {
+    if (!this.cabRideActive) return;
+    this.cabRideActive = false;
+    if (this.callbacks.onCabRideChange) this.callbacks.onCabRideChange(false);
+  }
+
+  startDroneTour() { this.stopBoulevardCabRide(); this.setGuidePhase('idle'); this.droneActive = true; this.droneTime = 0; if (this.callbacks.onDroneChange) this.callbacks.onDroneChange(true); }
   stopDroneTour() { if (!this.droneActive) return; this.droneActive = false; if (this.callbacks.onDroneChange) this.callbacks.onDroneChange(false); }
 
   setJoystickInput(forward, strafe) {
     this.moveInput.forward = forward; this.moveInput.strafe = strafe;
-    if (Math.abs(forward) > 0.1 || Math.abs(strafe) > 0.1) { this.setAutoFollow(false); this.stopDroneTour(); }
+    if (Math.abs(forward) > 0.12 || Math.abs(strafe) > 0.12) {
+      if (this.guidePhase === 'walking') this.setGuidePhase('idle');
+      this.stopDroneTour();
+      this.stopBoulevardCabRide();
+    }
   }
 
-  setAutoFollow(enabled) {
-    this.autoFollow = Boolean(enabled);
-    if (this.autoFollow) this.stopDroneTour();
-    if (this.callbacks.onAutoFollowChange) this.callbacks.onAutoFollowChange(this.autoFollow);
-  }
-
-  teleportToWaypoint(idx) {
+  teleportToWaypoint(idx, triggerExplain = true) {
     this.stopDroneTour();
-    const wp = STORY_WAYPOINTS[Math.max(0, Math.min(STORY_WAYPOINTS.length - 1, idx))];
+    this.stopBoulevardCabRide();
+    const safeIdx = Math.max(0, Math.min(STORY_WAYPOINTS.length - 1, idx));
+    const wp = STORY_WAYPOINTS[safeIdx];
     if (!wp) return;
-    this.currentWaypointIdx = idx;
-    const zOffset = idx === 0 ? 7.0 : idx === 1 ? 4.5 : idx === STORY_WAYPOINTS.length - 1 ? 2.6 : 3.2;
+    this.currentWaypointIdx = safeIdx;
+    const zOffset = safeIdx <= 3 ? 6.0 : safeIdx === 4 ? 4.5 : safeIdx === STORY_WAYPOINTS.length - 1 ? 2.6 : 3.2;
     this.playerPos.set(wp.x, 1.68, wp.z + zOffset);
     this.resolveCollisions(this.playerPos);
-    this.catPos.set(wp.catX, 0, wp.catZ); this.catRoot.position.copy(this.catPos);
-    const lookX = idx === 0 ? -1.8 : wp.catX * 1.25;
-    const lookZ = wp.z - 3.2;
-    this.targetYaw = Math.atan2(-(lookX - this.playerPos.x), -(lookZ - this.playerPos.z));
+    this.guidePos.set(wp.guideX, 0, wp.guideZ);
+    this.guideRoot.position.copy(this.guidePos);
+    const lx = wp.lookAtX !== undefined ? wp.lookAtX : wp.guideX;
+    const lz = wp.lookAtZ !== undefined ? wp.lookAtZ : wp.z - 4;
+    this.targetYaw = Math.atan2(-(lx - this.playerPos.x), -(lz - this.playerPos.z));
     this.playerYaw = this.targetYaw;
-    this.targetPitch = idx === 0 ? 0.03 : -0.02; this.playerPitch = this.targetPitch;
-    if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(idx, wp);
+    this.targetPitch = safeIdx <= 4 ? 0.05 : -0.01;
+    this.playerPitch = this.targetPitch;
+    if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(safeIdx, wp);
+    if (triggerExplain) this.enterExplainState(safeIdx);
+    else this.setGuidePhase('idle');
   }
 
   triggerCatAction(action) { this.catState = action; this.catStateTimer = 0; this.catStateDur = action === 'groom' ? 5.5 : action === 'play' ? 6.2 : 3.4; }
@@ -1519,30 +2221,34 @@ export class LouvreParisWorld3D {
     this.fireworksPoints.geometry.attributes.position.needsUpdate = true; this.fireworksPoints.material.opacity = 1;
   }
 
-  captureLouvrePostcard() {
+  captureLouvrePostcard(filterCss = 'none') {
     this.renderFrame();
     const out = document.createElement('canvas'); out.width = 1280; out.height = 760;
     const ctx = out.getContext('2d');
     ctx.fillStyle = '#0f0b08'; ctx.fillRect(0, 0, 1280, 760);
+    ctx.save();
+    if (filterCss && filterCss !== 'none') ctx.filter = filterCss;
     ctx.drawImage(this.canvas, 34, 34, 1212, 620);
+    ctx.restore();
     ctx.strokeStyle = '#e8c268'; ctx.lineWidth = 4; ctx.strokeRect(20, 20, 1240, 720);
     ctx.fillStyle = 'rgba(13, 9, 6, 0.92)'; ctx.fillRect(24, 654, 1232, 84);
     ctx.textAlign = 'center';
     ctx.direction = 'rtl'; ctx.fillStyle = '#fbf0cf'; ctx.font = '700 28px Amiri, Georgia, serif';
     ctx.fillText('جولة باريس ومتحف اللوفر 3D — رحلة يمنى (العام التاسع عشر) ✦ HEY', 640, 695);
     ctx.direction = 'ltr'; ctx.fillStyle = '#d6ab52'; ctx.font = '600 13px Cinzel, Georgia, serif';
-    ctx.fillText('MUSÉE DU LOUVRE PARIS 3D EDITION  •  DESIGNED & DEVELOPED BY ENG / MOHAMED TAREK', 640, 723);
+    ctx.fillText('PARIS GRAND BOULEVARD & MUSÉE DU LOUVRE  •  ENG / MOHAMED TAREK', 640, 723);
     const a = document.createElement('a'); a.download = `Yomna-Paris-Louvre-3D-${Date.now()}.png`; a.href = out.toDataURL('image/png'); a.click();
   }
 
   getMiniMapTelemetry() {
+    const distToLouvre = Math.max(0, Math.round(this.playerPos.z - 7));
+    const deg = (((-this.playerYaw * 180) / Math.PI) % 360 + 360) % 360;
+    const headingAr = deg < 45 || deg >= 315 ? 'شمال • نحو اللوفر' : deg < 135 ? 'شرق • جاليري مول' : deg < 225 ? 'جنوب • قوس النصر' : 'غرب • برج إيفل';
     return {
-      px: this.playerPos.x,
-      pz: this.playerPos.z,
-      yaw: this.playerYaw,
-      cx: this.catPos.x,
-      cz: this.catPos.z,
-      seals: this.hiddenSeals,
+      px: this.playerPos.x, pz: this.playerPos.z, yaw: this.playerYaw,
+      gx: this.guidePos.x, gz: this.guidePos.z, guideType: this.activeGuideType,
+      seals: this.hiddenSeals, distToLouvre, headingAr,
+      weather: this.weatherMode, guidePhase: this.guidePhase,
     };
   }
 
@@ -1559,7 +2265,11 @@ export class LouvreParisWorld3D {
     window.addEventListener('keydown', (e) => {
       if (e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLInputElement) return;
       this.keys[e.code] = true;
-      if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) { this.setAutoFollow(false); this.stopDroneTour(); }
+      if (['KeyW', 'KeyS', 'KeyA', 'KeyD', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
+        if (this.guidePhase === 'walking') this.setGuidePhase('idle');
+        this.stopDroneTour();
+        this.stopBoulevardCabRide();
+      }
       if (e.code === 'KeyE' && this.nearestInteractable && this.callbacks.onInteract) this.callbacks.onInteract(this.nearestInteractable.id);
       if (e.code === 'KeyZ') this.setZoom(!this.zoomed);
     });
@@ -1579,12 +2289,14 @@ export class LouvreParisWorld3D {
         this._ndc.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
         this.raycaster.setFromCamera(this._ndc, this.camera);
         const targets = this.interactables.map((it) => it.mesh);
-        if (this.catHitMesh) targets.push(this.catHitMesh);
+        if (this.guideHitMesh) targets.push(this.guideHitMesh);
         const hits = this.raycaster.intersectObjects(targets, false);
         if (hits.length > 0 && hits[0].object.userData.interactId) {
           const id = hits[0].object.userData.interactId;
-          if (id === 'cat') { this.triggerCatAction('pet'); if (this.callbacks.onCatPet) this.callbacks.onCatPet(); }
-          else if (this.callbacks.onInteract) this.callbacks.onInteract(id);
+          if (id === 'guide') {
+            this.triggerCatAction('pet');
+            if (this.callbacks.onGuideTap) this.callbacks.onGuideTap(this.activeGuideType);
+          } else if (this.callbacks.onInteract) this.callbacks.onInteract(id);
         }
       }
     };
@@ -1598,14 +2310,13 @@ export class LouvreParisWorld3D {
     else this.renderer.render(this.scene, this.camera);
   }
 
-  /* ==================== SILKY 60FPS GAME SIMULATION LOOP ==================== */
+  /* ==================== SILKY 60FPS SIMULATION LOOP ==================== */
   animate() {
     if (this.disposed) return;
     requestAnimationFrame(() => this.animate());
     if (this.isHidden) return;
 
     const dt = Math.min(this.clock.getDelta(), 0.05);
-    // Low-power 15FPS throttle while Reception Portal is open so entry feels instant & lag-free!
     if (this.portalPaused) {
       this.portalTickAccum += dt;
       if (this.portalTickAccum < 0.066) return;
@@ -1615,23 +2326,85 @@ export class LouvreParisWorld3D {
     const t = this.clock.getElapsedTime();
     const damp = 1 - Math.exp(-9.0 * dt);
 
-    // Smooth Telephoto Zoom FOV interpolation (1x / 2x)
+    // Smooth Telephoto Zoom FOV
     const desiredFov = this.zoomed ? 24 : this.baseFov;
     if (Math.abs(this.camera.fov - desiredFov) > 0.08) {
       this.camera.fov += (desiredFov - this.camera.fov) * damp;
       this.camera.updateProjectionMatrix();
     }
 
+    // ---- 1. UPDATE 3 WORKING TRAFFIC LIGHT INTERSECTIONS (GREEN -> YELLOW -> RED) ----
+    for (const inter of this.intersections) {
+      inter.timer = (inter.timer + dt) % 19.2;
+      const nextState = inter.timer < 9.5 ? 'green' : inter.timer < 11.7 ? 'yellow' : 'red';
+      if (nextState !== inter.state) {
+        inter.state = nextState;
+        const { rMat, yMat, gMat, redOff, yelOff, grnOff } = inter.mats;
+        for (const l of inter.lights) {
+          l.r[0].material = l.r[1].material = nextState === 'red' ? rMat : redOff;
+          l.y[0].material = l.y[1].material = nextState === 'yellow' ? yMat : yelOff;
+          l.g[0].material = l.g[1].material = nextState === 'green' ? gMat : grnOff;
+          l.halo.material.color.setHex(nextState === 'red' ? 0xff3b30 : nextState === 'yellow' ? 0xffcc00 : 0x22e568);
+          l.halo.position.y = l.baseY + (nextState === 'red' ? 0.54 : nextState === 'yellow' ? 0 : -0.54);
+        }
+      }
+    }
+
+    // ---- 2. UPDATE LIVE AI CARS & FLASHING PARIS POLICE LIGHTBARS ----
+    for (const pb of this.policeLightBars) {
+      const flash = Math.sin(t * 14 + pb.phase) > 0;
+      pb.redGlow.material.opacity = flash ? 0.98 : 0.08;
+      pb.blueGlow.material.opacity = flash ? 0.08 : 0.98;
+    }
+
+    for (let i = 0; i < this.trafficVehicles.length; i++) {
+      const v = this.trafficVehicles[i];
+      let targetSpd = v.maxSpeed;
+
+      // Check upcoming Red / Yellow traffic light before crosswalk!
+      for (const inter of this.intersections) {
+        if (inter.state === 'green') continue;
+        const distAhead = (inter.z - v.z) * v.dirZ;
+        if (distAhead > 3.5 && distAhead < 19) {
+          targetSpd = distAhead < 7.5 ? 0 : Math.min(targetSpd, v.maxSpeed * ((distAhead - 6.5) / 12.5));
+        }
+      }
+      // Maintain safe following gap behind other cars in the same lane
+      for (let j = 0; j < this.trafficVehicles.length; j++) {
+        if (i === j) continue;
+        const other = this.trafficVehicles[j];
+        if (Math.abs(other.laneX - v.laneX) > 1.5 || other.dirZ !== v.dirZ) continue;
+        const gap = (other.z - v.z) * v.dirZ;
+        if (gap > 0 && gap < 14) {
+          targetSpd = gap < 8.5 ? 0 : Math.min(targetSpd, other.speed);
+        }
+      }
+
+      const accel = targetSpd < v.speed ? 14 : 6.5;
+      v.speed += (targetSpd - v.speed) * Math.min(1, accel * dt);
+      v.z += v.dirZ * v.speed * dt;
+      if (v.dirZ < 0 && v.z < 38) v.z = 444;
+      if (v.dirZ > 0 && v.z > 444) v.z = 38;
+      v.root.position.z = v.z;
+
+      // Spin all 4 real wheels smoothly proportional to speed
+      if (v.speed > 0.1 && Math.abs(v.z - this.camera.position.z) < 130) {
+        const spin = v.speed * dt * 2.1;
+        for (const w of v.wheels) w.rotation.x += spin;
+      }
+    }
+
+    // ---- 3. PLAYER / CAMERA / PAUSE-AND-EXPLAIN GUIDED TOUR MOVEMENT ----
     if (this.droneActive) {
       this.droneTime += dt;
-      const p = Math.min(1, this.droneTime / 24.0);
-      const z = THREE.MathUtils.lerp(66, -86, p);
-      const y = z > 14 ? THREE.MathUtils.lerp(12.5, 2.3, (66 - z) / 52) : 2.15 + Math.sin(p * Math.PI * 4) * 0.2;
-      const x = z > 14 ? Math.sin(p * Math.PI * 2) * 5.5 : Math.sin(p * Math.PI * 5) * 1.1;
+      const p = Math.min(1, this.droneTime / 28.0);
+      const z = THREE.MathUtils.lerp(405, -86, p);
+      const y = z > 18 ? THREE.MathUtils.lerp(24, 3.2, (405 - z) / 387) : 2.2 + Math.sin(p * Math.PI * 5) * 0.2;
+      const x = z > 20 ? Math.sin(p * Math.PI * 2.5) * 9.5 : Math.sin(p * Math.PI * 6) * 1.1;
       this.camera.position.set(x, y, z);
-      this._tmpLook.set(z > 20 ? -8 : 0, z > 20 ? 6.0 : 2.2, z - 14);
+      this._tmpLook.set(z > 40 ? -12 : 0, z > 40 ? 10 : 2.3, z - 24);
       this.camera.lookAt(this._tmpLook);
-      this.playerPos.set(0, 1.68, Math.max(-87, Math.min(64, z)));
+      this.playerPos.set(0, 1.68, Math.max(-87, Math.min(410, z)));
       if (p >= 1) this.stopDroneTour();
     } else if (!this.portalPaused) {
       let fwd = this.moveInput.forward, str = this.moveInput.strafe;
@@ -1641,7 +2414,24 @@ export class LouvreParisWorld3D {
       if (this.keys.KeyA || this.keys.ArrowLeft) str -= 1;
 
       let movedStep = 0;
-      if (this.autoFollow) {
+      if (this.cabRideActive) {
+        // Smooth scenic Champs-Élysées Express Boulevard Cruise toward Louvre!
+        const destZ = 18;
+        const rem = this.playerPos.z - destZ;
+        if (rem > 1.2) {
+          movedStep = Math.min(rem, 24.0 * dt);
+          this.playerPos.z -= movedStep;
+          this.playerPos.x += (0 - this.playerPos.x) * Math.min(1, 3 * dt);
+          if (!this.isLooking) {
+            this.targetYaw += (0 - this.targetYaw) * Math.min(1, 2.5 * dt);
+            this.targetPitch += (0.04 - this.targetPitch) * Math.min(1, 2.5 * dt);
+          }
+        } else {
+          this.stopBoulevardCabRide();
+          this.currentWaypointIdx = 4;
+          this.enterExplainState(4);
+        }
+      } else if (this.guidePhase === 'walking') {
         const wp = STORY_WAYPOINTS[this.currentWaypointIdx];
         const dx = wp.x - this.playerPos.x, dz = wp.z - this.playerPos.z, dist = Math.hypot(dx, dz);
         if (!this.isLooking) {
@@ -1649,19 +2439,27 @@ export class LouvreParisWorld3D {
           let diff = desiredYaw - this.targetYaw;
           while (diff > Math.PI) diff -= Math.PI * 2;
           while (diff < -Math.PI) diff += Math.PI * 2;
-          this.targetYaw += diff * (1 - Math.exp(-3.4 * dt));
-          this.targetPitch += (-0.01 - this.targetPitch) * (1 - Math.exp(-3.0 * dt));
+          this.targetYaw += diff * (1 - Math.exp(-3.6 * dt));
+          this.targetPitch += (0.02 - this.targetPitch) * (1 - Math.exp(-3.0 * dt));
         }
-        if (dist > 1.8) { movedStep = Math.min(dist, 5.4 * dt); this.playerPos.x += (dx / dist) * movedStep; this.playerPos.z += (dz / dist) * movedStep; }
-        else if (this.currentWaypointIdx < STORY_WAYPOINTS.length - 1) {
-          this.currentWaypointIdx++;
-          if (this.callbacks.onWaypointChange) this.callbacks.onWaypointChange(this.currentWaypointIdx, STORY_WAYPOINTS[this.currentWaypointIdx]);
-        } else this.setAutoFollow(false);
+        // Smart outdoor/indoor speed: brisk 14.5m/s along the 500m boulevard (or 22m/s fast), smooth 5.6m/s inside Louvre!
+        const outdoorSpd = this.cruiseFast ? 23.0 : 14.5;
+        const indoorSpd = this.cruiseFast ? 8.5 : 5.6;
+        const moveRate = this.playerPos.z > 24 ? outdoorSpd : indoorSpd;
+        if (dist > 2.2) {
+          movedStep = Math.min(dist, moveRate * dt);
+          this.playerPos.x += (dx / dist) * movedStep;
+          this.playerPos.z += (dz / dist) * movedStep;
+        } else {
+          // TRUE PAUSE-AND-EXPLAIN: STOP at the landmark, turn to player, and wait for user to read & click Next!
+          this.enterExplainState(this.currentWaypointIdx);
+        }
       } else {
         const mag = Math.hypot(fwd, str);
         if (mag > 0.05) {
           const normF = fwd / Math.max(1, mag), normS = str / Math.max(1, mag);
-          movedStep = 6.2 * dt;
+          const freeSpd = this.playerPos.z > 24 ? (this.cruiseFast ? 18.0 : 10.5) : (this.cruiseFast ? 8.0 : 6.2);
+          movedStep = freeSpd * dt;
           const sinY = Math.sin(this.playerYaw), cosY = Math.cos(this.playerYaw);
           this.playerPos.x += (-sinY * normF + cosY * normS) * movedStep;
           this.playerPos.z += (-cosY * normF - sinY * normS) * movedStep;
@@ -1669,9 +2467,9 @@ export class LouvreParisWorld3D {
       }
 
       if (movedStep > 0) {
-        this.walkBobPhase += movedStep * 2.2;
+        this.walkBobPhase += movedStep * (this.playerPos.z > 24 ? 1.15 : 2.1);
         this.footstepAccum += movedStep;
-        if (this.footstepAccum > 2.1) {
+        if (this.footstepAccum > (this.playerPos.z > 24 ? 3.2 : 2.1)) {
           this.footstepAccum = 0;
           if (this.callbacks.onFootstep) this.callbacks.onFootstep(this.playerPos.z < -6 ? 'wood' : 'stone');
         }
@@ -1679,17 +2477,16 @@ export class LouvreParisWorld3D {
       this.resolveCollisions(this.playerPos);
       this.playerYaw += (this.targetYaw - this.playerYaw) * damp;
       this.playerPitch += (this.targetPitch - this.playerPitch) * damp;
-      this.camera.position.set(this.playerPos.x, this.playerPos.y + Math.sin(this.walkBobPhase) * 0.026, this.playerPos.z);
+      this.camera.position.set(this.playerPos.x, this.playerPos.y + Math.sin(this.walkBobPhase) * 0.025, this.playerPos.z);
       this.camera.rotation.order = 'YXZ'; this.camera.rotation.y = this.playerYaw; this.camera.rotation.x = this.playerPitch;
     } else {
-      // Gentle cinematic idle camera framing while portal is open
       this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-      this.camera.rotation.order = 'YXZ'; this.camera.rotation.y = Math.sin(t * 0.25) * 0.04; this.camera.rotation.x = 0.02;
+      this.camera.rotation.order = 'YXZ'; this.camera.rotation.y = Math.sin(t * 0.25) * 0.04; this.camera.rotation.x = 0.03;
     }
 
     // Automatic Sliding Glass Doors of the Louvre Pyramid
     for (const d of this.pyramidDoors) {
-      const near = (Math.abs(this.playerPos.z - d.worldZ) < 8.5 && Math.abs(this.playerPos.x) < 4.5) || Math.abs(this.catPos.z - d.worldZ) < 8.0 || (this.droneActive && Math.abs(this.camera.position.z - d.worldZ) < 12);
+      const near = (Math.abs(this.playerPos.z - d.worldZ) < 9.0 && Math.abs(this.playerPos.x) < 4.5) || Math.abs(this.guidePos.z - d.worldZ) < 8.5 || (this.droneActive && Math.abs(this.camera.position.z - d.worldZ) < 14);
       d.openAmt += ((near ? 1 : 0) - d.openAmt) * (1 - Math.exp(-5.5 * dt));
       d.leftDoor.position.x = d.closedLeftX - d.openAmt * 1.55;
       d.rightDoor.position.x = d.closedRightX + d.openAmt * 1.55;
@@ -1703,7 +2500,7 @@ export class LouvreParisWorld3D {
     this.playerLantern.position.set(this.camera.position.x, 3.2, this.camera.position.z - 2.4);
     if (this.skyGroup) this.skyGroup.position.set(this.camera.position.x, 0, this.camera.position.z);
 
-    if (!this.autoFollow && !this.droneActive && !this.portalPaused) {
+    if (this.guidePhase === 'idle' && !this.droneActive && !this.portalPaused) {
       let bestIdx = this.currentWaypointIdx, bestD = Infinity;
       for (let i = 0; i < STORY_WAYPOINTS.length; i++) {
         const d = Math.abs(this.playerPos.z - STORY_WAYPOINTS[i].z);
@@ -1725,40 +2522,72 @@ export class LouvreParisWorld3D {
       if (this.callbacks.onProximityChange) this.callbacks.onProximityChange(closest);
     }
 
-    // 40-Bone Golden Persian Cat Guide
+    // ---- 4. UNIFIED DUAL 3D TOUR GUIDE (القطة بوبس OR أنس حبيب) ----
     const wp = STORY_WAYPOINTS[this.currentWaypointIdx];
-    const targetCatX = wp.catX, targetCatZ = Math.max(wp.catZ, this.playerPos.z - 7.5);
-    const cdx = targetCatX - this.catPos.x, cdz = targetCatZ - this.catPos.z, cDist = Math.hypot(cdx, cdz);
-    let catSpd = 0;
-    if (cDist > 0.3 && !this.portalPaused) {
-      const step = Math.min(cDist, Math.max(2.5, cDist * 1.4) * dt, 7.0 * dt);
-      this.catPos.x += (cdx / cDist) * step; this.catPos.z += (cdz / cDist) * step;
-      catSpd = step / Math.max(0.001, dt);
-      this.catStride += step * 4.4; this.catStepAccum += step;
-      if (this.catStepAccum > 0.56) { this.catStepAccum = 0; this.spawnPawPrint(this.catPos, this.catYaw); }
+    const targetGX = wp.guideX;
+    const targetGZ = this.guidePhase === 'explaining'
+      ? wp.guideZ
+      : Math.max(wp.guideZ, this.playerPos.z - 6.8);
+    const gdx = targetGX - this.guidePos.x, gdz = targetGZ - this.guidePos.z, gDist = Math.hypot(gdx, gdz);
+    let guideSpd = 0;
+    if (gDist > 0.35 && !this.portalPaused) {
+      const maxGSpd = this.playerPos.z > 24 ? (this.cruiseFast ? 24 : 15.5) : 7.5;
+      const step = Math.min(gDist, Math.max(2.8, gDist * 1.65) * dt, maxGSpd * dt);
+      this.guidePos.x += (gdx / gDist) * step;
+      this.guidePos.z += (gdz / gDist) * step;
+      guideSpd = step / Math.max(0.001, dt);
+      this.catStride += step * 3.8;
+      this.catStepAccum += step;
+      if (this.catStepAccum > 0.62) { this.catStepAccum = 0; this.spawnPawPrint(this.guidePos, this.guideYaw); }
     }
-    this.catRoot.position.copy(this.catPos);
-    if (this.catBeaconRing) { this.catBeaconRing.rotation.z = t * 1.1; this.catBeaconRing.scale.setScalar(1 + Math.sin(t * 3.2) * 0.07); }
+    this.guideRoot.position.copy(this.guidePos);
+    if (this.guideBeaconRing) {
+      this.guideBeaconRing.rotation.z = t * 1.1;
+      this.guideBeaconRing.scale.setScalar(1 + Math.sin(t * 3.2) * 0.07);
+      this.guideBeaconRing.material.color.setHex(this.activeGuideType === 'anas' ? 0x76d0ff : 0xffe08a);
+    }
 
-    const catMoving = catSpd > 0.22;
-    const desiredCatYaw = catMoving ? Math.atan2(cdx, cdz) : Math.atan2(this.playerPos.x - this.catPos.x, this.playerPos.z - this.catPos.z) + 0.58;
-    let cyDiff = desiredCatYaw - this.catYaw;
-    while (cyDiff > Math.PI) cyDiff -= Math.PI * 2; while (cyDiff < -Math.PI) cyDiff += Math.PI * 2;
-    this.catYaw += cyDiff * (1 - Math.exp(-6.2 * dt));
-    this.catRoot.rotation.y = this.catYaw;
+    const guideMoving = guideSpd > 0.3;
+    // When stopped / explaining, guide faces DIRECTLY toward the player so it feels like a genuine live tour!
+    const desiredGuideYaw = guideMoving
+      ? Math.atan2(gdx, gdz)
+      : Math.atan2(this.playerPos.x - this.guidePos.x, this.playerPos.z - this.guidePos.z) + (this.activeGuideType === 'bobs' && this.guidePhase !== 'explaining' ? 0.35 : 0);
+    let gyDiff = desiredGuideYaw - this.guideYaw;
+    while (gyDiff > Math.PI) gyDiff -= Math.PI * 2; while (gyDiff < -Math.PI) gyDiff += Math.PI * 2;
+    this.guideYaw += gyDiff * (1 - Math.exp(-6.2 * dt));
+    this.guideRoot.rotation.y = this.guideYaw;
 
+    // Update Anas Habib Mocap Walk / Idle crossfade
+    if (this.anasLoaded && this.activeGuideType === 'anas') {
+      this.anasMixer.update(dt);
+      const want = guideMoving ? 'walk' : 'idle';
+      if (want !== this.anasCurAnim && this.anasWalkAction && this.anasIdleAction) {
+        this.anasCurAnim = want;
+        if (want === 'walk') {
+          this.anasWalkAction.reset().fadeIn(0.22).play();
+          this.anasIdleAction.fadeOut(0.22);
+        } else {
+          this.anasIdleAction.reset().fadeIn(0.25).play();
+          this.anasWalkAction.fadeOut(0.25);
+        }
+      }
+    }
+
+    // Update Bobs Cat 40-bone animations
     this.catStateTimer += dt;
-    if (!catMoving) {
+    if (!guideMoving && this.guidePhase !== 'explaining') {
       if (this.catState !== 'guide' && this.catStateTimer > this.catStateDur) { this.catState = 'guide'; this.catStateTimer = 0; this.catStateDur = 9 + Math.random() * 5; }
       else if (this.catState === 'guide' && this.catStateTimer > this.catStateDur) { this.catState = Math.random() < 0.5 ? 'groom' : 'play'; this.catStateTimer = 0; this.catStateDur = 5.4; }
+    } else if (this.guidePhase === 'explaining') {
+      this.catState = 'guide';
     }
-    this.catYarn.visible = this.catState === 'play' && !catMoving;
+    this.catYarn.visible = this.activeGuideType === 'bobs' && this.catState === 'play' && !guideMoving;
     if (this.catYarn.visible) { this.catYarn.position.x = Math.sin(t * 3.0) * 0.28; this.catYarn.position.y = 0.13 + Math.abs(Math.sin(t * 4.8)) * 0.18; this.catYarn.rotation.z += dt * 3.8; }
 
-    if (this.catLoaded) {
+    if (this.catLoaded && this.activeGuideType === 'bobs') {
       if (this.catMixer) this.catMixer.update(dt);
       for (const name in this.catBoneInfo) { const info = this.catBoneInfo[name]; if (info.isStatic) info.bone.quaternion.copy(info.restQuat); }
-      const w = catMoving ? Math.min(1, catSpd / 2.2) : 0;
+      const w = guideMoving ? Math.min(1, guideSpd / 2.4) : 0;
       if (w > 0.05) {
         const s = this.catStride, fl = Math.sin(s), fr = Math.sin(s + Math.PI), hl = Math.sin(s + Math.PI * 0.92), hr = Math.sin(s - Math.PI * 0.08);
         this.applyWorldBoneRot('Wolf_Spine_02SHJnt_20', Math.sin(s) * 0.04 * w, 0, 0);
@@ -1787,15 +2616,17 @@ export class LouvreParisWorld3D {
         this.applyWorldBoneRot('Wolf_r_FrontLeg_KneeSHJnt_9', bat * 0.36, 0, 0);
         this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', 0.14, Math.sin(t * 3.0) * 0.18, 0);
         if (this.catTongue) this.catTongue.scale.setScalar(0.001);
-      } else if (this.catState === 'pet') {
-        this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', -0.1, Math.sin(t * 3.4) * 0.14, Math.sin(t * 3.4) * 0.08);
+      } else if (this.guidePhase === 'explaining') {
+        // Expressive explaining head-nods & attentive ear posture!
+        this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', -0.08 + Math.sin(t * 2.6) * 0.06, Math.sin(t * 1.4) * 0.1, 0);
+        this.applyWorldBoneRot('Wolf_Head_JawSHJnt_12', Math.max(0, Math.sin(t * 5.2)) * 0.045, 0, 0);
         if (this.catTongue) this.catTongue.scale.setScalar(0.001);
       } else {
-        this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', -0.04, -0.28 + Math.sin(t * 1.2) * 0.06, 0);
+        this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', -0.04, -0.16 + Math.sin(t * 1.2) * 0.06, 0);
         if (this.catTongue) this.catTongue.scale.setScalar(0.001);
       }
       ['Wolf_Tail_01_02SHJnt_37', 'Wolf_Tail_01_03SHJnt_36', 'Wolf_Tail_01_04SHJnt_35', 'Wolf_Tail_01_05SHJnt_34'].forEach((bn, i) => {
-        this.applyWorldBoneRot(bn, i === 0 ? -0.1 : -0.04, Math.sin(t * (catMoving ? 4.8 : 2.1) - i * 0.55) * (catMoving ? 0.16 : 0.12), 0);
+        this.applyWorldBoneRot(bn, i === 0 ? -0.1 : -0.04, Math.sin(t * (guideMoving ? 4.8 : 2.1) - i * 0.55) * (guideMoving ? 0.16 : 0.12), 0);
       });
     }
 
@@ -1803,9 +2634,9 @@ export class LouvreParisWorld3D {
       if (p.life > 0) { p.life -= dt * 0.35; p.mesh.material.opacity = Math.max(0, p.life * 0.82); if (p.life <= 0) p.mesh.visible = false; }
     }
 
-    // Distance-Culled Mocap Human Visitors (only skin/animate humans within 52m!)
+    // Distance-Culled Mocap Visitors & Police Officer
     for (const v of this.humanVisitors) {
-      const nearCam = Math.abs(this.camera.position.z - v.root.position.z) < 54;
+      const nearCam = Math.abs(this.camera.position.z - v.root.position.z) < 62;
       if (nearCam) v.mixer.update(dt);
       if (v.walking) {
         const span = Math.max(1, Math.abs(v.z1 - v.z0));
@@ -1818,55 +2649,56 @@ export class LouvreParisWorld3D {
       }
     }
 
-    // Animate 5 Hidden Collectible Golden Seals
     for (const s of this.hiddenSeals) {
-      if (!s.collected) {
-        s.mesh.rotation.y += dt * 1.4;
-        s.mesh.position.y = 1.35 + Math.sin(t * 2.2 + s.phase) * 0.12;
-      }
+      if (!s.collected) { s.mesh.rotation.y += dt * 1.4; s.mesh.position.y = 1.35 + Math.sin(t * 2.2 + s.phase) * 0.12; }
     }
 
-    // Animate 19 Birthday Sky Lanterns Rising Over Paris!
     for (let i = this.skyLanterns.length - 1; i >= 0; i--) {
-      const ln = this.skyLanterns[i];
-      ln.life += dt;
-      ln.mesh.position.y += ln.vy * dt;
-      ln.mesh.position.x = ln.baseX + Math.sin(t * 0.7 + ln.phase) * 1.2;
-      ln.mesh.rotation.y += dt * 0.4;
+      const ln = this.skyLanterns[i]; ln.life += dt; ln.mesh.position.y += ln.vy * dt;
+      ln.mesh.position.x = ln.baseX + Math.sin(t * 0.7 + ln.phase) * 1.2; ln.mesh.rotation.y += dt * 0.4;
       if (ln.life > ln.maxLife) { this.scene.remove(ln.mesh); this.skyLanterns.splice(i, 1); }
     }
 
-    // Animate Wishing Coins
     for (let i = this.flyingCoins.length - 1; i >= 0; i--) {
-      const fc = this.flyingCoins[i]; fc.t += dt * 1.15;
-      const p = Math.min(1, fc.t);
-      fc.mesh.position.lerpVectors(fc.p0, fc.p1, p);
-      fc.mesh.position.y += Math.sin(p * Math.PI) * 2.4;
+      const fc = this.flyingCoins[i]; fc.t += dt * 1.15; const p = Math.min(1, fc.t);
+      fc.mesh.position.lerpVectors(fc.p0, fc.p1, p); fc.mesh.position.y += Math.sin(p * Math.PI) * 2.4;
       fc.mesh.rotation.x += dt * 14; fc.mesh.rotation.y += dt * 9;
       if (fc.t >= 1) { this.scene.remove(fc.mesh); this.flyingCoins.splice(i, 1); }
     }
 
-    // Eiffel Champagne Sparkle Show Event + Clouds + Props + 3D Cake
+    // Eiffel Sparkle, Clouds, Rain / Petals / Leaves, Props, Cake
     if (this.sparkleShowTimer > 0) this.sparkleShowTimer = Math.max(0, this.sparkleShowTimer - dt);
     const sparkleBoost = this.sparkleShowTimer > 0;
     for (const cl of this.cloudSprites) { cl.ang += cl.speed * dt; cl.sprite.position.set(Math.cos(cl.ang) * cl.dist, cl.h, Math.sin(cl.ang) * cl.dist); }
-    if (this.eiffelBeacon) this.eiffelBeacon.scale.setScalar((sparkleBoost ? 8.2 : 5.8) + Math.sin(t * (sparkleBoost ? 7 : 3.5)) * 1.4);
+    if (this.eiffelBeacon) this.eiffelBeacon.scale.setScalar((sparkleBoost ? 13 : 9.5) + Math.sin(t * (sparkleBoost ? 7 : 3.5)) * 1.8);
     if (this.eiffelSearchlightRig) this.eiffelSearchlightRig.rotation.y = t * (sparkleBoost ? 1.1 : 0.55);
     for (const sp of this.eiffelSparkles) {
       const spd = sparkleBoost ? sp.speed * 2.6 : sp.speed;
       const baseOp = sparkleBoost ? 0.35 : (this.timeOfDay === 'day' ? 0.08 : 0.25);
       sp.sprite.material.opacity = baseOp + Math.max(0, Math.sin(t * spd + sp.phase)) * (sparkleBoost ? 0.65 : 0.6);
-      sp.sprite.scale.setScalar(sparkleBoost ? 1.85 : 1.15);
+      sp.sprite.scale.setScalar(sparkleBoost ? 2.4 : 1.5);
     }
 
     for (const fr of this.fountainRings) { const f = (t * 0.55 + fr.phase) % 1; fr.mesh.scale.setScalar(0.6 + f * 3.6); fr.mesh.material.opacity = (1 - f) * 0.48; }
     for (const fp of this.floatingProps) { fp.mesh.position.y = fp.baseY + Math.sin(t * fp.speed) * 0.09; fp.mesh.rotation.y += dt * 0.4; }
     for (const pc of this.parchments) pc.mesh.position.y = pc.baseY + Math.sin(t * 1.8 + pc.phase) * 0.07;
 
+    if (this.rainDrops && this.rainDrops.visible) {
+      this.rainDrops.position.set(this.camera.position.x, 0, this.camera.position.z);
+      const rPos = this.rainPositions;
+      const dropDy = 24 * dt;
+      for (let i = 0; i < rPos.length; i += 6) {
+        rPos[i + 1] -= dropDy; rPos[i + 4] -= dropDy;
+        if (rPos[i + 1] < 0.2) { rPos[i + 1] = 22; rPos[i + 4] = 21.45; }
+      }
+      this.rainDrops.geometry.attributes.position.needsUpdate = true;
+    }
+
     if (this.leafInst && this.leafInst.visible) {
+      const camZ = this.camera.position.z;
       for (let i = 0; i < this.fallingLeaves.length; i++) {
-        const lf = this.fallingLeaves[i]; lf.y -= lf.spd * dt; if (lf.y < 0.2) lf.y = 11;
-        this.leafDummy.position.set(lf.x + Math.sin(t + lf.ph) * 0.4, lf.y, lf.z);
+        const lf = this.fallingLeaves[i]; lf.y -= lf.spd * dt; if (lf.y < 0.2) lf.y = 14;
+        this.leafDummy.position.set(lf.x + Math.sin(t + lf.ph) * 0.45, lf.y, camZ + lf.z);
         this.leafDummy.rotation.set(t + lf.ph, t * 0.7, lf.ph);
         this.leafDummy.updateMatrix(); this.leafInst.setMatrixAt(i, this.leafDummy.matrix);
       }

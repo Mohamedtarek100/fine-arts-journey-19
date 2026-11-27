@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>رحلة يمنى — متحف اللوفر وباريس 3D | HEY</title>
-  <meta name="description" content="تجربة تفاعلية ثلاثية الأبعاد فائقة السلاسة في شوارع باريس بجانب برج إيفل وداخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
+  <title>رحلة يمنى — مدينة باريس ومتحف اللوفر 3D | HEY</title>
+  <meta name="description" content="جولة تفاعلية ثلاثية الأبعاد بطول 500 متر في شوارع باريس بجانب برج إيفل والمولات والعقارات والشرطة وحتى داخل متحف اللوفر للاحتفاء بعام يمنى التاسع عشر (5 ديسمبر)." />
   <meta name="theme-color" content="#0e0a07" />
 
   <!-- Strict OWASP CSP + Official Firebase Cloud Firestore Origins + Local GLB Blob Textures Only -->
@@ -21,10 +21,10 @@
     href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Cairo:wght@400;500;600;700&family=Cinzel:wght@500;600;700&display=swap"
     rel="stylesheet"
   />
-  <link rel="stylesheet" href="./louvre.css?v=25" />
+  <link rel="stylesheet" href="./louvre.css?v=26" />
 </head>
 <body class="portal-open">
-  <!-- Lightweight Gold HEY Curtain Preloader (fades out automatically on 3D ready) -->
+  <!-- Lightweight Gold HEY Curtain Preloader -->
   <div id="preloader" class="preloader" aria-live="polite">
     <div class="preloader-inner">
       <div class="hey-crest-lg" aria-hidden="true">
@@ -42,28 +42,28 @@
           <text x="50" y="60" text-anchor="middle" fill="url(#lgHeyPre)" font-family="Cinzel, Georgia, serif" font-size="25" font-weight="700" letter-spacing="3">HEY</text>
         </svg>
       </div>
-      <p class="eyebrow-ltr">MUSÉE DU LOUVRE • PARIS 3D EDITION</p>
-      <p class="preloader-label">جاري تهيئة شوارع باريس ومتحف اللوفر ثلاثي الأبعاد</p>
+      <p class="eyebrow-ltr">PARIS GRAND BOULEVARD • MUSÉE DU LOUVRE 3D</p>
+      <p class="preloader-label">جاري تهيئة مدينة باريس ومتحف اللوفر ثلاثي الأبعاد</p>
       <div class="preloader-bar"><span></span></div>
     </div>
   </div>
 
-  <!-- Fullscreen Silky 60FPS Paris & Louvre WebGL World -->
-  <canvas id="louvre-canvas" aria-label="عالم باريس ومتحف اللوفر ثلاثي الأبعاد"></canvas>
+  <!-- Fullscreen Silky 60FPS 600m Paris & Louvre WebGL World -->
+  <canvas id="louvre-canvas" aria-label="مدينة باريس ومتحف اللوفر ثلاثي الأبعاد"></canvas>
 
   <!-- Subtle Center Aim Reticle -->
   <div class="game-reticle" aria-hidden="true"><span></span></div>
 
-  <!-- Cinema Photo / Drone Active Floating Bar -->
+  <!-- Cinema Photo Studio / Drone / Cab Active Floating Bar -->
   <div id="cinema-exit-bar" class="cinema-exit-bar" aria-hidden="true">
-    <button id="cinema-snap-btn" class="btn-royal-gold compact" type="button">📸 التقاط وحفظ بطاقة اللوفر</button>
-    <button id="cinema-exit-btn" class="btn-royal-ghost" type="button">✕ العودة للتحكم الحر</button>
+    <button id="cinema-filter-btn" class="btn-royal-ghost" type="button">🎞️ فلتر: طبيعي</button>
+    <button id="cinema-snap-btn" class="btn-royal-gold compact" type="button">📸 حفظ بطاقة باريس</button>
+    <button id="cinema-exit-btn" class="btn-royal-ghost" type="button">✕ العودة للتحكم</button>
   </div>
 
-  <!-- ==================== 2-STEP VIP FAMILY RECEPTION PORTAL (PERSONAL LETTERS + CRESTS) ==================== -->
+  <!-- ==================== 2-STEP VIP FAMILY RECEPTION PORTAL ==================== -->
   <section id="louvre-portal" class="louvre-portal" role="dialog" aria-modal="true" aria-labelledby="lp-title">
     <div class="lp-shell" id="lp-shell">
-      <!-- Incoming Shared Gift Banner (?gift=...) -->
       <div class="incoming-gift-banner" id="incoming-gift-banner" aria-live="polite" aria-hidden="true">
         <span>💌</span>
         <span id="incoming-gift-text"></span>
@@ -97,7 +97,7 @@
 
         <div class="lp-actions">
           <button id="lp-continue-btn" class="btn-royal-gold" type="button">
-            <span>عرض رسالتك الخاصة ودخول المتحف ✦</span>
+            <span>عرض رسالتك الخاصة ودخول باريس واللوفر ✦</span>
           </button>
         </div>
         <p class="lp-credit">التصميم والتطوير بواسطة ENG / Mohamed Tarek • HEY Edition</p>
@@ -155,7 +155,7 @@
         </svg>
       </span>
       <div class="gt-brand-txt">
-        <strong>متحف اللوفر 3D</strong>
+        <strong>باريس واللوفر 3D</strong>
         <div class="gt-counters-row">
           <span id="discovery-counter">الكنوز: 0 / 7</span>
           <span class="gt-sep" aria-hidden="true">•</span>
@@ -166,47 +166,53 @@
 
     <div class="quest-hud-pill" id="quest-pill" aria-live="polite">
       <span class="q-dot"></span>
-      <span id="quest-label">🐾 اتبع القطة • 1 / 9 — شارع باريس وبرج إيفل</span>
+      <span id="quest-label">🐾 جولة بوبس • 1 / 12 — شارع الشانزليزيه وقوس النصر</span>
     </div>
 
     <div class="gt-actions">
       <button id="gt-visitor-btn" class="hud-pill" type="button" title="تغيير الاسم أو عرض رسالتك الشخصية">🎨 يمنى</button>
-      <button id="gt-time-btn" class="hud-pill" type="button" title="تبديل الإضاءة: غروب / نهار / ليل / أتيليه دافئ">🌇 غروب</button>
-      <button id="gt-zoom-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة تقريب تلسكوبية لتفاصيل اللوحات وبرج إيفل (مفتاح Z)">🔭 تقريب</button>
-      <button id="gt-uv-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة القيّم الفني السرية لكشف رسائل اللوحات المخفية">🔍 أسرار</button>
-      <button id="gt-map-btn" class="hud-pill gold-hl" type="button" title="خريطة التنقل السريع"><span class="lbl-full">🗺️ الخريطة</span><span class="lbl-short">🗺️ خريطة</span></button>
-      <button id="gt-tools-btn" class="hud-pill" type="button" title="أحداث متحف اللوفر والأدوات الاحترافية"><span class="lbl-full">🎪 الأحداث والأدوات</span><span class="lbl-short">🎪 الأحداث</span></button>
+      <button id="gt-time-btn" class="hud-pill" type="button" title="تبديل الإضاءة: غروب / نهار / ليل / أتيليه">🌇 غروب</button>
+      <button id="gt-zoom-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة تقريب تلسكوبية (مفتاح Z)">🔭 تقريب</button>
+      <button id="gt-uv-btn" class="hud-pill hide-xs" type="button" aria-pressed="false" title="عدسة الأسرار UV">🔍 أسرار</button>
+      <button id="gt-map-btn" class="hud-pill gold-hl" type="button" title="خريطة التنقل السريع (12 محطة)">
+        <span class="lbl-full">🗺️ الخريطة</span><span class="lbl-short">🗺️ خريطة</span>
+      </button>
+      <button id="gt-tools-btn" class="hud-pill" type="button" title="أحداث باريس والأدوات الاحترافية">
+        <span class="lbl-full">🎪 الأحداث والأدوات</span><span class="lbl-short">🎪 الأحداث</span>
+      </button>
     </div>
   </header>
 
-  <!-- ==================== LIVE INTERACTIVE LOUVRE MINI-MAP RADAR (DESKTOP) ==================== -->
-  <button id="minimap-widget" class="minimap-widget" type="button" title="رادار متحف اللوفر المباشر — اضغط لفتح خريطة التنقل السريع" aria-label="رادار متحف اللوفر المباشر">
-    <canvas id="louvre-minimap" width="112" height="156"></canvas>
-    <span class="minimap-caption">رادار اللوفر المباشر</span>
+  <!-- ==================== LIVE 525M PARIS & LOUVRE MINI-MAP RADAR + COMPASS (DESKTOP) ==================== -->
+  <button id="minimap-widget" class="minimap-widget" type="button" title="رادار باريس ومتحف اللوفر المباشر — اضغط لفتح خريطة الـ 12 محطة" aria-label="رادار باريس ومتحف اللوفر المباشر">
+    <canvas id="louvre-minimap" width="114" height="164"></canvas>
+    <span id="minimap-telemetry" class="minimap-caption">377 م للوفر • شمال</span>
   </button>
 
-  <!-- ==================== PRO LIVE EVENTS & TOOLS MENU ==================== -->
+  <!-- ==================== PRO LIVE EVENTS, WEATHER & TOOLS MENU ==================== -->
   <div id="pro-tools-tray" class="pro-tools-tray" aria-hidden="true">
     <div class="ptt-row">
-      <p class="ptt-group-title">🎪 أحداث باريس ومتحف اللوفر الحية</p>
+      <p class="ptt-group-title">🎪 أحداث وجولات باريس الحية (525 متر)</p>
+      <button id="gt-cab-btn" class="ptt-btn gold-hl" type="button">🏎️ جولة بوليفارد باريس السريعة حتى اللوفر</button>
       <button id="gt-lanterns-btn" class="ptt-btn gold-hl" type="button">🏮 إطلاق 19 فانوس أمنيات في سماء باريس</button>
       <button id="gt-sparkle-btn" class="ptt-btn gold-hl" type="button">✨ عرض أضواء برج إيفل المتلألئ</button>
       <button id="gt-fountain-btn" class="ptt-btn" type="button">🪙 إلقاء عملة أمنية في نافورة اللوفر</button>
-      <button id="gt-drone-btn" class="ptt-btn" type="button">🚁 جولة درون سينمائية فوق باريس واللوفر</button>
+      <button id="gt-drone-btn" class="ptt-btn" type="button">🚁 جولة درون سينمائية فوق مدينة باريس</button>
 
-      <p class="ptt-group-title">🎨 أدوات القيّم الفني والمرسم</p>
+      <p class="ptt-group-title">🌦️ الطقس وأدوات القيّم الفني</p>
+      <button id="gt-weather-btn" class="ptt-btn" type="button">☀️ طقس باريس: صحو (أوراق ذهبية)</button>
       <button id="gt-paint-wall-btn" class="ptt-btn" type="button">🎨 مرسم جدار اللوفر وتعليق لوحتك بالـ 3D</button>
       <button id="gt-uv-tray-btn" class="ptt-btn" type="button" aria-pressed="false">🔍 عدسة أسرار اللوحات (UV): متوقفة</button>
       <button id="gt-zoom-tray-btn" class="ptt-btn" type="button" aria-pressed="false">🔭 عدسة التقريب البصري: 1×</button>
       <button id="gt-voice-btn" class="ptt-btn" type="button" aria-pressed="false">🗣️ الدليل الصوتي العربي: متوقف</button>
       <button id="gt-audio-btn" class="ptt-btn" type="button" aria-pressed="false">🔇 موسيقى باريس: متوقفة</button>
       <button id="gt-quality-btn" class="ptt-btn" type="button">⚡ الأداء: سلس 60FPS (افتراضي)</button>
-      <button id="gt-cinema-btn" class="ptt-btn" type="button">📷 وضع التصوير وحفظ بطاقة تذكارية</button>
-      <button id="gt-welcome-btn" class="ptt-btn" type="button">🏛️ دليل تجربة متحف اللوفر</button>
+      <button id="gt-cinema-btn" class="ptt-btn" type="button">📷 استوديو التصوير والفلاتر السينمائية</button>
+      <button id="gt-welcome-btn" class="ptt-btn" type="button">🏛️ دليل تجربة باريس ومتحف اللوفر</button>
     </div>
   </div>
 
-  <!-- ==================== FLOATING INTERACTION PROMPT (TOP-CENTER) ==================== -->
+  <!-- ==================== FLOATING INTERACTION PROMPT ==================== -->
   <button id="proximity-prompt" class="proximity-prompt" type="button" aria-hidden="true">
     <span id="proximity-text">📜 اضغط لاستكشاف التحفة</span>
   </button>
@@ -222,63 +228,75 @@
     <span class="joystick-hint">اسحب للمشي • WASD</span>
   </div>
 
-  <!-- ==================== CAT GUIDE QUEST CARD (BOTTOM-RIGHT) ==================== -->
-  <aside id="cat-guide-card" class="cat-guide-card" aria-label="مرشدة الرحلة القطة الذهبية">
-    <button id="cat-reopen-btn" class="cat-reopen-btn" type="button">🐾 اتبع القطة</button>
+  <!-- ==================== TRUE PAUSE-AND-EXPLAIN GUIDED TOUR STORY CARD (BOTTOM-RIGHT) ==================== -->
+  <aside id="cat-guide-card" class="cat-guide-card" aria-label="مرشد الجولة السياحية التفاعلي">
+    <button id="cat-reopen-btn" class="cat-reopen-btn" type="button">🐾 القطة بوبس</button>
     <div id="cat-guide-body" class="cat-guide-body">
       <div class="cg-head">
-        <strong>🐾 اتبع القطة الذهبية</strong>
+        <div class="cg-identity">
+          <img id="guide-avatar-img" class="guide-avatar-img" src="./assets/guides/bobs-cat.jpg" alt="القطة بوبس" />
+          <div class="cg-id-text">
+            <strong id="guide-card-name">🐾 القطة بوبس</strong>
+            <span id="guide-stop-badge" class="guide-stop-badge">محطة الشرح 1 / 12 • الشانزليزيه</span>
+          </div>
+        </div>
         <button id="cat-fold-btn" class="cg-close" type="button" aria-label="طي">−</button>
       </div>
+
       <p id="cat-guide-text">
-        أهلاً بك في شوارع باريس بجانب برج إيفل. اتبع خطواتي نحو ساحة نابليون وهرم متحف اللوفر لاكتشاف الكنوز والأختام المخفية.
+        أهلاً بك في قلب باريس، أنا القطة بوبس وسأرافقك خطوة بخطوة في جولة حقيقية بطول أكثر من 500 متر حتى قاعات متحف اللوفر.
       </p>
+      <p id="guide-funfact" class="guide-funfact"></p>
+
       <div class="cg-controls">
-        <button id="auto-follow-btn" class="cg-btn primary-follow" type="button" aria-pressed="false">🐾 اتبع القطة تلقائياً</button>
-        <button id="next-stop-btn" class="cg-btn" type="button">المحطة التالية ←</button>
-        <button id="cat-lick-btn" class="cg-btn" type="button">👅 الحسي كفك</button>
-        <button id="cat-play-btn" class="cg-btn" type="button">🧶 العبي</button>
+        <button id="tour-main-btn" class="cg-btn primary-follow" type="button">🐾 ابدأ الجولة مع بوبس</button>
+        <button id="tour-slide-btn" class="cg-btn" type="button">📖 تكملة الشرح (2/2)</button>
+        <button id="tour-explore-btn" class="cg-btn explore-hl panel-hidden" type="button">📜 استكشف المحطة</button>
+        <button id="tour-speed-btn" class="cg-btn" type="button" aria-pressed="false">⚡ سريع</button>
+        <button id="cat-lick-btn" class="cg-btn bobs-only" type="button">👅 الحسي كفك</button>
+        <button id="cat-play-btn" class="cg-btn bobs-only" type="button">🧶 العبي</button>
+        <button id="anas-wave-btn" class="cg-btn anas-only panel-hidden" type="button">👋 تحية أنس</button>
       </div>
     </div>
   </aside>
 
-  <!-- ==================== MODAL 0: LOUVRE MUSEUM EXPERIENCE CURATOR GUIDE ==================== -->
+  <!-- ==================== MODAL 0: PARIS & LOUVRE GUIDED TOUR BRIEFING ==================== -->
   <div id="welcome-museum-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="museum-modal-card welcome-theme">
       <button class="mm-close" data-close-modal="welcome-museum-modal" type="button" aria-label="إغلاق">✕</button>
-      <span class="mm-kicker">🏛️ دليل تجربة متحف اللوفر وباريس التفاعلية 3D • HEY</span>
-      <h2 id="wm-title">دليل جولة متحف اللوفر لرحلة يمنى ✨</h2>
+      <span class="mm-kicker">🏛️ دليل جولة باريس الكبرى ومتحف اللوفر 3D • HEY</span>
+      <h2 id="wm-title">دليل جولة باريس ومتحف اللوفر لرحلة يمنى ✨</h2>
       <p id="wm-personal-lead" class="mm-sub"></p>
 
       <div class="wm-story-grid">
         <article class="wm-step-card">
-          <span>🏮</span>
-          <h3>أحداث باريس الحية وبوابة الهرم</h3>
-          <p>أطلق <strong>19 فانوس أمنيات</strong> في سماء باريس، وشاهد <strong>عرض أضواء برج إيفل المتلألئ</strong>، وعند الاقتراب من الهرم الزجاجي تنفتح أبوابه تلقائياً.</p>
+          <span>🚦</span>
+          <h3>مدينة باريس الحية بطول 500 متر</h3>
+          <p>تبدأ رحلتك من <strong>الشانزليزيه وقوس النصر</strong> مروراً بـ <strong>جاليري باريس مول</strong> والشقق والعقارات وقسم <strong>شرطة باريس</strong> مع سيارات حقيقية وإشارات مرور تعمل وإطلالة مستمرة على <strong>برج إيفل</strong>.</p>
         </article>
         <article class="wm-step-card">
-          <span>🏅</span>
-          <h3>تحدي الأختام الخمسة والمرسم الحي</h3>
-          <p>ابحث عن <strong>5 أختام ذهبية مخفية</strong> في الساحة والقاعات، وتوقف عند الحامل الذهبي لترسم وتعلّق لوحتك مباشرة على جدار اللوفر بالـ 3D.</p>
+          <span id="wm-guide-icon">🐾</span>
+          <h3 id="wm-guide-heading">جولة شرح حقيقية مع القطة بوبس</h3>
+          <p id="wm-guide-desc">في كل محطة تتوقف <strong>القطة بوبس</strong> أمامك وتلتفت إليك لتشرح لك القصة والمعلومة وتنتظرك حتى تستكشف المكان وتضغط «أكمل الجولة للمحطة التالية».</p>
         </article>
         <article class="wm-step-card">
-          <span>🔍</span>
-          <h3>عدسة الأسرار، التقريب وصندوق العيلة</h3>
-          <p>استخدم <strong>عدسة الأسرار (UV)</strong> لقراءة الرسائل الخفية، و<strong>عدسة التقريب 2×</strong> لتفاصيل التحف، وافتح <strong>صندوق رسائل العائلة السحابي</strong>.</p>
+          <span>🌦️</span>
+          <h3>طقس حي، فوانيس، مرسم و 5 أختام</h3>
+          <p>جرّب <strong>مطر باريس</strong> أو <strong>جولة البوليفارد السريعة</strong> أو إطلاق <strong>19 فانوساً</strong>، وابحث عن <strong>5 أختام ذهبية مخفية</strong> وعلّق لوحتك بالـ 3D على جدار اللوفر.</p>
         </article>
         <article class="wm-step-card">
           <span>🎂</span>
-          <h3>الرسالة الأهم وتورتة العام الـ 19</h3>
-          <p>اقرأ <strong>الرسالة الأهم</strong> لمرحلة تالتة ثانوي، واختم تحت القبة الملكية بإطفاء شمعتي 1 و 9 وإطلاق الألعاب النارية.</p>
+          <h3>صندوق العيلة، الرسالة الأهم والتورتة</h3>
+          <p>اعبر أبواب الهرم الأوتوماتيكية إلى تحف يمنى الأربع، وافتح <strong>صندوق العائلة السحابي</strong> و<strong>الرسالة الأهم</strong>، واختم تحت القبة الملكية بتورتة الـ 19.</p>
         </article>
       </div>
 
       <div class="wm-actions">
         <button id="wm-start-auto-btn" class="btn-royal-gold" type="button">
-          <span>🐾 ابدأ الجولة تلقائياً خلف القطة الآن ✦</span>
+          <span id="wm-start-auto-label">🐾 ابدأ الجولة السياحية مع القطة بوبس الآن ✦</span>
         </button>
-        <button id="wm-start-drone-btn" class="btn-royal-ghost" type="button">
-          <span>🚁 جولة درون سينمائية</span>
+        <button id="wm-start-cab-btn" class="btn-royal-ghost" type="button">
+          <span>🏎️ جولة البوليفارد السريعة</span>
         </button>
         <button id="wm-start-free-btn" class="btn-royal-ghost" type="button">
           <span>🚶 أتجول بحرية بنفسي</span>
@@ -348,7 +366,7 @@
 
       <div class="mm-footer-row">
         <button class="btn-royal-gold compact" data-close-modal="artifact-modal" type="button">
-          <span>متابعة الجولة خلف القطة 🐾 ←</span>
+          <span>العودة لمتابعة الجولة السياحية ←</span>
         </button>
       </div>
     </div>
@@ -438,13 +456,13 @@
     </div>
   </div>
 
-  <!-- ==================== MODAL 6: FAST-TRAVEL LOUVRE & PARIS MAP ==================== -->
+  <!-- ==================== MODAL 6: FAST-TRAVEL 12-STATION PARIS & LOUVRE MAP ==================== -->
   <div id="map-modal" class="museum-modal" role="dialog" aria-modal="true" aria-hidden="true">
     <div class="museum-modal-card map-theme">
       <button class="mm-close" data-close-modal="map-modal" type="button" aria-label="إغلاق">✕</button>
-      <span class="mm-kicker">خريطة القصة التفاعلية • تنقل فوري + تقدّم الاستكشاف</span>
+      <span class="mm-kicker">خريطة مدينة باريس ومتحف اللوفر (525 متر • 12 محطة)</span>
       <h2>🗺️ محطات باريس ومتحف اللوفر الـ 3D</h2>
-      <p id="map-progress-summary" class="mm-sub">اكتشفت 0 من 7 كنوز و 0 من 5 أختام ذهبية داخل متحف اللوفر — اضغط على أي محطة للتنقل الفوري.</p>
+      <p id="map-progress-summary" class="mm-sub">اكتشفت 0 من 7 كنوز و 0 من 5 أختام ذهبية — اضغط على أي محطة للتنقل الفوري وبدء الشرح.</p>
       <div id="map-stations-grid" class="map-stations-grid"></div>
       <div class="map-seals-strip" id="map-seals-strip"></div>
       <div class="map-footer-bar">
@@ -453,6 +471,6 @@
     </div>
   </div>
 
-  <script type="module" src="./louvre-app.js?v=25"></script>
+  <script type="module" src="./louvre-app.js?v=26"></script>
 </body>
 </html>
