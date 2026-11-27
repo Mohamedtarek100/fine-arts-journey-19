@@ -1,13 +1,10 @@
 /**
  * =========================================================================
- *  600M PARIS METROPOLIS & MUSÉE DU LOUVRE STORY CONTROLLER (louvre-app.js v26)
- *  - True Pause-and-Explain Guided Tour Engine w/ Multi-Slide Storytelling
- *  - Dual Custom 3D Tour Guides:
- *      * القطة بوبس (default for all family guests)
- *      * أنس حبيب (exclusive custom 3D guide when يوسف is selected)
- *  - Live 525m Paris Mini-Map Radar + Compass + Distance-to-Louvre Meter
- *  - Live Paris Weather (Clear / Rain / Petals), Boulevard Express Cruise,
- *    Photo Studio Filters, 19 Sky Lanterns, Eiffel Sparkle Show & 5 Seals
+ *  PHOTOREALISTIC PARIS & MUSÉE DU LOUVRE STORY CONTROLLER (louvre-app.js v28)
+ *  - Calm, Comfortable Pause-and-Explain Guided Tour w/ Multi-Slide Storytelling
+ *  - BMW Passenger Guide Sync: القطة بوبس / أنس حبيب rides beside you & steps out
+ *    synced to the closest landmark (including Musée du Louvre arrival)
+ *  - Auto-Cinematic Desktop Quality Sync (2K Shadows + HDR Bloom + SMAA)
  *  - Strict OWASP Zero-HTML-Injection • Zero Exclamation Marks in UI Copy
  *  - Designed & Developed by ENG / Mohamed Tarek • HEY Edition
  * =========================================================================
@@ -15,7 +12,7 @@
 
 import { SITE_CONFIG } from './config.js?v=24';
 import { FamilyCloudVault } from './firebase-sync.js?v=24';
-import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=27';
+import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=28';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const WALL_PAINTING_KEY = 'yomna_louvre_wall_painting_v1';
@@ -425,15 +422,28 @@ function bootstrap() {
     onLoadProgress(pct, labelAr) {
       if (preloaderLabel && labelAr) preloaderLabel.textContent = `${labelAr} (${pct}%)`;
     },
-    onBmwDriveChange(active) {
+    onBmwDriveChange(active, stopIdx, wp) {
       document.body.classList.toggle('bmw-driving', active);
       if (bmwDriveBar) bmwDriveBar.setAttribute('aria-hidden', String(!active));
-      showToast(
-        active
-          ? '🚗 أنت تقود سيارة BMW الآن في شوارع باريس. استخدم WASD أو عصا التحكم، واضغط «انزل من BMW» وقتما تشاء.'
-          : '🚶 نزلت من سيارة BMW بأمان على بوليفارد الشانزليزيه.',
-        4800
-      );
+      const anas = isAnasActive();
+      const guideAr = anas ? 'أنس حبيب' : 'القطة بوبس';
+      if (active) {
+        showToast(
+          `🚗 ${anas ? 'ركب أنس حبيب' : 'ركبت القطة بوبس'} بجانبك داخل سيارة BMW. قُد بهدوء نحو متحف اللوفر عبر WASD أو عصا التحكم، واضغط «انزل من BMW» عند الوصول.`,
+          5400
+        );
+      } else {
+        const targetIdx = typeof stopIdx === 'number' ? stopIdx : world.currentWaypointIdx;
+        const stop = wp || STORY_WAYPOINTS[targetIdx] || STORY_WAYPOINTS[0];
+        currentSlideIdx = 0;
+        catGuideCard.classList.remove('folded');
+        renderTourStoryCard(targetIdx, 'explaining');
+        refreshMapActive(targetIdx);
+        showToast(
+          `🚶 نزلت مع ${guideAr} بأمان عند «${stop.labelAr}» ويمكنك الآن استكمال الجولة سيراً على الأقدام.`,
+          5200
+        );
+      }
     },
     onWaypointChange(idx, wp) {
       currentSlideIdx = 0;
@@ -1004,12 +1014,13 @@ function bootstrap() {
   });
 
   const qualityModes = [
-    { id: 'smooth60', label: '⚡ الأداء: سلس 60FPS (افتراضي)' },
+    { id: 'ultra', label: '💎 الأداء: سينمائي HDR + ظلال 2K' },
+    { id: 'smooth60', label: '⚡ الأداء: سلس 60FPS' },
     { id: 'eco', label: '🚀 الأداء: خفيف جداً للأجهزة الاقتصادية' },
-    { id: 'ultra', label: '💎 الأداء: فائق HDR Bloom' },
   ];
-  let qIdx = 0;
+  let qIdx = Math.max(0, qualityModes.findIndex((m) => m.id === world.qualityMode));
   const qualityBtn = document.getElementById('gt-quality-btn');
+  if (qualityBtn) qualityBtn.textContent = qualityModes[qIdx].label;
   qualityBtn.addEventListener('click', () => {
     qIdx = (qIdx + 1) % qualityModes.length; world.setQualityMode(qualityModes[qIdx].id);
     qualityBtn.textContent = qualityModes[qIdx].label; showToast(`تم تفعيل ${qualityModes[qIdx].label}`, 2600);

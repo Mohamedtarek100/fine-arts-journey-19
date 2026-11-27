@@ -1,9 +1,9 @@
 /**
  * =========================================================================
- *  CENTRALIZED AAA 3D ASSET MANIFEST (src/assets/assetManifest.js)
- *  - Every path is strictly verified local inside ./assets/ & ./vendor/
- *  - Zero unverified external CDN links -> 100% CSP-safe & offline-resilient
- *  - Supports seamless drop-in Draco-compressed GLB upgrades (see ASSETS_CHECKLIST.md)
+ *  CENTRALIZED AAA 3D ASSET MANIFEST (src/assets/assetManifest.js v28)
+ *  - ZERO low-poly cartoon/Kenney placeholders
+ *  - Real Poly Haven 1K Photographic HDRI Skyboxes (Sunset, Day & Night)
+ *  - Real Poly Haven Scanned PBR Surfaces + Draco-Compressed BMW Vision GLB
  *  - Designed & Developed by ENG / Mohamed Tarek • HEY Edition
  * =========================================================================
  */
@@ -13,6 +13,7 @@ export const ASSET_MANIFEST = {
 
   hdris: {
     sunset: './assets/hdri/paris_sunset_1k.hdr',
+    day: './assets/hdri/paris_day_1k.hdr',
     night: './assets/hdri/paris_night_1k.hdr',
   },
 
@@ -45,30 +46,12 @@ export const ASSET_MANIFEST = {
 
   models: {
     heroBmw: './assets/models/cars/bmw_hero.glb',
-    traffic: {
-      police: './assets/models/cars/police.glb',
-      taxi: './assets/models/cars/taxi.glb',
-      sedan: './assets/models/cars/sedan.glb',
-      sports: './assets/models/cars/sedan-sports.glb',
-      suv: './assets/models/cars/suv.glb',
-    },
     characters: {
       bobsCat: './assets/models/persian-cat.glb',
       bobsCoat: './assets/models/persian-cat-coat.jpg',
       humanAvatar: './assets/models/visitor-rpm.glb',
       humanWalkAnim: './assets/models/anim-walk.glb',
       humanIdleAnim: './assets/models/anim-idle.glb',
-    },
-    city: {
-      buildingA: './assets/models/city/building-type-a.glb',
-      buildingB: './assets/models/city/building-type-b.glb',
-      buildingC: './assets/models/city/building-type-c.glb',
-      buildingD: './assets/models/city/building-type-d.glb',
-      buildingE: './assets/models/city/building-type-e.glb',
-      buildingF: './assets/models/city/building-type-f.glb',
-      treeLarge: './assets/models/city/tree-large.glb',
-      treeSmall: './assets/models/city/tree-small.glb',
-      planter: './assets/models/city/planter.glb',
     },
   },
 };

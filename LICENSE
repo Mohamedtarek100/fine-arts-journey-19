@@ -7,8 +7,7 @@ is protected under copyright law.
 
 ---
 Third-Party Open-Licensed 3D & PBR Asset Attributions:
-- Base 3D Feline Skeletal Mesh ("Bicolor Cat") by kenchoo (https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf), licensed under Creative Commons Attribution 4.0 International (CC BY 4.0). Adapted and reskinned into a golden-apricot Persian cat.
-- Photogrammetry PBR Textures & 1K HDRI Maps (herringbone_parquet, cobblestone_floor_08, marble_01, sandstone_blocks_05, asphalt_03, venice_sunset_1k.hdr, blaubeuren_night_1k.hdr) from Poly Haven (https://polyhaven.com), dedicated to the Public Domain under CC0 1.0.
+- Base 3D Feline Skeletal Mesh ("Bicolor Cat") by kenchoo (https://sketchfab.com/3d-models/bicolor-cat-e623a618ca344a8393d7ba4d63ec23cf), licensed under Creative Commons Attribution 4.0 International (CC BY 4.0). Adapted and reskinned into a golden-apricot Persian cat ("Bobs").
+- Photogrammetry PBR Textures & 1K HDRI Environment Maps (herringbone_parquet, cobblestone_floor_08, marble_01, sandstone_blocks_05, asphalt_03, venice_sunset_1k.hdr, kloofendal_48d_partly_cloudy_puresky_1k.hdr, blaubeuren_night_1k.hdr) from Poly Haven (https://polyhaven.com), dedicated to the Public Domain under CC0 1.0.
 - 3D Civilian Visitor Avatar (readyplayer.me.glb) from the official Three.js repository (https://github.com/mrdoob/three.js, MIT License) and Locomotion/Idle Motion-Capture Clips from Ready Player Me Animation Library (https://github.com/readyplayerme/animation-library, MIT License).
-- 3D City Vehicles & Modular City Architecture/Trees (police.glb, taxi.glb, sedan.glb, sedan-sports.glb, suv.glb, building-type-a..f.glb, tree-large/small.glb, planter.glb) from Kenney Car Kit & City Kit (https://kenney.nl), dedicated to the Public Domain under CC0 1.0.
 - Hero Drivable BMW 3D GLB (Draco-compressed) sourced from open-source Three.js showcase (`AboyLuYixiong/BMWProduct-show`).
