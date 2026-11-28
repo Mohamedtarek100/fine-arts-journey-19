@@ -44,14 +44,17 @@ export class AssetManager {
   }
 
   loadPBRSet(setDef, repX, repY, aniso = 4) {
+    const clampedAniso = Math.min(4, Math.max(1, aniso));
     const prep = (url, isColor) => {
       if (!url) return null;
       const tex = this.texLoader.load(url);
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(repX, repY);
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
       if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = aniso;
+      tex.anisotropy = clampedAniso;
       return tex;
     };
     return {
@@ -79,7 +82,7 @@ export class AssetManager {
   }
 
   async loadHDRI(url, labelAr = 'تهيئة إضاءة السماء الواقعية HDRI') {
-    if (this.hdriCache.has(url)) return this.hdriCache.get(url);
+    if (this.hdriCache.has(url)) return this.hdriCache.get(url).envTex;
     this.totalTracked++;
     try {
       const hdrTex = await this.rgbeLoader.loadAsync(url);

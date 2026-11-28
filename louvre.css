@@ -1,8 +1,8 @@
 /* =========================================================================
-   PHOTOREALISTIC PARIS HAUSSMANN & MUSÉE DU LOUVRE 3D — SERENE HUD (v28)
-   - Zero GPU blur lag over WebGL canvas
-   - Calm, comfortable Pause-and-Explain Story Card w/ Live Guide Portraits
-   - Live 525m Paris Radar + Compass + BMW Cockpit + Zero Mobile Clipping
+   الرحلة — PHOTOREALISTIC PARIS & LOUVRE 3D + NATIVE PWA + ACCESS GATE (v29)
+   - iOS/Android safe-area insets + zero pull-to-refresh / tap highlight
+   - Heavily animated colorful Parisian Aurora Access Gate («الرحلة»)
+   - Calm, comfortable Pause-and-Explain Story Card + Zero Mobile Clipping
    ========================================================================= */
 
 :root {
@@ -17,19 +17,26 @@
   --font-display: 'Amiri', Georgia, serif;
   --font-body: 'Cairo', system-ui, sans-serif;
   --font-en: 'Cinzel', Georgia, serif;
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #0d0907;
+  overscroll-behavior: none;
+  background: #0b0f19;
   color: var(--ivory);
   font-family: var(--font-body);
   touch-action: none;
   user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 /* ==================== LIGHTWEIGHT GOLD HEY CURTAIN PRELOADER ==================== */
@@ -117,7 +124,215 @@ body.bmw-driving .bmw-drive-bar { display: flex; }
   background: rgba(232, 194, 104, 0.22); border-color: var(--gold-100); transform: translateY(-1px);
 }
 
-/* ==================== 2-STEP RECEPTION PORTAL ==================== */
+/* ==================== PRIVATE ANIMATED ACCESS CODE GATE («الرحلة») ==================== */
+.access-gate {
+  position: fixed; inset: 0; z-index: 280;
+  display: flex; align-items: center; justify-content: center;
+  padding: calc(14px + var(--sat)) calc(14px + var(--sar)) calc(14px + var(--sab)) calc(14px + var(--sal));
+  overflow-y: auto;
+  background: #0b1026;
+  transition: opacity 0.65s ease, visibility 0.65s ease;
+}
+.access-gate.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.gate-aurora {
+  position: fixed; inset: -30%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(245, 199, 107, 0.34) 0%, transparent 44%),
+    radial-gradient(circle at 82% 22%, rgba(200, 75, 107, 0.42) 0%, transparent 46%),
+    radial-gradient(circle at 52% 84%, rgba(59, 29, 94, 0.72) 0%, transparent 56%),
+    radial-gradient(circle at 76% 74%, rgba(245, 199, 107, 0.24) 0%, transparent 42%),
+    linear-gradient(135deg, #0b1026 0%, #241342 36%, #56204e 68%, #15102b 100%);
+  background-size: 160% 160%;
+  animation: auroraDrift 14s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+@keyframes auroraDrift {
+  0% { transform: translate3d(-2%, -1.5%, 0) scale(1); }
+  50% { transform: translate3d(2.5%, 2%, 0) scale(1.06); }
+  100% { transform: translate3d(-1.5%, 2.5%, 0) scale(1.03); }
+}
+
+.gate-particles-canvas {
+  position: fixed; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;
+}
+
+/* Gilded Parisian Curtain Doors */
+.gate-curtain {
+  position: fixed; top: 0; bottom: 0; width: 50.5%; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, rgba(11, 16, 38, 0.62), rgba(42, 18, 66, 0.48), rgba(11, 16, 38, 0.72));
+  transition: transform 0.92s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.8s ease;
+  will-change: transform;
+}
+.gate-curtain-left { left: 0; border-left: none; border-right: 1.5px solid rgba(245, 199, 107, 0.28); }
+.gate-curtain-right { right: 0; border-right: none; border-left: 1.5px solid rgba(245, 199, 107, 0.28); }
+.access-gate.unlocking .gate-curtain-left { transform: translate3d(-105%, 0, 0); opacity: 0.2; }
+.access-gate.unlocking .gate-curtain-right { transform: translate3d(105%, 0, 0); opacity: 0.2; }
+
+.gate-welcome-flash {
+  position: fixed; inset: 0; z-index: 6; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 24px; text-align: center;
+  opacity: 0; transform: scale(0.88);
+  transition: opacity 0.42s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.gate-welcome-flash.show { opacity: 1; transform: scale(1); }
+.gwf-sparkles { font-size: 1.45rem; color: #ffe39b; letter-spacing: 0.3em; text-shadow: 0 0 22px rgba(245, 199, 107, 0.9); }
+#gate-welcome-text {
+  font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700;
+  background: linear-gradient(120deg, #fff6d6 0%, #f5c76b 45%, #ff9eb5 75%, #fff6d6 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 8px 28px rgba(0, 0, 0, 0.65));
+}
+#gate-welcome-sub { font-size: 0.92rem; color: #f6e7c7; font-weight: 600; }
+
+/* Frosted Glassmorphism Card w/ Animated Rotating Iridescent Gold-Violet Border */
+.gate-card-wrap {
+  position: relative; z-index: 4; width: min(100%, 428px); margin: auto;
+  padding: 2px; border-radius: 30px; overflow: hidden;
+  box-shadow: 0 30px 90px rgba(4, 6, 18, 0.78), 0 0 46px rgba(200, 75, 107, 0.22);
+  transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.access-gate.unlocking .gate-card-wrap { opacity: 0; transform: scale(0.9) translateY(-14px); pointer-events: none; }
+.gate-card-wrap::before {
+  content: ''; position: absolute; inset: -55%; z-index: 0;
+  background: conic-gradient(from 0deg, #f5c76b, #c84b6b, #7b46c4, #59c8ff, #f5c76b);
+  animation: borderOrbit 6.5s linear infinite;
+}
+.gate-card-wrap.shake { animation: gateShake 0.48s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.gate-card-wrap.error-glow::before { background: conic-gradient(from 0deg, #ff4f64, #ff8674, #c82546, #ff4f64); }
+@keyframes borderOrbit { to { transform: rotate(360deg); } }
+@keyframes gateShake {
+  10%, 90% { transform: translate3d(-4px, 0, 0); }
+  20%, 80% { transform: translate3d(7px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-9px, 0, 0); }
+  40%, 60% { transform: translate3d(9px, 0, 0); }
+}
+
+.gate-card {
+  position: relative; z-index: 1; border-radius: 28px;
+  padding: clamp(18px, 3vw, 26px) clamp(18px, 3.2vw, 26px) 18px;
+  background: linear-gradient(165deg, rgba(16, 18, 40, 0.88), rgba(24, 14, 38, 0.92) 55%, rgba(13, 14, 28, 0.94));
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  text-align: center;
+}
+
+.gate-crest { width: 52px; height: 52px; margin: 0 auto 4px; }
+.gate-crest svg { width: 100%; height: 100%; filter: drop-shadow(0 0 14px rgba(245, 199, 107, 0.45)); }
+
+.gate-title-ar {
+  font-family: var(--font-display);
+  font-size: clamp(2.45rem, 6.2vw, 3.35rem);
+  font-weight: 700; line-height: 1.12; margin-bottom: 4px;
+  background: linear-gradient(105deg, #d89f3c 0%, #fff6d6 24%, #f5c76b 48%, #ffd1dc 66%, #fff8de 82%, #c98f2d 100%);
+  background-size: 240% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: goldShimmer 4.2s linear infinite;
+  filter: drop-shadow(0 6px 20px rgba(245, 199, 107, 0.34));
+}
+@keyframes goldShimmer {
+  0% { background-position: 120% 50%; }
+  100% { background-position: -120% 50%; }
+}
+
+.gate-subtitle-ar { font-size: 0.8rem; color: rgba(247, 232, 202, 0.86); letter-spacing: 0.02em; margin-bottom: 12px; }
+.gate-instruction { font-size: 0.82rem; font-weight: 600; color: #f6dfaa; margin-bottom: 11px; }
+
+/* 4 Glowing PIN Digit Boxes */
+.pin-boxes { display: flex; justify-content: center; gap: 11px; margin-bottom: 10px; }
+.pin-box {
+  width: 56px; height: 62px; border-radius: 16px;
+  display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(245, 199, 107, 0.34);
+  box-shadow: inset 0 0 16px rgba(11, 16, 38, 0.55);
+  font-family: var(--font-en); font-size: 1.65rem; font-weight: 700;
+  color: rgba(245, 199, 107, 0.32);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease, color 0.22s ease;
+}
+.pin-box.active-cursor {
+  border-color: #f5c76b;
+  box-shadow: 0 0 20px rgba(245, 199, 107, 0.36), inset 0 0 14px rgba(245, 199, 107, 0.14);
+}
+.pin-box.filled {
+  background: linear-gradient(160deg, rgba(245, 199, 107, 0.22), rgba(200, 75, 107, 0.2));
+  border-color: #ffe7a8; color: #fff7dc;
+  transform: scale(1.06);
+  box-shadow: 0 0 22px rgba(245, 199, 107, 0.45);
+}
+.pin-box.error-pulse {
+  border-color: #ff5d73; background: rgba(255, 79, 100, 0.22); color: #ffd4da;
+  box-shadow: 0 0 22px rgba(255, 79, 100, 0.55);
+}
+.pin-box.success-glow {
+  border-color: #6df2b0; background: linear-gradient(145deg, rgba(64, 214, 146, 0.35), rgba(245, 199, 107, 0.32));
+  color: #eafff4; transform: scale(1.1);
+  box-shadow: 0 0 28px rgba(109, 242, 176, 0.65);
+}
+
+.gate-status-msg {
+  min-height: 22px; font-size: 0.78rem; font-weight: 600; margin-bottom: 10px;
+  color: #ff9eb0; transition: opacity 0.25s ease;
+}
+.gate-status-msg.ok { color: #8af5c0; }
+
+/* Sleek Animated Touch Numeric Keypad */
+.gate-keypad {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  max-width: 286px; margin: 0 auto 13px;
+}
+.kp-key {
+  position: relative; overflow: hidden; height: 48px; border-radius: 14px;
+  border: 1px solid rgba(245, 199, 107, 0.28);
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.08), rgba(245, 199, 107, 0.04));
+  color: #fff6e0; font-family: var(--font-en); font-size: 1.24rem; font-weight: 700;
+  cursor: pointer; touch-action: manipulation;
+  transition: transform 0.14s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+.kp-key:hover {
+  border-color: rgba(245, 199, 107, 0.72);
+  background: linear-gradient(160deg, rgba(245, 199, 107, 0.2), rgba(200, 75, 107, 0.14));
+  box-shadow: 0 6px 18px rgba(245, 199, 107, 0.2);
+}
+.kp-key:active, .kp-key.pressed {
+  transform: scale(0.92);
+  background: linear-gradient(145deg, rgba(245, 199, 107, 0.42), rgba(200, 75, 107, 0.34));
+  border-color: #fff3cc;
+  box-shadow: 0 0 20px rgba(245, 199, 107, 0.55);
+}
+.kp-key.kp-util {
+  font-family: var(--font-body); font-size: 1.02rem; color: #f6d48a;
+  background: rgba(200, 75, 107, 0.12); border-color: rgba(200, 75, 107, 0.36);
+}
+
+.btn-gate-enter {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  width: min(100%, 286px); padding: 11px 22px; margin-bottom: 10px; border-radius: 999px;
+  border: 1px solid #fff3cf;
+  background: linear-gradient(120deg, #c98d2e 0%, #f5c76b 45%, #e57a8f 78%, #d7a344 100%);
+  background-size: 200% 100%;
+  color: #170e07; font-family: var(--font-body); font-size: 0.94rem; font-weight: 700;
+  cursor: pointer; box-shadow: 0 12px 32px rgba(245, 199, 107, 0.34);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-position 0.35s ease;
+}
+.btn-gate-enter:hover { transform: translateY(-2px); background-position: 100% 50%; box-shadow: 0 16px 38px rgba(245, 199, 107, 0.5); }
+.gate-credit { font-size: 0.69rem; color: rgba(238, 210, 138, 0.72); font-weight: 600; }
+
+/* iOS 2-Step Install Modal */
+.ios-install-theme { max-width: 520px; }
+.ios-steps-list { display: flex; flex-direction: column; gap: 10px; text-align: right; margin: 14px 0 18px; }
+.ios-step-item {
+  display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 16px;
+  background: rgba(255, 245, 224, 0.05); border: 1px solid rgba(238, 210, 138, 0.32);
+}
+.ios-step-num {
+  width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
+  background: linear-gradient(135deg, #c7983e, #eed28a); color: #191108; font-weight: 700; font-size: 0.88rem;
+}
+.ios-step-item strong { display: block; color: var(--gold-100); font-size: 0.9rem; margin-bottom: 3px; }
+.ios-step-item p { font-size: 0.78rem; color: var(--ivory-muted); line-height: 1.62; }
+
+/* ==================== PERSONALIZED RECEPTION PORTAL (UNLOCKED LETTER) ==================== */
 .louvre-portal {
   position: fixed; inset: 0; z-index: 200; display: flex; align-items: center; justify-content: center;
   padding: 14px;
@@ -211,9 +426,10 @@ body.bmw-driving .bmw-drive-bar { display: flex; }
 .lp-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 10px; }
 .lp-credit { font-size: 0.74rem; color: var(--gold-300); font-weight: 600; }
 
-/* ==================== TOP GAME HUD BAR ==================== */
+/* ==================== TOP GAME HUD BAR (SAFE-AREA AWARE) ==================== */
 .game-topbar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 60; padding: 10px 14px;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  padding: calc(10px + var(--sat)) calc(14px + var(--sar)) 10px calc(14px + var(--sal));
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   background: linear-gradient(180deg, rgba(14, 10, 7, 0.9) 0%, rgba(14, 10, 7, 0) 100%);
   pointer-events: none;
@@ -305,7 +521,7 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 .louvre-toast.show { opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); }
 
 /* ==================== JOYSTICK & TRUE GUIDED TOUR STORY CARD ==================== */
-.joystick-zone { position: fixed; left: 18px; bottom: 18px; z-index: 62; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.joystick-zone { position: fixed; left: calc(18px + var(--sal)); bottom: calc(18px + var(--sab)); z-index: 62; display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .joystick-base {
   width: 96px; height: 96px; border-radius: 50%; background: rgba(18, 13, 9, 0.72);
   border: 1.5px solid rgba(238, 210, 138, 0.45); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.52);
@@ -318,7 +534,7 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
 }
 .joystick-hint { font-size: 0.64rem; color: var(--gold-200); background: rgba(16, 11, 8, 0.82); padding: 2px 10px; border-radius: 999px; }
 
-.cat-guide-card { position: fixed; right: 18px; bottom: 18px; z-index: 63; max-width: 368px; transition: opacity 0.35s ease, transform 0.35s ease; }
+.cat-guide-card { position: fixed; right: calc(18px + var(--sar)); bottom: calc(18px + var(--sab)); z-index: 63; max-width: 368px; transition: opacity 0.35s ease, transform 0.35s ease; }
 .cat-reopen-btn {
   display: none; padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(238, 210, 138, 0.55);
   background: rgba(17, 13, 10, 0.92); color: var(--gold-100); font-family: var(--font-body); font-size: 0.82rem; font-weight: 700; cursor: pointer;
@@ -488,12 +704,12 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
   .lp-roles-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .wm-story-grid, .art-modal-grid, .vm-inbox-grid, .mm-pillars, .map-stations-grid { grid-template-columns: 1fr; }
 
-  .joystick-zone { left: 10px; bottom: 12px; }
+  .joystick-zone { left: calc(10px + var(--sal)); bottom: calc(12px + var(--sab)); }
   .joystick-base { width: 82px; height: 82px; }
   .joystick-knob { width: 35px; height: 35px; }
   .joystick-hint { display: none; }
 
-  .cat-guide-card { right: 10px; bottom: 12px; max-width: calc(100vw - 108px); }
+  .cat-guide-card { right: calc(10px + var(--sar)); bottom: calc(12px + var(--sab)); max-width: calc(100vw - 108px); }
   .cat-guide-body { padding: 8px 10px; }
   .guide-avatar-img { width: 32px; height: 32px; }
   .cg-id-text strong { font-size: 0.84rem; }
@@ -501,4 +717,9 @@ body.portal-open .cat-guide-card { opacity: 0; pointer-events: none; }
   #cat-guide-text { font-size: 0.69rem; line-height: 1.48; margin-bottom: 5px; }
   .guide-funfact { display: none; }
   .cg-btn { padding: 4px 7.5px; font-size: 0.61rem; }
+
+  .gate-card { padding: 16px 14px 14px; }
+  .gate-crest { width: 44px; height: 44px; }
+  .pin-box { width: 50px; height: 54px; font-size: 1.45rem; }
+  .kp-key { height: 44px; font-size: 1.15rem; }
 }

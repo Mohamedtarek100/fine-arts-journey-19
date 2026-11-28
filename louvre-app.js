@@ -12,10 +12,59 @@
 
 import { SITE_CONFIG } from './config.js?v=24';
 import { FamilyCloudVault } from './firebase-sync.js?v=24';
-import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=282';
+import { LouvreParisWorld3D, STORY_WAYPOINTS, HIDDEN_SEALS_DATA } from './louvre-world.js?v=29';
 
 const VAULT_STORAGE_KEY = 'yomna_family_vault_xix_v1';
 const WALL_PAINTING_KEY = 'yomna_louvre_wall_painting_v1';
+const SESSION_GATE_KEY = 'yomna_al_rehla_session_v1';
+const GATE_SALT = 'HEY::AL-REHLA::PARIS-LOUVRE::2026::V29';
+
+// Salted SHA-256 + deterministic fallback digests (ZERO plain-text PINs stored in source!)
+const AUTHORIZED_DIGESTS = [
+  { roleId: 'essam', sha: 'f0a61281956172139c02ae01615a1ff32a0027b73971c67275dc2ccb66f293c6', fb: '19c35fc6df6d80' },
+  { roleId: 'yomna', sha: '90466ee8a211dd85799e1ac6759e01bcb9d6520400960d2881ae05656aa40dfe', fb: '0a9d20b4141b08' },
+  { roleId: 'heba', sha: 'e934bcbe9c7d7e22649d573a1616b007c8a51c5d8d40ffed058410f142c0d3c7', fb: '1cedc2f2012c73' },
+  { roleId: 'youssef', sha: '37de87a3903560aabd18a9ac9768fccbb7694f4befcdceac58fe6569db2d1298', fb: '0196cea6ea6070' },
+  { roleId: 'islam', sha: 'fccdcaef68e1ee1dbba627e211e81065a82ceb59445b2f85c62e8e1448eaae37', fb: '0f1fe2d00647cc' },
+  { roleId: 'salwa', sha: 'a86248e02bcc8817a2f574c77add6774b278d4766341c42073f7fa58f389828c', fb: '19f1329b2c6c5f' },
+  { roleId: 'mohamed', sha: 'e24ed1e61a8372422eff07e65a84ccc451a21184ac3fb201ba41e9a930bd8b4e', fb: '14e6f74d7b519d' },
+  { roleId: 'nada', sha: 'c8c6ccb0b35a41e8ca166c248a58b3bb4dee3239e52c9adb59287166475f917e', fb: '18cb59f3f732bd' },
+];
+
+function fallbackPinHash(str) {
+  let h1 = 0xdeadbeef ^ str.length, h2 = 0x41c6ce57 ^ str.length;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16).padStart(14, '0');
+}
+
+async function verifyAccessPin(pin4) {
+  if (!/^\d{4}$/.test(pin4)) return null;
+  const payload = `${GATE_SALT}::${pin4}`;
+  if (window.crypto && window.crypto.subtle && typeof TextEncoder !== 'undefined') {
+    try {
+      const buf = await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(payload));
+      const hex = Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
+      const match = AUTHORIZED_DIGESTS.find((d) => d.sha === hex);
+      return match ? match.roleId : null;
+    } catch { /* fallback below */ }
+  }
+  const fb = fallbackPinHash(payload);
+  const match = AUTHORIZED_DIGESTS.find((d) => d.fb === fb);
+  return match ? match.roleId : null;
+}
+
+// Register Subpath-Safe PWA Service Worker (./sw.js)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+  });
+}
 const ALLOWED_SENDERS = new Set(SITE_CONFIG.reception.roles.filter((r) => !r.isHonoree).map((r) => r.id));
 const TRACKED_DISCOVERIES = ['fountain', 'childhood', 'easel', 'passion', 'thanaweya', 'fine-arts', 'vault'];
 
@@ -151,6 +200,27 @@ class LouvreAudio {
       this.ensure();
       this.tone(415, 0.28, 0.2, 'sawtooth');
       this.tone(523, 0.28, 0.18, 'sawtooth');
+    } catch { /* ignore */ }
+  }
+  pinTap(step = 0) {
+    try {
+      this.ensure();
+      const notes = [523.25, 587.33, 659.25, 783.99];
+      this.tone(notes[step % notes.length], 0.24, 0.18, 'sine');
+    } catch { /* ignore */ }
+  }
+  pinError() {
+    try {
+      this.ensure();
+      this.tone(220, 0.22, 0.18, 'triangle');
+      setTimeout(() => this.tone(174.61, 0.34, 0.2, 'triangle'), 120);
+    } catch { /* ignore */ }
+  }
+  pinUnlock(isHonoree = false) {
+    try {
+      this.ensure();
+      const seq = isHonoree ? [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98] : [523.25, 659.25, 783.99, 1046.5];
+      seq.forEach((f, i) => setTimeout(() => this.tone(f, 1.4, 0.22, 'sine'), i * 75));
     } catch { /* ignore */ }
   }
   meow() {
@@ -510,6 +580,9 @@ function bootstrap() {
     },
     onInteract(id) { handleInteract(id); },
   });
+
+  // Expose live GPU/FPS benchmark telemetry hook
+  window.__PARIS_PERF__ = () => world.getPerfStats();
 
   // ==================== LIVE 525M PARIS & LOUVRE MINI-MAP RADAR + COMPASS ====================
   const miniCanvas = document.getElementById('louvre-minimap');
@@ -1128,13 +1201,163 @@ function bootstrap() {
   function refreshMapActive(activeIdx) { mapBtns.forEach((b, i) => b.classList.toggle('active', i === activeIdx)); }
   document.getElementById('gt-map-btn').addEventListener('click', () => openModal('map-modal'));
 
-  // ==================== 2-STEP RECEPTION PORTAL + AUTOMATIC GUIDE SWAP FOR يوسف ====================
+  // ==================== PWA INSTALL BUTTON (ANDROID NATIVE PROMPT + IOS 2-STEP GUIDE) ====================
+  const installBtn = document.getElementById('gt-install-btn');
+  let deferredInstallPrompt = null;
+  const isStandalonePwa = () =>
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  const isIosDevice = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  if (installBtn && isStandalonePwa()) installBtn.classList.add('panel-hidden');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if (installBtn && !isStandalonePwa()) installBtn.classList.remove('panel-hidden');
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    if (installBtn) installBtn.classList.add('panel-hidden');
+    showToast('📲 تم تثبيت تطبيق «رحلة يمنى» بنجاح على جهازك.', 4800);
+  });
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        try { await deferredInstallPrompt.userChoice; } catch { /* ignore */ }
+        deferredInstallPrompt = null;
+      } else if (isIosDevice()) {
+        openModal('ios-install-modal');
+      } else {
+        openModal('ios-install-modal');
+      }
+    });
+  }
+
+  // ==================== PRIVATE ANIMATED ACCESS CODE GATE («الرحلة») + DIRECT PERSONAL ROUTING ====================
+  const accessGate = document.getElementById('access-gate');
+  const gateCardWrap = document.getElementById('gate-card-wrap');
+  const gateStatusMsg = document.getElementById('gate-status-msg');
+  const gateWelcomeFlash = document.getElementById('gate-welcome-flash');
+  const gateWelcomeText = document.getElementById('gate-welcome-text');
+  const gateWelcomeSub = document.getElementById('gate-welcome-sub');
+  const pinBoxes = Array.from(document.querySelectorAll('#pin-boxes .pin-box'));
+  const gateCanvas = document.getElementById('gate-particles-canvas');
+  const gctx = gateCanvas ? gateCanvas.getContext('2d') : null;
+
   const portal = document.getElementById('louvre-portal');
   const shell = document.getElementById('lp-shell');
-  const stepSelect = document.getElementById('portal-step-select');
-  const stepLetter = document.getElementById('portal-step-letter');
-  document.getElementById('lp-title').textContent = SITE_CONFIG.reception.titleAr;
-  document.getElementById('lp-subtitle-ar').textContent = SITE_CONFIG.reception.subtitleAr;
+
+  let enteredPin = '';
+  let gateBusy = false;
+  let gateUnlocked = false;
+  let gateParticleRaf = 0;
+
+  // GPU-friendly 60FPS bokeh & confetti celebration canvas (runs ONLY while gate is visible!)
+  const bokehOrbs = [];
+  const confettiBursts = [];
+  const resizeGateCanvas = () => {
+    if (!gateCanvas) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    gateCanvas.width = Math.max(1, Math.floor(window.innerWidth * dpr));
+    gateCanvas.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+    if (gctx) gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  resizeGateCanvas();
+  window.addEventListener('resize', resizeGateCanvas, { passive: true });
+
+  const bokehColors = ['rgba(245,199,107,0.42)', 'rgba(255,168,196,0.34)', 'rgba(164,124,255,0.34)', 'rgba(255,242,202,0.45)'];
+  for (let i = 0; i < 34; i++) {
+    bokehOrbs.push({
+      x: Math.random() * window.innerWidth,
+      y: Math.random() * window.innerHeight,
+      r: 3 + Math.random() * 14,
+      vx: (Math.random() - 0.5) * 0.35,
+      vy: -(0.18 + Math.random() * 0.45),
+      ph: Math.random() * Math.PI * 2,
+      color: bokehColors[i % bokehColors.length],
+    });
+  }
+
+  const spawnUnlockCelebration = (isHonoree = false) => {
+    const cx = window.innerWidth * 0.5, cy = window.innerHeight * 0.48;
+    const count = isHonoree ? 120 : 64;
+    const pal = isHonoree
+      ? ['#fff6d6', '#f5c76b', '#ffd86b', '#ff9eb5', '#9df5c8', '#ffffff']
+      : ['#fff4ce', '#f5c76b', '#e588a2', '#8ee0ff', '#9bf2c0'];
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = (isHonoree ? 3.2 : 2.4) + Math.random() * (isHonoree ? 7.4 : 5.4);
+      confettiBursts.push({
+        x: cx, y: cy,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - (isHonoree ? 2.6 : 1.5),
+        size: 3 + Math.random() * 5.5,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.24,
+        life: 1.0,
+        decay: 0.011 + Math.random() * 0.01,
+        color: pal[i % pal.length],
+        star: isHonoree && i % 3 === 0,
+      });
+    }
+  };
+
+  const tickGateParticles = () => {
+    if (!gctx || accessGate.classList.contains('hidden')) { gateParticleRaf = 0; return; }
+    const W = window.innerWidth, H = window.innerHeight;
+    gctx.clearRect(0, 0, W, H);
+    const now = performance.now() * 0.001;
+
+    for (let i = 0; i < bokehOrbs.length; i++) {
+      const b = bokehOrbs[i];
+      b.x += b.vx + Math.sin(now * 0.7 + b.ph) * 0.22;
+      b.y += b.vy;
+      if (b.y < -20) { b.y = H + 20; b.x = Math.random() * W; }
+      if (b.x < -20) b.x = W + 20;
+      if (b.x > W + 20) b.x = -20;
+      const alpha = 0.55 + Math.sin(now * 1.4 + b.ph) * 0.35;
+      gctx.globalAlpha = alpha;
+      gctx.fillStyle = b.color;
+      gctx.beginPath();
+      gctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+      gctx.fill();
+    }
+
+    for (let i = confettiBursts.length - 1; i >= 0; i--) {
+      const p = confettiBursts[i];
+      p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.vx *= 0.99; p.rot += p.vRot; p.life -= p.decay;
+      if (p.life <= 0) { confettiBursts.splice(i, 1); continue; }
+      gctx.save();
+      gctx.globalAlpha = Math.max(0, p.life);
+      gctx.translate(p.x, p.y);
+      gctx.rotate(p.rot);
+      gctx.fillStyle = p.color;
+      if (p.star) {
+        gctx.beginPath();
+        gctx.arc(0, 0, p.size * 0.72, 0, Math.PI * 2);
+        gctx.fill();
+      } else {
+        gctx.fillRect(-p.size * 0.6, -p.size * 0.35, p.size * 1.2, p.size * 0.7);
+      }
+      gctx.restore();
+    }
+    gctx.globalAlpha = 1;
+    gateParticleRaf = requestAnimationFrame(tickGateParticles);
+  };
+  const startGateParticles = () => { if (!gateParticleRaf) gateParticleRaf = requestAnimationFrame(tickGateParticles); };
+  startGateParticles();
+
+  const populatePersonalLetter = (r) => {
+    const crestHost = document.getElementById('letter-crest-icon');
+    crestHost.replaceChildren(createRoleCrestSvg(r.icon));
+    document.getElementById('letter-role-pill').textContent = r.badgeAr;
+    document.getElementById('letter-tag-en').textContent = r.tagEn;
+    document.getElementById('letter-title-ar').textContent = r.letterTitleAr;
+    document.getElementById('letter-lead-ar').textContent = r.letterLeadAr;
+    document.getElementById('letter-body-ar').textContent = r.letterBodyAr;
+    document.getElementById('lp-enter-btn-ar').textContent = r.enterBtnAr || 'افتح بوابة باريس ومتحف اللوفر 3D ←';
+  };
 
   const syncRoleAndGuide = (r) => {
     activeRole = r;
@@ -1148,45 +1371,172 @@ function bootstrap() {
     renderTourStoryCard(world.currentWaypointIdx);
   };
 
-  const populatePersonalLetter = (r) => {
-    const crestHost = document.getElementById('letter-crest-icon');
-    crestHost.replaceChildren(createRoleCrestSvg(r.icon));
-    document.getElementById('letter-role-pill').textContent = r.badgeAr;
-    document.getElementById('letter-tag-en').textContent = r.tagEn;
-    document.getElementById('letter-title-ar').textContent = r.letterTitleAr;
-    document.getElementById('letter-lead-ar').textContent = r.letterLeadAr;
-    document.getElementById('letter-body-ar').textContent = r.letterBodyAr;
-    document.getElementById('lp-enter-btn-ar').textContent = r.enterBtnAr || 'افتح بوابة باريس ومتحف اللوفر 3D ←';
+  const renderPinBoxes = (state = 'normal') => {
+    pinBoxes.forEach((box, idx) => {
+      box.classList.remove('filled', 'active-cursor', 'error-pulse', 'success-glow');
+      const sp = box.querySelector('span');
+      if (idx < enteredPin.length) {
+        if (sp) sp.textContent = '✦';
+        box.classList.add('filled');
+      } else {
+        if (sp) sp.textContent = '•';
+        if (idx === enteredPin.length && state === 'normal') box.classList.add('active-cursor');
+      }
+      if (state === 'error') box.classList.add('error-pulse');
+    });
+  };
+  renderPinBoxes();
+
+  const openUnlockedLetter = (r) => {
+    gateUnlocked = true;
+    syncRoleAndGuide(r);
+    accessGate.classList.add('hidden');
+    accessGate.setAttribute('aria-hidden', 'true');
+    accessGate.classList.remove('unlocking');
+    gateWelcomeFlash.classList.remove('show');
+    gateWelcomeFlash.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('gate-locked');
+    portal.classList.remove('hidden');
+    portal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('portal-open');
+    world.setPortalPaused(true);
   };
 
-  const rolesGrid = document.getElementById('lp-roles-grid');
-  const roleBtns = roles.map((r, idx) => {
-    const b = el('button', `lp-role-btn${r.isHonoree ? ' honoree' : ''}${idx === 0 ? ' selected' : ''}`);
-    b.type = 'button'; b.style.setProperty('--role-accent', r.accentHex || '#e8c268');
-    const crest = el('div', 'role-crest-circle'); crest.appendChild(createRoleCrestSvg(r.icon));
-    const txtWrap = el('div', 'role-txt-wrap'); txtWrap.append(el('strong', '', r.nameAr), el('span', '', ` (${r.relationAr})`));
-    b.append(crest, txtWrap, el('small', '', r.tagEn));
-    b.addEventListener('click', () => {
-      roleBtns.forEach((btn, i) => btn.classList.toggle('selected', i === idx));
-      syncRoleAndGuide(r);
+  const lockAccessGate = () => {
+    try { window.sessionStorage.removeItem(SESSION_GATE_KEY); } catch { /* ignore */ }
+    gateUnlocked = false;
+    gateBusy = false;
+    enteredPin = '';
+    shownWelcomeOnce = false;
+    closeAllModals();
+    toolsTray.classList.remove('open'); toolsTray.setAttribute('aria-hidden', 'true');
+    world.setPortalPaused(true);
+    world.pauseGuidedTour();
+    world.stopDroneTour();
+    world.stopBoulevardCabRide();
+    if (world.drivingBmw) world.exitBmwDrive();
+    portal.classList.add('hidden'); portal.setAttribute('aria-hidden', 'true');
+    document.body.classList.add('portal-open', 'gate-locked');
+    gateStatusMsg.textContent = ''; gateStatusMsg.classList.remove('ok');
+    gateCardWrap.classList.remove('shake', 'error-glow');
+    accessGate.classList.remove('hidden', 'unlocking');
+    accessGate.setAttribute('aria-hidden', 'false');
+    gateWelcomeFlash.classList.remove('show'); gateWelcomeFlash.setAttribute('aria-hidden', 'true');
+    renderPinBoxes('normal');
+    startGateParticles();
+  };
+
+  const submitPin = async () => {
+    if (gateBusy || enteredPin.length < 4) {
+      if (!gateBusy && enteredPin.length < 4) {
+        gateStatusMsg.textContent = 'يرجى إدخال الأرقام الأربعة كاملة';
+        gateStatusMsg.classList.remove('ok');
+      }
+      return;
+    }
+    gateBusy = true;
+    const roleId = await verifyAccessPin(enteredPin);
+    const matchedRole = roleId ? roles.find((r) => r.id === roleId) : null;
+
+    if (!matchedRole) {
+      audio.pinError();
+      gateStatusMsg.textContent = 'الكود غير صحيح — هذا الموقع مخصص لعائلة الرحلة فقط';
+      gateStatusMsg.classList.remove('ok');
+      gateCardWrap.classList.remove('shake');
+      void gateCardWrap.offsetWidth;
+      gateCardWrap.classList.add('shake', 'error-glow');
+      renderPinBoxes('error');
+      window.setTimeout(() => {
+        enteredPin = '';
+        gateCardWrap.classList.remove('shake', 'error-glow');
+        renderPinBoxes('normal');
+        gateBusy = false;
+      }, 650);
+      return;
+    }
+
+    // Valid code -> choreographed emerald/gold sequence + confetti burst + gilded Parisian curtain opening!
+    try { window.sessionStorage.setItem(SESSION_GATE_KEY, JSON.stringify({ roleId: matchedRole.id })); } catch { /* ignore */ }
+    audio.pinUnlock(Boolean(matchedRole.isHonoree));
+    gateStatusMsg.textContent = `تم التحقق بنجاح — مرحباً يا ${matchedRole.nameAr} ✨`;
+    gateStatusMsg.classList.add('ok');
+
+    pinBoxes.forEach((box, i) => {
+      window.setTimeout(() => box.classList.add('success-glow'), i * 75);
     });
-    return b;
-  });
-  rolesGrid.replaceChildren(...roleBtns);
-  syncRoleAndGuide(activeRole);
 
-  document.getElementById('lp-continue-btn').addEventListener('click', () => {
-    populatePersonalLetter(activeRole);
-    stepSelect.classList.remove('active'); stepLetter.classList.add('active'); stepLetter.setAttribute('aria-hidden', 'false');
-    audio.chime();
+    window.setTimeout(() => {
+      spawnUnlockCelebration(Boolean(matchedRole.isHonoree));
+      if (matchedRole.isHonoree) {
+        window.setTimeout(() => spawnUnlockCelebration(true), 260);
+      }
+      gateWelcomeText.textContent = matchedRole.isHonoree
+        ? `أهلاً بكِ يا ${matchedRole.nameAr} ✨`
+        : `أهلاً بك يا ${matchedRole.nameAr} ✨`;
+      gateWelcomeSub.textContent = matchedRole.isHonoree
+        ? 'كل عامٍ وأنتِ متألقة في عامكِ الـ 19 — جاري فتح بوابتكِ الخاصة ✦'
+        : 'جاري فتح رسالتك الخاصة وبوابة باريس ومتحف اللوفر ✦';
+      gateWelcomeFlash.classList.add('show');
+      gateWelcomeFlash.setAttribute('aria-hidden', 'false');
+      accessGate.classList.add('unlocking');
+    }, 340);
+
+    window.setTimeout(() => {
+      openUnlockedLetter(matchedRole);
+      gateBusy = false;
+    }, matchedRole.isHonoree ? 1420 : 1180);
+  };
+
+  const appendPinDigit = (d) => {
+    if (gateBusy || gateUnlocked || enteredPin.length >= 4) return;
+    enteredPin += d;
+    audio.pinTap(enteredPin.length - 1);
+    gateStatusMsg.textContent = '';
+    renderPinBoxes('normal');
+    if (enteredPin.length === 4) window.setTimeout(submitPin, 120);
+  };
+
+  const backspacePin = () => {
+    if (gateBusy || gateUnlocked || !enteredPin.length) return;
+    enteredPin = enteredPin.slice(0, -1);
+    gateStatusMsg.textContent = '';
+    renderPinBoxes('normal');
+  };
+
+  const clearPin = () => {
+    if (gateBusy || gateUnlocked) return;
+    enteredPin = '';
+    gateStatusMsg.textContent = '';
+    renderPinBoxes('normal');
+  };
+
+  document.querySelectorAll('.gate-keypad .kp-key').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      btn.classList.add('pressed');
+      window.setTimeout(() => btn.classList.remove('pressed'), 140);
+      if (btn.dataset.digit) appendPinDigit(btn.dataset.digit);
+      else if (btn.dataset.action === 'back') backspacePin();
+      else if (btn.dataset.action === 'clear') clearPin();
+    });
   });
 
-  document.getElementById('lp-back-btn').addEventListener('click', () => {
-    stepLetter.classList.remove('active'); stepLetter.setAttribute('aria-hidden', 'true'); stepSelect.classList.add('active');
+  document.getElementById('gate-submit-btn').addEventListener('click', submitPin);
+
+  window.addEventListener('keydown', (e) => {
+    if (gateUnlocked || accessGate.classList.contains('hidden')) return;
+    if (e.key >= '0' && e.key <= '9') { e.preventDefault(); appendPinDigit(e.key); }
+    else if (e.key === 'Backspace') { e.preventDefault(); backspacePin(); }
+    else if (e.key === 'Delete' || e.key === 'Escape') { e.preventDefault(); clearPin(); }
+    else if (e.key === 'Enter') { e.preventDefault(); submitPin(); }
   });
+
+  document.getElementById('lp-switch-code-btn').addEventListener('click', lockAccessGate);
+  const switchCodeTrayBtn = document.getElementById('gt-switch-code-tray-btn');
+  if (switchCodeTrayBtn) switchCodeTrayBtn.addEventListener('click', lockAccessGate);
 
   document.getElementById('lp-enter-btn').addEventListener('click', () => {
     portal.classList.add('hidden');
+    portal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('portal-open');
     world.setPortalPaused(false);
     audio.chime();
@@ -1200,10 +1550,19 @@ function bootstrap() {
   });
 
   visitorBtn.addEventListener('click', () => {
-    stepLetter.classList.remove('active'); stepSelect.classList.add('active');
-    portal.classList.remove('hidden'); document.body.classList.add('portal-open');
+    if (!gateUnlocked) { lockAccessGate(); return; }
+    populatePersonalLetter(activeRole);
+    portal.classList.remove('hidden'); portal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('portal-open');
     world.setPortalPaused(true); world.pauseGuidedTour(); world.stopDroneTour(); world.stopBoulevardCabRide();
   });
+
+  // Restore verified session smoothly on page reload (never exposes other names!)
+  try {
+    const savedSess = JSON.parse(window.sessionStorage.getItem(SESSION_GATE_KEY) || 'null');
+    const savedRole = savedSess?.roleId ? roles.find((r) => r.id === savedSess.roleId) : null;
+    if (savedRole) openUnlockedLetter(savedRole);
+  } catch { /* keep gate locked */ }
 }
 
 bootstrap();

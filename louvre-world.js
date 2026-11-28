@@ -18,13 +18,36 @@
 
 import * as THREE from './vendor/three.module.min.js';
 import * as SkeletonUtils from './vendor/SkeletonUtils.js';
+import { mergeGeometries } from './vendor/BufferGeometryUtils.js';
 import { EffectComposer } from './vendor/postprocessing/EffectComposer.js';
 import { RenderPass } from './vendor/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from './vendor/postprocessing/UnrealBloomPass.js';
 import { SMAAPass } from './vendor/postprocessing/SMAAPass.js';
 import { OutputPass } from './vendor/postprocessing/OutputPass.js';
-import { ASSET_MANIFEST } from './src/assets/assetManifest.js?v=28';
-import { AssetManager } from './src/assets/AssetManager.js?v=28';
+import { ASSET_MANIFEST } from './src/assets/assetManifest.js?v=29';
+import { AssetManager } from './src/assets/AssetManager.js?v=29';
+
+const CAT_TAIL_BONES = ['Wolf_Tail_01_02SHJnt_37', 'Wolf_Tail_01_03SHJnt_36', 'Wolf_Tail_01_04SHJnt_35', 'Wolf_Tail_01_05SHJnt_34'];
+const _TMP_V1 = new THREE.Vector3();
+const _TMP_V2 = new THREE.Vector3();
+const _TMP_M4 = new THREE.Matrix4();
+const _TMP_Q1 = new THREE.Quaternion();
+const _TMP_S1 = new THREE.Vector3(1, 1, 1);
+
+function createRadialContactShadowTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64; c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32, 32, 4, 32, 32, 30);
+  g.addColorStop(0, 'rgba(6, 5, 5, 0.72)');
+  g.addColorStop(0.55, 'rgba(6, 5, 5, 0.36)');
+  g.addColorStop(1, 'rgba(6, 5, 5, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 64, 64);
+  const tex = new THREE.CanvasTexture(c);
+  tex.generateMipmaps = true;
+  return tex;
+}
 import {
   createGlowTexture,
   createLightBeamTexture,
@@ -284,8 +307,8 @@ export class LouvreParisWorld3D {
     this.config = config;
     this.callbacks = callbacks;
 
-    this.isMobile = window.innerWidth < 900;
-    // Auto-enable Cinematic Quality (2048px Shadows + Subtle Bloom + SMAA) on Desktop; lightweight 60FPS on Mobile!
+    this.isMobile = window.innerWidth < 900 || Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints || 0) > 1;
+    // Desktop: half-res selective Bloom + 2048px 45m shadow frustum; Mobile/Touch: zero-composer fast path + 1024px 45m shadows!
     this.qualityMode = this.isMobile ? 'smooth60' : 'ultra';
     this.timeOfDay = 'sunset';
     this.weatherMode = 'clear';
@@ -293,6 +316,25 @@ export class LouvreParisWorld3D {
     this.zoomed = false;
     this.portalPaused = true;
     this.portalTickAccum = 0;
+
+    // Adaptive FPS Watchdog (3-second rolling window -> auto step-down DPR / post-processing if FPS < 32)
+    this.dprCeiling = this.isMobile ? 1.25 : 1.5;
+    this.watchdogDpr = this.dprCeiling;
+    this.watchdogLevel = 0;
+    this.fpsFrames = 0;
+    this.fpsAccum = 0;
+    this.fpsHistory = [];
+    this.avgFps = 60;
+    this.lastShadowSnapX = Infinity;
+    this.lastShadowSnapZ = Infinity;
+    this.shadowMapSize = this.isMobile ? 1024 : 2048;
+    this.activeZone = 'outdoor';
+
+    // Zone-based scene groups for instant indoor/outdoor culling
+    this.outdoorCityGroup = new THREE.Group();
+    this.plazaBridgeGroup = new THREE.Group();
+    this.louvreInteriorGroup = new THREE.Group();
+    this.louvreSpotLights = [];
 
     this.activeGuideType = 'bobs';
     this.guidePhase = 'idle';
@@ -394,35 +436,39 @@ export class LouvreParisWorld3D {
   init() {
     this.renderer = new THREE.WebGLRenderer({
       canvas: this.canvas,
-      antialias: !this.isMobile,
+      antialias: true,
       powerPreference: 'high-performance',
     });
-    this.renderer.shadowMap.enabled = !this.isMobile;
+    this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.shadowMap.autoUpdate = false;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.04;
+    this.renderer.toneMappingExposure = 0.96;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x2d201a); // Replaced immediately by real 1K HDRI photograph!
-    this.scene.fog = new THREE.FogExp2(0xc98a63, 0.0021);
+    this.scene.fog = new THREE.FogExp2(0xc98a63, 0.0019);
+    this.scene.add(this.outdoorCityGroup, this.plazaBridgeGroup, this.louvreInteriorGroup);
 
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     this.baseFov = aspect < 0.85 ? 64 : 52;
-    this.camera = new THREE.PerspectiveCamera(this.baseFov, aspect, 0.3, 1050);
+    // Match camera.far (315m) with FogExp2 for early frustum culling while keeping Eiffel Tower (262m) crisp!
+    this.camera = new THREE.PerspectiveCamera(this.baseFov, aspect, 0.3, 315);
 
     this.assets = new AssetManager(this.renderer, (pct, labelAr) => {
       if (this.callbacks.onLoadProgress) this.callbacks.onLoadProgress(pct, labelAr);
     });
     this.texLoader = this.assets.texLoader;
+    this.contactShadowTex = createRadialContactShadowTexture();
 
     this.composer = null;
     this.bloomPass = null;
     this.smaaPass = null;
     this.applyQualitySettings();
 
-    const aniso = Math.min(this.renderer.capabilities.getMaxAnisotropy(), this.isMobile ? 2 : 8);
+    // Cap anisotropy strictly to <= 4 (2 on mobile, 4 on desktop)
+    const aniso = Math.min(this.renderer.capabilities.getMaxAnisotropy(), this.isMobile ? 2 : 4);
 
     // Real Poly Haven Photogrammetry PBR Sets
     this.asphaltScan = this.assets.loadPBRSet(ASSET_MANIFEST.pbrTextures.asphalt, 3, 64, aniso);
@@ -544,6 +590,12 @@ export class LouvreParisWorld3D {
     this.buildWeatherParticles();
     this.buildPawPrintPool();
 
+    // Freeze matrixAutoUpdate on ALL static city, plaza & museum meshes so Three.js skips thousands of matrix rebuilds!
+    this.freezeStaticTree(this.outdoorCityGroup);
+    this.freezeStaticTree(this.plazaBridgeGroup);
+    this.freezeStaticTree(this.louvreInteriorGroup);
+    this.updateZoneCulling(true);
+
     // Load Real Photographic HDRI Skyboxes (Sunset, Day, Night) + Draco Hero BMW & Realistic Traffic + Rigged Guides
     this.loadRealHDRISkyboxes();
     this.loadHeroBMWAndRealisticTraffic();
@@ -551,9 +603,36 @@ export class LouvreParisWorld3D {
     this.loadAnatomicallyFixedBobsPersianCat();
 
     this.setTimeOfDay('sunset');
+    this.updateFollowingShadowFrustum(true);
     this.bindEvents();
     if (this.callbacks.onReady) this.callbacks.onReady();
     this.animate();
+  }
+
+  freezeStaticTree(root) {
+    root.updateMatrixWorld(true);
+    root.traverse((obj) => {
+      if (obj.userData && obj.userData.dynamic) return;
+      if (obj.isMesh || obj.isInstancedMesh || obj.isPoints) {
+        obj.updateMatrix();
+        obj.matrixAutoUpdate = false;
+      }
+    });
+  }
+
+  getPerfStats() {
+    const info = this.renderer?.info?.render || { calls: 0, triangles: 0 };
+    return {
+      calls: info.calls,
+      triangles: info.triangles,
+      avgFps: Math.round(this.avgFps),
+      pixelRatio: Number((this.renderer?.getPixelRatio() || 1).toFixed(2)),
+      zone: this.activeZone,
+      shadowSize: this.shadowMapSize,
+      composerActive: this.qualityMode === 'ultra' && Boolean(this.composer) && !this.isMobile,
+      watchdogLevel: this.watchdogLevel,
+      qualityMode: this.qualityMode,
+    };
   }
 
   async loadRealHDRISkyboxes() {
@@ -588,35 +667,37 @@ export class LouvreParisWorld3D {
   }
 
   ensureUltraComposer() {
-    if (this.composer) return;
+    if (this.composer || this.isMobile) return;
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    // Subtle selective UnrealBloomPass (high threshold 1.18 so ONLY headlights, lamp filaments & lanterns bloom — never the HDRI sky!)
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.2, 0.35, 1.18);
+    // Half-resolution selective UnrealBloomPass (50% fewer GPU bloom pixels, threshold 1.18 -> zero sky glare!)
+    this.bloomPass = new UnrealBloomPass(
+      new THREE.Vector2(Math.max(1, Math.floor(window.innerWidth * 0.5)), Math.max(1, Math.floor(window.innerHeight * 0.5))),
+      0.2, 0.35, 1.18
+    );
     this.composer.addPass(this.bloomPass);
-    if (!this.isMobile) {
-      const dpr = this.renderer.getPixelRatio();
-      this.smaaPass = new SMAAPass(window.innerWidth * dpr, window.innerHeight * dpr);
-      this.composer.addPass(this.smaaPass);
-    }
     this.composer.addPass(new OutputPass());
   }
 
   applyQualitySettings() {
-    const dpr = window.devicePixelRatio || 1;
-    let targetDpr = Math.min(dpr, this.isMobile ? 1.15 : 1.5);
-    if (this.qualityMode === 'eco') targetDpr = Math.min(dpr, 1.0);
-    else if (this.qualityMode === 'ultra') {
-      targetDpr = Math.min(dpr, this.isMobile ? 1.25 : 1.65);
+    const nativeDpr = window.devicePixelRatio || 1;
+    const maxCap = this.isMobile ? 1.25 : 1.5;
+    let targetDpr = Math.min(nativeDpr, maxCap, this.watchdogDpr);
+    if (this.qualityMode === 'eco') targetDpr = Math.min(targetDpr, 0.95);
+    else if (this.qualityMode === 'ultra' && !this.isMobile) {
       this.ensureUltraComposer();
     }
+    targetDpr = Math.max(0.85, targetDpr);
     this.renderer.setPixelRatio(targetDpr);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.shadowMap.enabled = !this.isMobile && this.qualityMode !== 'eco';
+    this.renderer.shadowMap.enabled = this.qualityMode !== 'eco';
     this.renderer.shadowMap.needsUpdate = true;
     if (this.composer) {
       this.composer.setPixelRatio(targetDpr);
       this.composer.setSize(window.innerWidth, window.innerHeight);
+      if (this.bloomPass) {
+        this.bloomPass.resolution.set(Math.max(1, Math.floor(window.innerWidth * 0.5)), Math.max(1, Math.floor(window.innerHeight * 0.5)));
+      }
     }
   }
 
@@ -653,28 +734,66 @@ export class LouvreParisWorld3D {
     if (this.callbacks.onWeatherChange) this.callbacks.onWeatherChange(this.weatherMode);
   }
 
-  /* ==================== 2048px DIRECTIONAL SUNSET SHADOWS & LIGHTING ==================== */
+  /* ==================== CAMERA-FOLLOWING 45m×45m TEXEL-SNAPPED DIRECTIONAL SHADOWS ==================== */
   setupLighting() {
-    this.hemiLight = new THREE.HemisphereLight(0xffe4c4, 0x302420, 0.92);
+    this.hemiLight = new THREE.HemisphereLight(0xffe4c4, 0x302420, 0.88);
     this.scene.add(this.hemiLight);
 
-    this.sunLight = new THREE.DirectionalLight(0xffc685, 2.75);
-    this.sunLight.position.set(-55, 28, 340);
-    this.sunLight.target.position.set(0, 0, 340);
-    this.sunLight.castShadow = !this.isMobile;
-    this.sunLight.shadow.mapSize.set(2048, 2048);
-    this.sunLight.shadow.camera.near = 10; this.sunLight.shadow.camera.far = 280;
-    this.sunLight.shadow.camera.left = -95; this.sunLight.shadow.camera.right = 95;
-    this.sunLight.shadow.camera.top = 135; this.sunLight.shadow.camera.bottom = -135;
-    this.sunLight.shadow.bias = -0.0005;
+    this.sunOffset = new THREE.Vector3(-34, 24, -18);
+    this.sunLight = new THREE.DirectionalLight(0xffc685, 2.55);
+    this.sunLight.position.set(-34, 24, 360);
+    this.sunLight.target.position.set(0, 0, 378);
+    this.sunLight.castShadow = true;
+    this.sunLight.shadow.mapSize.set(this.shadowMapSize, this.shadowMapSize);
+    // Tight 45m × 45m shadow box following camera/BMW (massive GPU win + razor-sharp shadows!)
+    this.sunLight.shadow.camera.near = 4;
+    this.sunLight.shadow.camera.far = 115;
+    this.sunLight.shadow.camera.left = -22.5;
+    this.sunLight.shadow.camera.right = 22.5;
+    this.sunLight.shadow.camera.top = 22.5;
+    this.sunLight.shadow.camera.bottom = -22.5;
+    this.sunLight.shadow.bias = -0.00045;
+    this.sunLight.shadow.normalBias = 0.025;
     this.scene.add(this.sunLight, this.sunLight.target);
 
-    this.fillLight = new THREE.DirectionalLight(0x88a2d8, 0.48);
-    this.fillLight.position.set(55, 32, 320);
+    this.fillLight = new THREE.DirectionalLight(0x88a2d8, 0.45);
+    this.fillLight.position.set(45, 28, 320);
     this.scene.add(this.fillLight);
 
-    this.playerLantern = new THREE.PointLight(0xffdca0, 14, 28, 1.45);
+    this.playerLantern = new THREE.PointLight(0xffdca0, 14, 26, 1.45);
     this.scene.add(this.playerLantern);
+  }
+
+  updateFollowingShadowFrustum(force = false) {
+    if (!this.sunLight || !this.renderer.shadowMap.enabled) return;
+    if (this.activeZone === 'indoor') return;
+    const focus = this.drivingBmw ? this.bmwPos : this.playerPos;
+    const texelSize = 45.0 / this.shadowMapSize;
+    const snapX = Math.round(focus.x / texelSize) * texelSize;
+    const snapZ = Math.round((focus.z - 8.0) / texelSize) * texelSize;
+    if (!force && Math.abs(snapX - this.lastShadowSnapX) < 0.4 && Math.abs(snapZ - this.lastShadowSnapZ) < 0.4) return;
+    this.lastShadowSnapX = snapX;
+    this.lastShadowSnapZ = snapZ;
+    this.sunLight.target.position.set(snapX, 0, snapZ);
+    this.sunLight.position.set(snapX + this.sunOffset.x, this.sunOffset.y, snapZ + this.sunOffset.z);
+    this.sunLight.target.updateMatrixWorld();
+    this.renderer.shadowMap.needsUpdate = true;
+  }
+
+  updateZoneCulling(force = false) {
+    const camZ = this.camera.position.z;
+    const nextZone = camZ < -8.5 && !this.droneActive ? 'indoor' : 'outdoor';
+    const showInterior = nextZone === 'indoor' || camZ < 48 || this.droneActive;
+    if (!force && nextZone === this.activeZone && this.louvreInteriorGroup.visible === showInterior) return;
+    this.activeZone = nextZone;
+    const isIndoor = nextZone === 'indoor';
+    this.outdoorCityGroup.visible = !isIndoor;
+    this.louvreInteriorGroup.visible = showInterior;
+    for (let i = 0; i < this.louvreSpotLights.length; i++) {
+      this.louvreSpotLights[i].visible = isIndoor;
+    }
+    if (this.sunLight) this.sunLight.castShadow = !isIndoor && this.qualityMode !== 'eco';
+    if (!isIndoor) this.updateFollowingShadowFrustum(true);
   }
 
   setTimeOfDay(mode) {
@@ -729,8 +848,9 @@ export class LouvreParisWorld3D {
     this.releaseBirthdayLanterns();
   }
 
-  /* ==================== 525M WET CHAMPS-ÉLYSÉES & AUTHENTIC 6-STORY HAUSSMANN PARIS ==================== */
+  /* ==================== 525M WET CHAMPS-ÉLYSÉES & INSTANCED 6-STORY HAUSSMANN PARIS (<20 DRAW CALLS!) ==================== */
   buildGrand525mWetBoulevardAndHaussmannCity() {
+    const city = this.outdoorCityGroup;
     const len = 424, midZ = 244;
 
     this.cobbleMat = new THREE.MeshStandardMaterial({
@@ -739,15 +859,19 @@ export class LouvreParisWorld3D {
     });
     const centralPromenade = new THREE.Mesh(new THREE.PlaneGeometry(16, len), this.cobbleMat);
     centralPromenade.rotation.x = -Math.PI / 2; centralPromenade.position.set(0, 0, midZ); centralPromenade.receiveShadow = true;
-    this.scene.add(centralPromenade);
+    city.add(centralPromenade);
 
     const runner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, len - 8), this.mats.promenadeFlagstone);
     runner.rotation.x = -Math.PI / 2; runner.position.set(0, 0.042, midZ); runner.receiveShadow = true;
-    this.scene.add(runner);
-    [-1.66, 1.66].forEach((x) => {
-      const trim = new THREE.Mesh(new THREE.PlaneGeometry(0.08, len - 8), this.mats.goldOverlay);
-      trim.rotation.x = -Math.PI / 2; trim.position.set(x, 0.048, midZ); this.scene.add(trim);
+    city.add(runner);
+    const trimGeo = new THREE.PlaneGeometry(0.08, len - 8);
+    const trimInst = new THREE.InstancedMesh(trimGeo, this.mats.goldOverlay, 2);
+    const dummy = new THREE.Object3D();
+    [-1.66, 1.66].forEach((x, i) => {
+      dummy.position.set(x, 0.048, midZ); dummy.rotation.set(-Math.PI / 2, 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
+      trimInst.setMatrixAt(i, dummy.matrix);
     });
+    city.add(trimInst);
 
     // Wet-Asphalt Reflective Champs-Élysées Avenues (Poly Haven asphalt_03 + wet reflection patch roughnessMap!)
     this.asphaltMat = new THREE.MeshPhysicalMaterial({
@@ -758,165 +882,167 @@ export class LouvreParisWorld3D {
     [-16, 16].forEach((rx) => {
       const road = new THREE.Mesh(new THREE.PlaneGeometry(16, len), this.asphaltMat);
       road.rotation.x = -Math.PI / 2; road.position.set(rx, 0, midZ); road.receiveShadow = true;
-      this.scene.add(road);
+      city.add(road);
     });
 
-    // Crisp White Dashed Lane Markings & Edge Lines (polygonOffset -> ZERO z-fighting!)
+    // Crisp White Dashed Lane Markings & Edge Lines (InstancedMesh -> 1 draw call!)
     const dashPositions = [];
     for (let z = 446; z >= 38; z -= 10) dashPositions.push([-16, z], [16, z]);
     const dashInst = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.24, 4.4), this.mats.laneDash, dashPositions.length);
-    const dummy = new THREE.Object3D();
     dashPositions.forEach(([x, z], i) => {
-      dummy.position.set(x, 0.046, z); dummy.rotation.set(-Math.PI / 2, 0, 0); dummy.updateMatrix();
+      dummy.position.set(x, 0.046, z); dummy.rotation.set(-Math.PI / 2, 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
       dashInst.setMatrixAt(i, dummy.matrix);
     });
-    this.scene.add(dashInst);
+    city.add(dashInst);
 
-    // Outer Limestone Parisian Sidewalks (strictly non-overlapping!)
+    // Outer Limestone Parisian Sidewalks
     [-44, 44].forEach((sx) => {
       const sw = new THREE.Mesh(new THREE.PlaneGeometry(40, len), this.mats.limestone);
       sw.rotation.x = -Math.PI / 2; sw.position.set(sx, 0, midZ); sw.receiveShadow = true;
-      this.scene.add(sw);
+      city.add(sw);
     });
 
-    // Chamfered Parisian Stone Curbs
-    [8.1, 24.1].forEach((cx) => {
-      const curb = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.2, len), this.mats.limestoneTrim);
-      curb.position.set(cx, 0.1, midZ); curb.receiveShadow = true; this.scene.add(curb);
+    // Chamfered Parisian Stone Curbs (1 InstancedMesh!)
+    const curbSpecs = [
+      [8.1, 0.1, midZ, len], [24.1, 0.1, midZ, len],
+      [-8.1, 0.1, 162, 260], [-8.1, 0.1, 382, 148],
+      [-24.1, 0.1, 162, 260], [-24.1, 0.1, 382, 148],
+    ];
+    const curbInst = new THREE.InstancedMesh(new THREE.BoxGeometry(0.45, 0.2, 1), this.mats.limestoneTrim, curbSpecs.length);
+    curbInst.receiveShadow = true;
+    curbSpecs.forEach(([cx, cy, cz, cl], i) => {
+      dummy.position.set(cx, cy, cz); dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, cl); dummy.updateMatrix();
+      curbInst.setMatrixAt(i, dummy.matrix);
     });
-    [-8.1, -24.1].forEach((cx) => {
-      const cNorth = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.2, 260), this.mats.limestoneTrim); cNorth.position.set(cx, 0.1, 162); cNorth.receiveShadow = true;
-      const cSouth = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.2, 148), this.mats.limestoneTrim); cSouth.position.set(cx, 0.1, 382); cSouth.receiveShadow = true;
-      this.scene.add(cNorth, cSouth);
+    city.add(curbInst);
+
+    // ---- INSTANCED 6-STORY PARISIAN HAUSSMANN ARCHITECTURE (1,120 meshes -> 14 InstancedMeshes!) ----
+    const haussmannSpecs = [];
+    [412, 386, 360, 334, 242, 216, 190, 164, 138, 112, 86, 60].forEach((z, i) => {
+      haussmannSpecs.push({ x: 35.0, z, rotY: -Math.PI / 2, variant: i % 3 });
+    });
+    [412, 386, 360, 334, 262, 198, 96, 68].forEach((z, i) => {
+      haussmannSpecs.push({ x: -35.0, z, rotY: Math.PI / 2, variant: (i + 1) % 3 });
     });
 
-    // ---- AUTHENTIC 6-STORY PARISIAN HAUSSMANN BUILDING BUILDER ----
-    // Real warm cream limestone + extruded stone cornices + 2nd & 5th floor wrought-iron balconies +
-    // sloped dark zinc mansard roof + protruding dormer windows (lucarnes) + terracotta chimney pots + café awnings!
+    const W = 24.0, H = 19.6, D = 13.5;
+    const unitBox = new THREE.BoxGeometry(1, 1, 1);
     const mansardGeo = new THREE.CylinderGeometry(14.6, 17.5, 4.6, 4);
     mansardGeo.rotateY(Math.PI / 4);
-    const haussmannMats = [this.mats.haussmann0, this.mats.haussmann1, this.mats.haussmann2];
+    const capGeo = new THREE.CylinderGeometry(0.95, 0.95, 1.32, 8, 1, false, 0, Math.PI);
+    capGeo.rotateZ(Math.PI / 2); capGeo.rotateY(Math.PI / 2);
+    const potGeo = new THREE.CylinderGeometry(0.18, 0.22, 0.65, 6);
+    const paneGeo = new THREE.PlaneGeometry(1.22, 1.55);
 
-    const buildSixStoryHaussmannBlock = (x, z, rotY, variant = 0) => {
-      const grp = new THREE.Group();
-      grp.position.set(x, 0, z);
-      grp.rotation.y = rotY;
+    const dormerLitMat = new THREE.MeshStandardMaterial({ color: 0xffd68c, emissive: 0xe69f42, emissiveIntensity: 0.78, roughness: 0.15 });
+    const dormerDarkMat = new THREE.MeshPhysicalMaterial({ color: 0x1b2430, roughness: 0.08, metalness: 0.25, clearcoat: 1.0 });
+    this.emissiveBuildingMats.push(dormerLitMat);
 
-      const W = 24.0, H = 19.6, D = 13.5;
-      const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), haussmannMats[variant % 3]);
-      body.position.y = H * 0.5;
-      body.castShadow = true; body.receiveShadow = true;
-      grp.add(body);
+    const bodyMats = [this.mats.haussmann0, this.mats.haussmann1, this.mats.haussmann2];
+    const mBodies = [[], [], []], mTrim = [], mIron = [], mAwnBurg = [], mAwnNavy = [], mMansard = [], mDormerCap = [], mDormerLit = [], mDormerDark = [], mChimney = [], mPot = [];
 
-      // Extruded Horizontal Parisian Limestone Cornices (Mezzanine, Floor 2, Floor 5, Main Entablature)
+    const parentMat = new THREE.Matrix4();
+    const localMat = new THREE.Matrix4();
+    const qRot = new THREE.Quaternion();
+    const qAwn = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.34, 0, 0));
+    const qIdent = new THREE.Quaternion();
+    const vPos = new THREE.Vector3(), vScale = new THREE.Vector3();
+
+    const pushLocal = (arr, px, py, pz, sx, sy, sz, q = qIdent) => {
+      localMat.compose(vPos.set(px, py, pz), q, vScale.set(sx, sy, sz));
+      arr.push(new THREE.Matrix4().multiplyMatrices(parentMat, localMat));
+    };
+
+    haussmannSpecs.forEach((sp) => {
+      qRot.setFromAxisAngle(new THREE.Vector3(0, 1, 0), sp.rotY);
+      parentMat.compose(vPos.set(sp.x, 0, sp.z), qRot, vScale.set(1, 1, 1));
+
+      // Main 6-story limestone facade body
+      pushLocal(mBodies[sp.variant], 0, H * 0.5, 0, W, H, D);
+
+      // 4 Extruded Horizontal Parisian Limestone Cornices
       [4.5, 8.6, 15.6, H].forEach((cy, ci) => {
-        const depth = ci === 3 ? D + 0.85 : D + 0.42;
-        const cornice = new THREE.Mesh(new THREE.BoxGeometry(W + 0.35, ci === 3 ? 0.65 : 0.36, depth), this.mats.limestoneTrim);
-        cornice.position.y = cy;
-        grp.add(cornice);
+        pushLocal(mTrim, 0, cy, 0, W + 0.35, ci === 3 ? 0.65 : 0.36, ci === 3 ? D + 0.85 : D + 0.42);
       });
 
-      // Vertical Corner Stone Pilasters for genuine 3D facade relief
+      // 4 Vertical Stone Pilasters
       [-11.6, -3.9, 3.9, 11.6].forEach((px) => {
-        const pil = new THREE.Mesh(new THREE.BoxGeometry(0.65, H, 0.32), this.mats.limestoneTrim);
-        pil.position.set(px, H * 0.5, D * 0.5 + 0.12);
-        grp.add(pil);
+        pushLocal(mTrim, px, H * 0.5, D * 0.5 + 0.12, 0.65, H, 0.32);
       });
 
-      // Continuous Protruding 3D Wrought-Iron Parisian Balconies on 2nd Floor (y=8.6) & 5th Floor (y=15.6)!
+      // Continuous 2nd & 5th Floor Wrought-Iron Balconies
       [8.6, 15.6].forEach((by) => {
-        const slab = new THREE.Mesh(new THREE.BoxGeometry(W - 0.6, 0.24, 1.15), this.mats.limestoneTrim);
-        slab.position.set(0, by + 0.08, D * 0.5 + 0.52);
-        const railTop = new THREE.Mesh(new THREE.BoxGeometry(W - 0.6, 0.07, 0.07), this.mats.ironDark);
-        railTop.position.set(0, by + 1.05, D * 0.5 + 1.02);
-        const railMid = new THREE.Mesh(new THREE.BoxGeometry(W - 0.6, 0.05, 0.05), this.mats.ironDark);
-        railMid.position.set(0, by + 0.56, D * 0.5 + 1.02);
-        grp.add(slab, railTop, railMid);
-        for (let bx = -11.2; bx <= 11.2; bx += 2.24) {
-          const post = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.92, 0.05), this.mats.ironDark);
-          post.position.set(bx, by + 0.6, D * 0.5 + 1.02);
-          grp.add(post);
+        pushLocal(mTrim, 0, by + 0.08, D * 0.5 + 0.52, W - 0.6, 0.24, 1.15);
+        pushLocal(mIron, 0, by + 1.05, D * 0.5 + 1.02, W - 0.6, 0.07, 0.07);
+        pushLocal(mIron, 0, by + 0.56, D * 0.5 + 1.02, W - 0.6, 0.05, 0.05);
+        for (let bx = -11.2; bx <= 11.2; bx += 2.8) {
+          pushLocal(mIron, bx, by + 0.6, D * 0.5 + 1.02, 0.055, 0.92, 0.055);
         }
       });
 
-      // Ground-Floor Luxury Striped Parisian Café / Boutique Awnings
-      const awningMat = variant % 2 === 0 ? this.mats.awningBurgundy : this.mats.awningNavy;
-      [-6.0, 6.0].forEach((ax) => {
-        const awn = new THREE.Mesh(new THREE.BoxGeometry(9.6, 0.14, 2.3), awningMat);
-        awn.position.set(ax, 3.85, D * 0.5 + 0.98);
-        awn.rotation.x = 0.34;
-        grp.add(awn);
-      });
+      // Striped Parisian Café Awnings
+      const awnArr = sp.variant % 2 === 0 ? mAwnBurg : mAwnNavy;
+      [-6.0, 6.0].forEach((ax) => pushLocal(awnArr, ax, 3.85, D * 0.5 + 0.98, 9.6, 0.14, 2.3, qAwn));
 
-      // Steep Dark Zinc/Slate Parisian Mansard Roof (#2c323b)
-      const mansard = new THREE.Mesh(mansardGeo, this.mats.mansard);
-      mansard.scale.set(W / 24.4, 1.0, D / 24.4);
-      mansard.position.y = H + 2.3;
-      mansard.castShadow = true;
-      grp.add(mansard);
+      // Steep Dark Zinc/Slate Mansard Roof
+      pushLocal(mMansard, 0, H + 2.3, 0, W / 24.4, 1.0, D / 24.4);
 
-      // Protruding 3D Dormer Windows (Lucarnes) along the Mansard Roof
+      // Protruding 3D Dormer Windows (Lucarnes)
       [-8.4, -2.8, 2.8, 8.4].forEach((dx, di) => {
-        const dormer = new THREE.Group();
-        dormer.position.set(dx, H + 1.65, D * 0.5 - 0.45);
-        const frame = new THREE.Mesh(new THREE.BoxGeometry(1.75, 2.1, 1.3), this.mats.limestoneTrim);
-        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 0.95, 1.32, 10, 1, false, 0, Math.PI), this.mats.mansard);
-        cap.rotation.z = Math.PI / 2; cap.rotation.y = Math.PI / 2; cap.position.y = 1.05;
-        const paneMat = (di + variant) % 2 === 0
-          ? new THREE.MeshStandardMaterial({ color: 0xffd68c, emissive: 0xe69f42, emissiveIntensity: 0.75, roughness: 0.15 })
-          : new THREE.MeshPhysicalMaterial({ color: 0x1b2430, roughness: 0.08, metalness: 0.25, clearcoat: 1.0 });
-        const pane = new THREE.Mesh(new THREE.PlaneGeometry(1.22, 1.55), paneMat);
-        pane.position.z = 0.67;
-        dormer.add(frame, cap, pane);
-        grp.add(dormer);
+        pushLocal(mTrim, dx, H + 1.65, D * 0.5 - 0.45, 1.75, 2.1, 1.3);
+        pushLocal(mDormerCap, dx, H + 2.7, D * 0.5 - 0.45, 1, 1, 1);
+        pushLocal((di + sp.variant) % 2 === 0 ? mDormerLit : mDormerDark, dx, H + 1.65, D * 0.5 + 0.22, 1, 1, 1);
       });
 
-      // Classic Parisian Limestone Chimney Stacks & Terracotta Chimney Pots
+      // Limestone Chimney Stacks & Terracotta Chimney Pots
       [-6.5, 6.5].forEach((cx) => {
-        const stack = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.1, 1.0), this.mats.limestone);
-        stack.position.set(cx, H + 5.2, -1.2);
-        grp.add(stack);
-        [-0.45, 0.45].forEach((px) => {
-          const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.65, 8), this.mats.terracotta);
-          pot.position.set(cx + px, H + 6.5, -1.2);
-          grp.add(pot);
-        });
+        pushLocal(mChimney, cx, H + 5.2, -1.2, 1.8, 2.1, 1.0);
+        pushLocal(mPot, cx - 0.45, H + 6.5, -1.2, 1, 1, 1);
+        pushLocal(mPot, cx + 0.45, H + 6.5, -1.2, 1, 1, 1);
       });
+    });
 
-      this.scene.add(grp);
+    const addInst = (geo, mat, matsArr, cast = false, recv = false) => {
+      if (!matsArr.length) return;
+      const im = new THREE.InstancedMesh(geo, mat, matsArr.length);
+      for (let i = 0; i < matsArr.length; i++) im.setMatrixAt(i, matsArr[i]);
+      im.instanceMatrix.needsUpdate = true;
+      im.castShadow = cast; im.receiveShadow = recv;
+      im.computeBoundingSphere();
+      city.add(im);
     };
 
-    // Line BOTH sides of the 525m Champs-Élysées Boulevard with authentic 6-Story Parisian Haussmann blocks!
-    // East Side (z=290 reserved for Beaux-Arts Galeries Lafayette / Grand Palais!)
-    [412, 386, 360, 334, 242, 216, 190, 164, 138, 112, 86, 60].forEach((z, i) => {
-      buildSixStoryHaussmannBlock(35.0, z, -Math.PI / 2, i);
-    });
-    // West Side (z=300 Enterable Haussmann House, z=170 Paris Police HQ, open Eiffel skyline vista at z=120..150 & z=210..240!)
-    [412, 386, 360, 334, 262, 198, 96, 68].forEach((z, i) => {
-      buildSixStoryHaussmannBlock(-35.0, z, Math.PI / 2, i + 1);
-    });
+    mBodies.forEach((arr, idx) => addInst(unitBox, bodyMats[idx], arr, true, true));
+    addInst(unitBox, this.mats.limestoneTrim, mTrim, false, true);
+    addInst(unitBox, this.mats.ironDark, mIron, false, false);
+    addInst(unitBox, this.mats.awningBurgundy, mAwnBurg, false, false);
+    addInst(unitBox, this.mats.awningNavy, mAwnNavy, false, false);
+    addInst(mansardGeo, this.mats.mansard, mMansard, false, false);
+    addInst(capGeo, this.mats.mansard, mDormerCap, false, false);
+    addInst(paneGeo, dormerLitMat, mDormerLit, false, false);
+    addInst(paneGeo, dormerDarkMat, mDormerDark, false, false);
+    addInst(unitBox, this.mats.limestone, mChimney, false, false);
+    addInst(potGeo, this.mats.terracotta, mPot, false, false);
 
-    // ---- BEAUX-ARTS GALERIES LAFAYETTE / GRAND PALAIS PARIS (East Side x=+35, z=290 — ZERO BLACK BOX!) ----
+    // ---- BEAUX-ARTS GALERIES LAFAYETTE / GRAND PALAIS PARIS (East Side x=+35, z=290) ----
     const palais = new THREE.Group(); palais.position.set(35.0, 0, 290);
     const pBody = new THREE.Mesh(new THREE.BoxGeometry(16, 20.5, 44), this.mats.grandPalais);
     pBody.position.set(0, 10.25, 0); pBody.castShadow = true; pBody.receiveShadow = true;
     const pCornice = new THREE.Mesh(new THREE.BoxGeometry(17.0, 0.85, 45.2), this.mats.limestoneTrim); pCornice.position.set(0, 20.7, 0);
     const pAttic = new THREE.Mesh(new THREE.BoxGeometry(15.6, 2.4, 43.4), this.mats.mansard); pAttic.position.set(0, 22.2, 0);
-    // Real Glass-and-Bronze Art Nouveau Beaux-Arts Cupola reflecting HDRI Sky!
-    const cupolaGlass = new THREE.Mesh(new THREE.SphereGeometry(11.2, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.48), this.mats.glassPyramid);
+    const cupolaGlass = new THREE.Mesh(new THREE.SphereGeometry(11.2, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.48), this.mats.glassPyramid);
     cupolaGlass.scale.set(0.72, 0.88, 1.45); cupolaGlass.position.set(-0.5, 22.8, 0);
-    // Classical bronze structural arch ribs (not cheap wireframe!)
+    const ribInst = new THREE.InstancedMesh(new THREE.TorusGeometry(11.3, 0.16, 6, 22, Math.PI), this.mats.gold, 4);
     for (let r = 0; r < 4; r++) {
-      const rib = new THREE.Mesh(new THREE.TorusGeometry(11.3, 0.16, 8, 28, Math.PI), this.mats.gold);
-      rib.position.set(-0.5, 22.8, -11 + r * 7.3); rib.scale.set(0.72, 0.88, 1);
-      palais.add(rib);
+      dummy.position.set(-0.5, 22.8, -11 + r * 7.3); dummy.rotation.set(0, 0, 0); dummy.scale.set(0.72, 0.88, 1); dummy.updateMatrix();
+      ribInst.setMatrixAt(r, dummy.matrix);
     }
     const pSign = new THREE.Mesh(new THREE.PlaneGeometry(20, 4.2), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('جاليري باريس • قصر الفنون والأزياء', 'GALERIES PARIS • BEAUX-ARTS PALAIS') }));
     pSign.position.set(-8.2, 18.2, 0); pSign.rotation.y = -Math.PI / 2;
-    palais.add(pBody, pCornice, pAttic, cupolaGlass, pSign);
-    this.scene.add(palais);
+    palais.add(pBody, pCornice, pAttic, cupolaGlass, ribInst, pSign);
+    city.add(palais);
 
-    // ---- PARIS POLICE PRECINCT (West Side x=-35, z=170 — Authentic Haussmann Limestone Architecture!) ----
+    // ---- PARIS POLICE PRECINCT (West Side x=-35, z=170) ----
     const policeHQ = new THREE.Group(); policeHQ.position.set(-35, 0, 170);
     const polBody = new THREE.Mesh(new THREE.BoxGeometry(14, 15.6, 26), this.mats.haussmann1);
     polBody.position.y = 7.8; polBody.castShadow = true; polBody.receiveShadow = true;
@@ -928,29 +1054,29 @@ export class LouvreParisWorld3D {
       const strip = new THREE.Mesh(new THREE.BoxGeometry(0.28, 4.8, 0.72), new THREE.MeshStandardMaterial({ color: hex, roughness: 0.5 }));
       strip.position.set(7.15, 2.4, -4.6 + idx * 0.75); policeHQ.add(strip);
     });
-    policeHQ.add(polBody, polCornice, polRoof, polSign); this.scene.add(policeHQ);
+    policeHQ.add(polBody, polCornice, polRoof, polSign); city.add(policeHQ);
 
     // ---- ARC DE TRIOMPHE MONUMENT (z = +444) ----
     const arc = new THREE.Group(); arc.position.set(0, 0, 444);
-    [-10, 10].forEach((px) => { const pier = new THREE.Mesh(new THREE.BoxGeometry(9.5, 28, 12), this.mats.limestone); pier.position.set(px, 14, 0); pier.castShadow = true; arc.add(pier); });
+    [-10, 10].forEach((px) => { const pier = new THREE.Mesh(new THREE.BoxGeometry(9.5, 28, 12), this.mats.limestone); pier.position.set(px, 14, 0); arc.add(pier); });
     const arcTop = new THREE.Mesh(new THREE.BoxGeometry(30, 11, 12.6), this.mats.limestone); arcTop.position.set(0, 33, 0);
     const arcCornice = new THREE.Mesh(new THREE.BoxGeometry(31.5, 1.4, 13.4), this.mats.limestoneTrim); arcCornice.position.set(0, 38.6, 0);
-    const arcRing = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.48, 10, 32, Math.PI), this.mats.gold); arcRing.position.set(0, 22, -6.1);
+    const arcRing = new THREE.Mesh(new THREE.TorusGeometry(5.6, 0.48, 8, 26, Math.PI), this.mats.gold); arcRing.position.set(0, 22, -6.1);
     const arcSign = new THREE.Mesh(new THREE.PlaneGeometry(18, 3.6), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('قوس النصر • بوليفارد الشانزليزيه', 'ARC DE TRIOMPHE • CHAMPS-ÉLYSÉES • HEY') }));
     arcSign.position.set(0, 33, -6.45); arcSign.rotation.y = Math.PI;
-    arc.add(arcTop, arcCornice, arcRing, arcSign); this.scene.add(arc);
+    arc.add(arcTop, arcCornice, arcRing, arcSign); city.add(arc);
 
     // ---- ART NOUVEAU MÉTRO PARISIEN ENTRANCE (z = +64, x = +5.8) ----
     const metro = new THREE.Group(); metro.position.set(5.8, 0, 64);
     [-1.4, 1.4].forEach((px) => {
-      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.2, 10), this.mats.metroGreen); post.position.set(px, 1.6, 0);
-      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), this.lampFilamentMat); globe.position.set(px, 3.3, 0);
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 3.2, 8), this.mats.metroGreen); post.position.set(px, 1.6, 0);
+      const globe = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), this.lampFilamentMat); globe.position.set(px, 3.3, 0);
       metro.add(post, globe);
     });
     const mArch = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.68, 0.16), this.mats.metroGreen); mArch.position.set(0, 3.05, 0);
     const mSign = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 0.54), new THREE.MeshBasicMaterial({ map: createDistrictSignTexture('مترو باريس • ريفولي', 'MÉTROPOLITAIN', '#ffdf86', '#164533') }));
     mSign.position.set(0, 3.05, 0.1); const mSignBack = mSign.clone(); mSignBack.position.z = -0.1; mSignBack.rotation.y = Math.PI;
-    metro.add(mArch, mSign, mSignBack); this.circleColliders.push({ x: 5.8, z: 64, r: 1.5 }); this.scene.add(metro);
+    metro.add(mArch, mSign, mSignBack); this.circleColliders.push({ x: 5.8, z: 64, r: 1.5 }); city.add(metro);
   }
 
   /* ==================== ENTERABLE 2-STORY PARIS HAUSSMANN APARTMENT «منزل باريس المفتوح» ==================== */
@@ -984,23 +1110,24 @@ export class LouvreParisWorld3D {
     f2Floor.position.set(2.0, 4.45, 0);
     const balconySlab = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.32, 12.6), this.mats.limestoneTrim); balconySlab.position.set(9.8, 4.45, 0);
     const railTop = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 12.4), this.mats.ironDark); railTop.position.set(11.45, 5.65, 0);
-    for (let rz = -6.0; rz <= 6.0; rz += 0.8) {
-      const bal = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 6), this.mats.ironDark); bal.position.set(11.45, 5.05, rz); house.add(bal);
-    }
-    house.add(f2Floor, balconySlab, railTop);
+    const hDummy = new THREE.Object3D();
+    const balInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.025, 0.025, 1.15, 6), this.mats.ironDark, 16);
+    for (let i = 0; i < 16; i++) { hDummy.position.set(11.45, 5.05, -6.0 + i * 0.8); hDummy.updateMatrix(); balInst.setMatrixAt(i, hDummy.matrix); }
+    house.add(f2Floor, balconySlab, railTop, balInst);
 
     const steps = 16;
+    const stepInst = new THREE.InstancedMesh(new THREE.BoxGeometry(2.6, 0.3, 0.72), this.mats.marble, steps);
     for (let i = 0; i < steps; i++) {
-      const step = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.3, 0.72), this.mats.marble);
-      step.position.set(-5.6, 0.15 + i * (4.55 / steps), 5.8 - i * 0.68); house.add(step);
+      hDummy.position.set(-5.6, 0.15 + i * (4.55 / steps), 5.8 - i * 0.68); hDummy.updateMatrix(); stepInst.setMatrixAt(i, hDummy.matrix);
     }
+    house.add(stepInst);
     const landing = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.32, 3.4), this.mats.marble); landing.position.set(-5.5, 4.45, -6.5);
     const sofa = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 3.8), this.mats.velvetRed); sofa.position.set(2.2, 0.45, -4.5);
     const table = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.55, 2.2), this.mats.woodDark); table.position.set(4.1, 0.3, -4.5);
     const lamp1 = new THREE.PointLight(0xffd796, 16, 20, 1.4); lamp1.position.set(1.5, 3.6, 0);
     const lamp2 = new THREE.PointLight(0xffdfa8, 16, 22, 1.4); lamp2.position.set(3.5, 8.6, 0);
     const artDesk = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 2.6), this.mats.woodDark); artDesk.position.set(4.6, 5.0, 3.8);
-    const chandelier = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.08, 8, 24), this.mats.goldGlow); chandelier.rotation.x = Math.PI / 2; chandelier.position.set(2.0, 8.8, 0);
+    const chandelier = new THREE.Mesh(new THREE.TorusGeometry(0.95, 0.08, 8, 20), this.mats.goldGlow); chandelier.rotation.x = Math.PI / 2; chandelier.position.set(2.0, 8.8, 0);
     house.add(landing, sofa, table, lamp1, lamp2, artDesk, chandelier);
 
     const stairHit = new THREE.Mesh(new THREE.BoxGeometry(5.5, 4.2, 6.5), new THREE.MeshBasicMaterial({ visible: false }));
@@ -1010,7 +1137,7 @@ export class LouvreParisWorld3D {
       badgeAr: '🏠 اضغط للدخول والصعود لشرفة منزل باريس العلوية',
       mesh: stairHit, worldPos: new THREE.Vector3(-25, 1.6, 300), radius: 14.0,
     });
-    this.scene.add(house);
+    this.outdoorCityGroup.add(house);
   }
 
   enterParisHouseBalcony(goUp = true) {
@@ -1047,7 +1174,7 @@ export class LouvreParisWorld3D {
 
     const dummy = new THREE.Object3D();
     lampPositions.forEach(([x, z], i) => {
-      dummy.rotation.set(0, 0, 0);
+      dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
       dummy.position.set(x, 0.45, z); dummy.updateMatrix(); baseInst.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 2.75, z); dummy.updateMatrix(); poleInst.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 4.66, z); dummy.updateMatrix(); collarInst.setMatrixAt(i, dummy.matrix);
@@ -1055,25 +1182,28 @@ export class LouvreParisWorld3D {
       dummy.position.set(x, 5.45, z); dummy.updateMatrix(); capInst.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 5.02, z); dummy.updateMatrix(); bulbInst.setMatrixAt(i, dummy.matrix);
     });
-    this.scene.add(baseInst, poleInst, collarInst, glassInst, capInst, bulbInst);
+    this.outdoorCityGroup.add(baseInst, poleInst, collarInst, glassInst, capInst, bulbInst);
 
-    // ---- MULTI-LAYERED PARISIAN BOULEVARD PLANE TREES (NO LOLLIPOP BLOBS!) ----
+    // ---- INSTANCED MULTI-LAYERED PARISIAN PLANE TREES (156 leaf meshes -> 1 InstancedMesh!) ----
     const treePositions = [];
     for (let z = 414; z >= 46; z -= 26) {
       if (Math.abs(z - 300) < 16 || Math.abs(z - 170) < 16 || Math.abs(z - 65) < 14) continue;
-      // Leave clean sightline around Hero BMW at Station 1 (x=+5.3, z=371.5)
       if (z > 358 && z < 382) treePositions.push([-6.5, z]);
       else treePositions.push([-6.5, z], [6.5, z]);
     }
     const tCount = treePositions.length;
-    const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.28, 3.8, 9), this.mats.bark, tCount);
-    const grateInst = new THREE.InstancedMesh(new THREE.RingGeometry(0.32, 0.92, 12), this.mats.ironDark, tCount);
-    trunkInst.castShadow = !this.isMobile;
-    const branchGeo = new THREE.CylinderGeometry(0.07, 0.14, 2.1, 7);
-    const branchInst = new THREE.InstancedMesh(branchGeo, this.mats.bark, tCount * 3);
+    const trunkInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.16, 0.28, 3.8, 8), this.mats.bark, tCount);
+    const grateInst = new THREE.InstancedMesh(new THREE.RingGeometry(0.32, 0.92, 10), this.mats.ironDark, tCount);
+    trunkInst.castShadow = true;
+    const branchInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.07, 0.14, 2.1, 6), this.mats.bark, tCount * 3);
     const leafGeo = new THREE.PlaneGeometry(4.4, 4.2);
+    const leafOffsets = [[0, 0.5, 0, 1.1], [0.9, -0.35, 0.5, 0.86], [-0.85, -0.3, -0.45, 0.88]];
+    const canopyInst = new THREE.InstancedMesh(leafGeo, this.mats.planeLeaf, tCount * leafOffsets.length * 2);
+    canopyInst.castShadow = true;
 
+    let leafCursor = 0;
     treePositions.forEach(([x, z], i) => {
+      dummy.scale.set(1, 1, 1);
       dummy.position.set(x, 1.9, z); dummy.rotation.set(0, i * 0.8, 0); dummy.updateMatrix(); trunkInst.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 0.055, z); dummy.rotation.set(-Math.PI / 2, 0, 0); dummy.updateMatrix(); grateInst.setMatrixAt(i, dummy.matrix);
 
@@ -1081,30 +1211,22 @@ export class LouvreParisWorld3D {
         const ang = (b / 3) * Math.PI * 2 + i * 0.5;
         dummy.position.set(x + Math.cos(ang) * 0.48, 4.25, z + Math.sin(ang) * 0.48);
         dummy.rotation.set(Math.sin(ang) * 0.45, ang, -Math.cos(ang) * 0.45);
-        dummy.updateMatrix();
+        dummy.scale.set(1, 1, 1); dummy.updateMatrix();
         branchInst.setMatrixAt(i * 3 + b, dummy.matrix);
       }
 
-      // Dense 3-tier multi-angle alpha-mapped real leaf foliage canopy with subtle wind sway
-      const canopy = new THREE.Group();
-      canopy.position.set(x, 5.4, z);
-      const offsets = [[0, 0.5, 0, 1.1], [0.9, -0.35, 0.5, 0.86], [-0.85, -0.3, -0.45, 0.88]];
-      offsets.forEach(([ox, oy, oz, sc], oi) => {
+      leafOffsets.forEach(([ox, oy, oz, sc], oi) => {
         for (let k = 0; k < 2; k++) {
-          const card = new THREE.Mesh(leafGeo, this.mats.planeLeaf);
-          card.position.set(ox, oy, oz);
-          card.scale.setScalar(sc);
-          card.rotation.y = (k * Math.PI) / 2 + i * 0.6 + oi * 0.4;
-          card.rotation.x = (oi - 1) * 0.14;
-          card.castShadow = !this.isMobile && oi === 0;
-          canopy.add(card);
+          dummy.position.set(x + ox, 5.4 + oy, z + oz);
+          dummy.scale.setScalar(sc);
+          dummy.rotation.set((oi - 1) * 0.14, (k * Math.PI) / 2 + i * 0.6 + oi * 0.4, 0);
+          dummy.updateMatrix();
+          canopyInst.setMatrixAt(leafCursor++, dummy.matrix);
         }
       });
-      this.scene.add(canopy);
-      this.treeCanopyGroups.push({ grp: canopy, phase: i * 0.9 });
       this.circleColliders.push({ x, z, r: 0.6 });
     });
-    this.scene.add(trunkInst, grateInst, branchInst);
+    this.outdoorCityGroup.add(trunkInst, grateInst, branchInst, canopyInst);
   }
 
   /* ==================== HERO BMW AT STATION 1 + REALISTIC AUTOMOTIVE TRAFFIC (ZERO TOYS!) ==================== */
@@ -1136,62 +1258,95 @@ export class LouvreParisWorld3D {
     const fitCtr = fitBox.getCenter(new THREE.Vector3());
     baseModel.position.set(-fitCtr.x, -fitBox.min.y + 0.02, -fitCtr.z);
 
-    // Helper to build a realistic clearcoat car instance sharing baseModel's GPU geometry buffers!
+    const contactShadowMat = new THREE.MeshBasicMaterial({
+      map: this.contactShadowTex, transparent: true, opacity: 0.88, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    });
+    const sharedGlassMat = new THREE.MeshPhysicalMaterial({
+      color: 0x0d141e, metalness: 0.12, roughness: 0.05, transparent: true, opacity: 0.74, ior: 1.5, clearcoat: 0.9, envMapIntensity: 1.4,
+    });
+    const sharedDarkTrimMat = new THREE.MeshStandardMaterial({ color: 0x1a1e24, metalness: 0.72, roughness: 0.34 });
+    const sharedHeadMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2cc, emissiveIntensity: 3.4, roughness: 0.08 });
+    const sharedTailMat = new THREE.MeshStandardMaterial({ color: 0xff1c24, emissive: 0xff141e, emissiveIntensity: 2.3, roughness: 0.14 });
+
+    // Pre-merge BMW submeshes into 3 ultra-fast BufferGeometries for traffic fleet (~35 -> 3 draw calls per car!)
+    baseModel.updateMatrixWorld(true);
+    const trafficBuckets = { paint: [], glass: [], trim: [] };
+    baseModel.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      const mName = (Array.isArray(o.material) ? o.material.map((m) => m?.name).join(' ') : o.material?.name) || '';
+      let bucket = 'trim';
+      if (/car paint/i.test(mName)) bucket = 'paint';
+      else if (/glass|stuklo/i.test(mName)) bucket = 'glass';
+      const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      g.applyMatrix4(o.matrixWorld);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      for (const attr of Object.keys(g.attributes)) {
+        if (attr !== 'position' && attr !== 'normal') g.deleteAttribute(attr);
+      }
+      trafficBuckets[bucket].push(g);
+    });
+    const mergedTrafficPaintGeo = trafficBuckets.paint.length ? mergeGeometries(trafficBuckets.paint, false) : null;
+    const mergedTrafficGlassGeo = trafficBuckets.glass.length ? mergeGeometries(trafficBuckets.glass, false) : null;
+    const mergedTrafficTrimGeo = trafficBuckets.trim.length ? mergeGeometries(trafficBuckets.trim, false) : null;
+    trafficBuckets.paint.forEach((g) => g.dispose());
+    trafficBuckets.glass.forEach((g) => g.dispose());
+    trafficBuckets.trim.forEach((g) => g.dispose());
+
+    // Helper to build detailed Hero BMW OR 3-draw-call merged metallic traffic car!
     const buildRealisticCarInstance = (paintHex, isHero = false, isPolice = false) => {
       const wrapper = new THREE.Group();
-      const clone = baseModel.clone(true);
-
+      wrapper.userData.dynamic = true;
       const paintMat = new THREE.MeshPhysicalMaterial({
-        color: paintHex, metalness: 0.9, roughness: 0.14, clearcoat: 1.0, clearcoatRoughness: 0.04, envMapIntensity: 1.5,
+        color: paintHex, metalness: 0.88, roughness: 0.15, clearcoat: 1.0, clearcoatRoughness: 0.05, envMapIntensity: 1.45,
       });
-      const glassMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0d141e, metalness: 0.12, roughness: 0.04, transparent: true, opacity: 0.72, ior: 1.5, clearcoat: 1.0, envMapIntensity: 1.6,
-      });
-      const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe8edf5, metalness: 0.98, roughness: 0.08 });
-      const headLightMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2cc, emissiveIntensity: 3.4, roughness: 0.08 });
-      const tailLightMat = new THREE.MeshStandardMaterial({ color: 0xff1c24, emissive: 0xff141e, emissiveIntensity: 2.3, roughness: 0.14 });
-
-      if (isHero) { this.bmwPaintMats.push(paintMat); this.bmwBrakeMats.push(tailLightMat); }
-
       const wheels = [];
-      clone.traverse((o) => {
-        if (!o.isMesh) return;
-        o.castShadow = isHero && !this.isMobile;
-        o.receiveShadow = false;
-        const mats = Array.isArray(o.material) ? o.material : [o.material];
-        const nextMats = mats.map((m) => {
-          if (!m) return m;
-          const n = m.name || '';
-          if (/car paint/i.test(n)) return paintMat;
-          if (/glass|stuklo/i.test(n)) return glassMat;
-          if (/chrome|rims|steel/i.test(n)) return chromeMat;
-          if (/^far$/i.test(n)) return headLightMat;
-          if (/led red/i.test(n)) return tailLightMat;
-          if (/tyre/i.test(n)) { const tm = m.clone(); tm.roughness = 0.82; tm.metalness = 0.05; return tm; }
-          return m;
-        });
-        o.material = Array.isArray(o.material) ? nextMats : nextMats[0];
-        if (/guma|wheel|rim/i.test(o.name || '')) wheels.push(o);
-      });
-      wrapper.add(clone);
 
-      // Soft realistic dark contact shadow directly under chassis
-      const contactSh = new THREE.Mesh(
-        new THREE.PlaneGeometry(2.5, 5.1),
-        new THREE.MeshBasicMaterial({ color: 0x040303, transparent: true, opacity: 0.58, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
-      );
+      if (isHero || !mergedTrafficPaintGeo || !mergedTrafficTrimGeo) {
+        const clone = baseModel.clone(true);
+        const chromeMat = new THREE.MeshStandardMaterial({ color: 0xe8edf5, metalness: 0.96, roughness: 0.1 });
+        const tailLightMat = sharedTailMat.clone();
+        if (isHero) { this.bmwPaintMats.push(paintMat); this.bmwBrakeMats.push(tailLightMat); }
+        clone.traverse((o) => {
+          if (!o.isMesh) return;
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          const isBodyPart = mats.some((m) => /car paint/i.test(m?.name || ''));
+          o.castShadow = isHero && isBodyPart;
+          o.receiveShadow = false;
+          const nextMats = mats.map((m) => {
+            if (!m) return m;
+            const n = m.name || '';
+            if (/car paint/i.test(n)) return paintMat;
+            if (/glass|stuklo/i.test(n)) return sharedGlassMat;
+            if (/chrome|rims|steel/i.test(n)) return chromeMat;
+            if (/^far$/i.test(n)) return sharedHeadMat;
+            if (/led red/i.test(n)) return tailLightMat;
+            if (/tyre/i.test(n)) { const tm = m.clone(); tm.roughness = 0.82; tm.metalness = 0.05; return tm; }
+            return m;
+          });
+          o.material = Array.isArray(o.material) ? nextMats : nextMats[0];
+          if (/guma|wheel|rim/i.test(o.name || '')) wheels.push(o);
+        });
+        wrapper.add(clone);
+      } else {
+        wrapper.add(new THREE.Mesh(mergedTrafficPaintGeo, paintMat), new THREE.Mesh(mergedTrafficTrimGeo, sharedDarkTrimMat));
+        if (mergedTrafficGlassGeo) wrapper.add(new THREE.Mesh(mergedTrafficGlassGeo, sharedGlassMat));
+      }
+
+      // Ultra-cheap radial contact shadow plane directly under chassis (zero shadow-pass GPU cost!)
+      const contactSh = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 5.4), contactShadowMat);
       contactSh.rotation.x = -Math.PI / 2; contactSh.position.y = 0.04;
       wrapper.add(contactSh);
 
-      // Subtle glowing headlights & red LED taillights (+ volumetric headlight beams on Hero BMW!)
+      // Glowing headlights & red LED taillights (+ volumetric beams on Hero BMW!)
       [-0.7, 0.7].forEach((hx) => {
-        const hGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xfff2cc, transparent: true, opacity: isHero ? 0.85 : 0.6, blending: THREE.AdditiveBlending, depthWrite: false }));
-        hGlow.scale.set(isHero ? 1.25 : 0.9, isHero ? 1.25 : 0.9, 1); hGlow.position.set(hx, 0.65, 2.34);
-        const tGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff2230, transparent: true, opacity: isHero ? 0.78 : 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
-        tGlow.scale.set(isHero ? 1.05 : 0.82, isHero ? 1.05 : 0.82, 1); tGlow.position.set(hx, 0.72, -2.32);
+        const hGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xfff2cc, transparent: true, opacity: isHero ? 0.85 : 0.56, blending: THREE.AdditiveBlending, depthWrite: false }));
+        hGlow.scale.set(isHero ? 1.25 : 0.85, isHero ? 1.25 : 0.85, 1); hGlow.position.set(hx, 0.65, 2.34);
+        const tGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff2230, transparent: true, opacity: isHero ? 0.78 : 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+        tGlow.scale.set(isHero ? 1.05 : 0.78, isHero ? 1.05 : 0.78, 1); tGlow.position.set(hx, 0.72, -2.32);
         wrapper.add(hGlow, tGlow);
         if (isHero) {
-          const beam = new THREE.Mesh(new THREE.ConeGeometry(1.1, 7.0, 12, 1, true), new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff2cc, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
+          const beam = new THREE.Mesh(new THREE.ConeGeometry(1.1, 7.0, 10, 1, true), new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff2cc, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
           beam.rotation.x = -Math.PI / 2 + 0.08; beam.position.set(hx, 0.44, 5.7);
           wrapper.add(beam);
         }
@@ -1215,7 +1370,6 @@ export class LouvreParisWorld3D {
     this.bmwRoot = hero.wrapper;
     this.bmwWheels = hero.wheels;
 
-    // Open-Top Cockpit Passenger Anchor so Bobs / Anas literally rides BESIDE you!
     this.bmwPassengerSlot.position.set(0.42, 0.34, -0.18);
     this.bmwRoot.add(this.bmwPassengerSlot);
 
@@ -1229,8 +1383,8 @@ export class LouvreParisWorld3D {
     this.bmwRoot.position.copy(this.bmwPos);
     this.bmwRoot.rotation.y = this.bmwYaw;
     this.bmwLoaded = true;
-    this.scene.add(this.bmwRoot);
-    this.renderer.shadowMap.needsUpdate = true;
+    this.outdoorCityGroup.add(this.bmwRoot);
+    this.updateFollowingShadowFrustum(true);
 
     this.interactables.push({
       id: 'bmw', titleAr: 'سيارة BMW الرياضية في باريس',
@@ -1238,26 +1392,21 @@ export class LouvreParisWorld3D {
       mesh: bmwHit, worldPos: this.bmwPos, radius: 12.0,
     });
 
-    // ---- 2. REALISTIC METALLIC PARISIAN BOULEVARD TRAFFIC (ZERO KENNEY TOYS!) ----
+    // ---- 2. ULTRA-FAST MERGED METALLIC PARISIAN BOULEVARD TRAFFIC (3 DRAW CALLS PER CAR!) ----
     const trafficSpecs = [
-      // Parked realistic Police Nationale Metallic Navy Interceptor outside Police HQ!
       { hex: 0x132c5c, laneX: -25.8, z: 176, dirZ: -1, spd: 0, police: true, parked: true },
-      // Moving realistic metallic luxury sedans/roadsters across all 4 boulevard lanes
-      { hex: 0x132c5c, laneX: -19.5, z: 410, dirZ: -1, spd: 13.5, police: true },
-      { hex: 0x262930, laneX: -19.5, z: 270, dirZ: -1, spd: 11.8, police: false },
-      { hex: 0xbcc4cf, laneX: -19.5, z: 125, dirZ: -1, spd: 12.2, police: false },
-      { hex: 0x0e1014, laneX: -12.6, z: 80, dirZ: 1, spd: 13.0, police: false },
-      { hex: 0xe6eaf0, laneX: -12.6, z: 255, dirZ: 1, spd: 11.5, police: false },
-      { hex: 0x18253a, laneX: 12.6, z: 240, dirZ: -1, spd: 12.6, police: false },
-      { hex: 0x2f333b, laneX: 19.5, z: 95, dirZ: 1, spd: 12.0, police: false },
-      { hex: 0xc2c8d2, laneX: 19.5, z: 310, dirZ: 1, spd: 12.8, police: false },
+      { hex: 0x132c5c, laneX: -19.5, z: 395, dirZ: -1, spd: 13.5, police: true },
+      { hex: 0xbcc4cf, laneX: -12.6, z: 345, dirZ: 1, spd: 12.2, police: false },
+      { hex: 0x262930, laneX: -19.5, z: 225, dirZ: -1, spd: 11.8, police: false },
+      { hex: 0x18253a, laneX: 12.6, z: 280, dirZ: -1, spd: 12.6, police: false },
+      { hex: 0xe6eaf0, laneX: 19.5, z: 130, dirZ: 1, spd: 12.0, police: false },
     ];
-    const picked = this.isMobile ? trafficSpecs.filter((_, idx) => idx === 0 || idx % 2 === 1) : trafficSpecs;
+    const picked = this.isMobile ? trafficSpecs.slice(0, 4) : trafficSpecs;
     picked.forEach((sp) => {
       const inst = buildRealisticCarInstance(sp.hex, false, sp.police);
       inst.wrapper.position.set(sp.laneX, 0, sp.z);
       inst.wrapper.rotation.y = sp.dirZ > 0 ? 0 : Math.PI;
-      this.scene.add(inst.wrapper);
+      this.outdoorCityGroup.add(inst.wrapper);
       if (!sp.parked) {
         this.trafficVehicles.push({ root: inst.wrapper, wheels: inst.wheels, laneX: sp.laneX, z: sp.z, dirZ: sp.dirZ, speed: sp.spd * 0.7, maxSpeed: sp.spd });
       }
@@ -1351,44 +1500,64 @@ export class LouvreParisWorld3D {
     return p;
   }
 
-  /* ==================== WORKING PARISIAN TRAFFIC LIGHTS ==================== */
+  /* ==================== WORKING PARISIAN TRAFFIC LIGHTS (INSTANCED CROSSWALKS & POLES!) ==================== */
   buildWorkingTrafficLightsAndIntersections() {
     const interZList = [{ z: 290, offset: 0 }, { z: 170, offset: 6.5 }, { z: 65, offset: 12.2 }];
     const redOff = new THREE.MeshBasicMaterial({ color: 0x3b1010 });
     const yelOff = new THREE.MeshBasicMaterial({ color: 0x3f300c });
     const grnOff = new THREE.MeshBasicMaterial({ color: 0x0d361c });
 
-    interZList.forEach(({ z, offset }) => {
-      [-16, 16].forEach((rx) => {
-        for (let sx = -6.2; sx <= 6.2; sx += 1.8) {
-          const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.85, 3.8), this.mats.crosswalkStripe);
-          stripe.rotation.x = -Math.PI / 2; stripe.position.set(rx + sx, 0.048, z); this.scene.add(stripe);
-        }
-      });
+    // Instanced zebra crosswalk stripes (1 draw call instead of 42!)
+    const stripePositions = [];
+    interZList.forEach(({ z }) => { [-16, 16].forEach((rx) => { for (let sx = -6.2; sx <= 6.2; sx += 1.8) stripePositions.push([rx + sx, z]); }); });
+    const stripeInst = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.85, 3.8), this.mats.crosswalkStripe, stripePositions.length);
+    const dummy = new THREE.Object3D();
+    stripePositions.forEach(([x, z], i) => {
+      dummy.position.set(x, 0.048, z); dummy.rotation.set(-Math.PI / 2, 0, 0); dummy.scale.set(1, 1, 1); dummy.updateMatrix();
+      stripeInst.setMatrixAt(i, dummy.matrix);
+    });
+    this.outdoorCityGroup.add(stripeInst);
 
+    const poleCount = interZList.length * 2;
+    const mastInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.08, 0.11, 5.6, 8), this.mats.parisGreenIron, poleCount);
+    const armInst = new THREE.InstancedMesh(new THREE.BoxGeometry(5.2, 0.1, 0.1), this.mats.parisGreenIron, poleCount);
+    const boxInst = new THREE.InstancedMesh(new THREE.BoxGeometry(0.52, 1.55, 0.44), this.mats.ironDark, poleCount);
+    let pIdx = 0;
+
+    interZList.forEach(({ z, offset }) => {
       const rMat = new THREE.MeshStandardMaterial({ color: 0xff3b30, emissive: 0xff2820, emissiveIntensity: 3.2 });
       const yMat = new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0xffb800, emissiveIntensity: 3.2 });
       const gMat = new THREE.MeshStandardMaterial({ color: 0x22e568, emissive: 0x1ed860, emissiveIntensity: 3.0 });
       const lights = [];
 
       [[-8.3, -1], [8.3, 1]].forEach(([px, dir]) => {
-        const pole = new THREE.Group(); pole.position.set(px, 0, z + dir * 4.5);
-        const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.11, 5.6, 8), this.mats.parisGreenIron); mast.position.y = 2.8;
-        const arm = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.1, 0.1), this.mats.parisGreenIron); arm.position.set(dir * 2.5, 5.4, 0);
-        const box = new THREE.Mesh(new THREE.BoxGeometry(0.52, 1.55, 0.44), this.mats.ironDark); box.position.set(dir * 4.2, 4.9, 0);
-        const makeLens = (ly, mat, sideZ) => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.16, 14), mat); m.position.set(dir * 4.2, 4.9 + ly, sideZ); if (sideZ < 0) m.rotation.y = Math.PI; return m; };
+        const pz = z + dir * 4.5;
+        dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
+        dummy.position.set(px, 2.8, pz); dummy.updateMatrix(); mastInst.setMatrixAt(pIdx, dummy.matrix);
+        dummy.position.set(px + dir * 2.5, 5.4, pz); dummy.updateMatrix(); armInst.setMatrixAt(pIdx, dummy.matrix);
+        dummy.position.set(px + dir * 4.2, 4.9, pz); dummy.updateMatrix(); boxInst.setMatrixAt(pIdx, dummy.matrix);
+        pIdx++;
+
+        const lensGeo = new THREE.CircleGeometry(0.16, 10);
+        const makeLens = (ly, mat, sideZ) => {
+          const m = new THREE.Mesh(lensGeo, mat);
+          m.position.set(px + dir * 4.2, 4.9 + ly, pz + sideZ);
+          if (sideZ < 0) m.rotation.y = Math.PI;
+          this.outdoorCityGroup.add(m);
+          return m;
+        };
         const r1 = makeLens(0.46, rMat, 0.23), r2 = makeLens(0.46, rMat, -0.23);
         const y1 = makeLens(0.0, yMat, 0.23), y2 = makeLens(0.0, yMat, -0.23);
         const g1 = makeLens(-0.46, gMat, 0.23), g2 = makeLens(-0.46, gMat, -0.23);
-        pole.add(mast, arm, box, r1, r2, y1, y2, g1, g2); this.scene.add(pole);
         lights.push({ r: [r1, r2], y: [y1, y2], g: [g1, g2] });
       });
 
       this.intersections.push({ z, timer: offset, state: 'green', lights, mats: { rMat, yMat, gMat, redOff, yelOff, grnOff } });
     });
+    this.outdoorCityGroup.add(mastInst, armInst, boxInst);
   }
 
-  /* ==================== REFINED DARK BRONZE 128M EIFFEL TOWER ==================== */
+  /* ==================== REFINED DARK BRONZE 128M EIFFEL TOWER (1-DRAW-CALL POINTS SPARKLES!) ==================== */
   buildBronzeEiffelTower() {
     const tower = new THREE.Group(); tower.position.set(-86, 0, 135); tower.scale.setScalar(1.42);
     [[-10.5, -10.5], [10.5, -10.5], [10.5, 10.5], [-10.5, 10.5]].forEach(([lx, lz]) => {
@@ -1402,7 +1571,7 @@ export class LouvreParisWorld3D {
     [0, Math.PI / 2, Math.PI, -Math.PI / 2].forEach((rot) => {
       const panel = new THREE.Mesh(new THREE.PlaneGeometry(15.2, 21), this.mats.eiffelLattice);
       panel.position.set(Math.sin(rot) * 7.6, 11, Math.cos(rot) * 7.6); panel.rotation.y = rot; panel.rotation.x = -0.22;
-      const arch = new THREE.Mesh(new THREE.TorusGeometry(6.8, 0.36, 8, 24, Math.PI), this.mats.eiffelBronze);
+      const arch = new THREE.Mesh(new THREE.TorusGeometry(6.8, 0.36, 6, 18, Math.PI), this.mats.eiffelBronze);
       arch.position.set(Math.sin(rot) * 9.8, 5.2, Math.cos(rot) * 9.8); arch.rotation.y = rot;
       tower.add(panel, arch);
     });
@@ -1412,28 +1581,38 @@ export class LouvreParisWorld3D {
     const d2Rim = new THREE.Mesh(new THREE.BoxGeometry(8.6, 0.28, 8.6), this.mats.goldGlow); d2Rim.position.y = 43.3;
     const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.95, 3.0, 36, 4), this.mats.eiffelLattice); spire.rotation.y = Math.PI / 4; spire.position.y = 61;
     const d3 = new THREE.Mesh(new THREE.BoxGeometry(3.2, 2.0, 3.2), this.mats.goldGlow); d3.position.y = 80;
-    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.36, 11, 8), this.mats.gold); ant.position.y = 86;
+    const ant = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.36, 11, 6), this.mats.gold); ant.position.y = 86;
     tower.add(d1, d1Rim, d2, d2Rim, spire, d3, ant);
 
     const beacon = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe49e, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending, depthWrite: false }));
-    beacon.scale.set(9.0, 9.0, 1); beacon.position.y = 89.5; this.eiffelBeacon = beacon; tower.add(beacon);
+    beacon.scale.set(9.0, 9.0, 1); beacon.position.y = 89.5; beacon.userData.dynamic = true; this.eiffelBeacon = beacon; tower.add(beacon);
 
-    this.eiffelSearchlightRig = new THREE.Group(); this.eiffelSearchlightRig.position.y = 88.5;
-    this.eiffelSearchlightMat = new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff1c4, transparent: true, opacity: 0.14, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
+    this.eiffelSearchlightRig = new THREE.Group(); this.eiffelSearchlightRig.position.y = 88.5; this.eiffelSearchlightRig.userData.dynamic = true;
+    this.eiffelSearchlightMat = new THREE.MeshBasicMaterial({ map: this.beamTex, color: 0xfff1c4, transparent: true, opacity: 0.12, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false });
     [0, Math.PI].forEach((rot) => {
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(16, 145, 16, 1, true), this.eiffelSearchlightMat);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(16, 145, 12, 1, true), this.eiffelSearchlightMat);
       cone.rotation.z = Math.PI / 2 - 0.14; cone.rotation.y = rot; cone.position.set(Math.cos(rot) * 70, -8, Math.sin(rot) * 70);
+      cone.userData.dynamic = true;
       this.eiffelSearchlightRig.add(cone);
     });
     tower.add(this.eiffelSearchlightRig);
 
-    for (let i = 0; i < 40; i++) {
-      const h = 10 + (i / 40) * 72, r = THREE.MathUtils.lerp(9.6, 1.2, h / 82), ang = i * 1.45;
-      const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xffe6a6, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false }));
-      sp.position.set(Math.cos(ang) * r, h, Math.sin(ang) * r); sp.scale.set(1.2, 1.2, 1); tower.add(sp);
-      this.eiffelSparkles.push({ sprite: sp, phase: i * 0.7, speed: 3.0 + (i % 4) * 1.2 });
+    // 40 Eiffel Sparkles collapsed into 1 single THREE.Points draw call!
+    const spCount = 40;
+    const spPos = new Float32Array(spCount * 3);
+    for (let i = 0; i < spCount; i++) {
+      const h = 10 + (i / spCount) * 72, r = THREE.MathUtils.lerp(9.6, 1.2, h / 82), ang = i * 1.45;
+      spPos[i * 3] = Math.cos(ang) * r; spPos[i * 3 + 1] = h; spPos[i * 3 + 2] = Math.sin(ang) * r;
     }
-    this.scene.add(tower);
+    const spGeo = new THREE.BufferGeometry();
+    spGeo.setAttribute('position', new THREE.BufferAttribute(spPos, 3));
+    this.eiffelSparkleMat = new THREE.PointsMaterial({
+      size: 2.2, map: this.glowTex, color: 0xffe6a6, transparent: true, opacity: 0.45,
+      blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true,
+    });
+    this.eiffelSparklePoints = new THREE.Points(spGeo, this.eiffelSparkleMat);
+    tower.add(this.eiffelSparklePoints);
+    this.outdoorCityGroup.add(tower);
   }
 
   /* ==================== COUR NAPOLÉON, PHYSICAL GLASS PYRAMID & FOUNTAIN ==================== */
@@ -1444,10 +1623,10 @@ export class LouvreParisWorld3D {
     });
     const plazaFloor = new THREE.Mesh(new THREE.PlaneGeometry(76, 38), plazaMat);
     plazaFloor.rotation.x = -Math.PI / 2; plazaFloor.position.set(0, 0, 13); plazaFloor.receiveShadow = true;
-    this.scene.add(plazaFloor);
+    this.plazaBridgeGroup.add(plazaFloor);
 
     const plazaRunner = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 38), this.mats.runnerOverlay);
-    plazaRunner.rotation.x = -Math.PI / 2; plazaRunner.position.set(0, 0.045, 13); this.scene.add(plazaRunner);
+    plazaRunner.rotation.x = -Math.PI / 2; plazaRunner.position.set(0, 0.045, 13); this.plazaBridgeGroup.add(plazaRunner);
 
     [-10.2, 10.2].forEach((px) => {
       const pool = new THREE.Group(); pool.position.set(px, 0, 9.4);
@@ -1455,16 +1634,16 @@ export class LouvreParisWorld3D {
       const water = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 11.4), this.mats.waterPool); water.rotation.x = -Math.PI / 2; water.position.y = 0.37;
       pool.add(basin, water);
       for (let r = 0; r < 2; r++) {
-        const ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.28, 24), new THREE.MeshBasicMaterial({ color: 0xffe49e, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
-        ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.385, -1.5 + r * 3.0);
+        const ring = new THREE.Mesh(new THREE.RingGeometry(0.18, 0.28, 20), new THREE.MeshBasicMaterial({ color: 0xffe49e, transparent: true, opacity: 0.45, side: THREE.DoubleSide }));
+        ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.385, -1.5 + r * 3.0); ring.userData.dynamic = true;
         pool.add(ring); this.fountainRings.push({ mesh: ring, phase: r * 1.6 + (px > 0 ? 0.5 : 0) });
       }
       this.boxColliders.push({ minX: px - 3.6, maxX: px + 3.6, minZ: 3.2, maxZ: 15.6 });
-      this.scene.add(pool);
+      this.plazaBridgeGroup.add(pool);
     });
 
     const fHit = new THREE.Mesh(new THREE.BoxGeometry(6.6, 2.4, 6.6), new THREE.MeshBasicMaterial({ visible: false }));
-    fHit.position.set(9.8, 1.2, 10.0); fHit.userData.interactId = 'fountain'; this.scene.add(fHit);
+    fHit.position.set(9.8, 1.2, 10.0); fHit.userData.interactId = 'fountain'; this.plazaBridgeGroup.add(fHit);
     this.interactables.push({ id: 'fountain', titleAr: 'نافورة أمنيات ساحة اللوفر', badgeAr: '🪙 اضغط لإلقاء عملة أمنية ليمنى في نافورة اللوفر', mesh: fHit, worldPos: new THREE.Vector3(6.8, 1.2, 11.2), radius: 7.8 });
 
     const B = 5.4, H = 7.9, doorHW = 1.85, doorH = 3.45;
@@ -1494,10 +1673,10 @@ export class LouvreParisWorld3D {
       const lintel = new THREE.Mesh(new THREE.BoxGeometry(doorHW * 2 + 0.36, 0.2, 0.3), this.mats.goldGlow); lintel.position.set(0, doorH + 0.05, 0); frameGrp.add(lintel);
 
       const makeDoorLeaf = (side) => {
-        const leaf = new THREE.Group();
-        const pane = new THREE.Mesh(new THREE.BoxGeometry(doorHW - 0.06, doorH - 0.08, 0.05), this.mats.glassDoor); pane.position.y = doorH * 0.5;
-        const border = new THREE.Mesh(new THREE.BoxGeometry(doorHW - 0.02, 0.1, 0.07), this.mats.gold); border.position.y = doorH - 0.08;
-        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 8), this.mats.goldGlow); handle.position.set(-side * (doorHW * 0.38), 1.35, 0.05);
+        const leaf = new THREE.Group(); leaf.userData.dynamic = true;
+        const pane = new THREE.Mesh(new THREE.BoxGeometry(doorHW - 0.06, doorH - 0.08, 0.05), this.mats.glassDoor); pane.position.y = doorH * 0.5; pane.userData.dynamic = true;
+        const border = new THREE.Mesh(new THREE.BoxGeometry(doorHW - 0.02, 0.1, 0.07), this.mats.gold); border.position.y = doorH - 0.08; border.userData.dynamic = true;
+        const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.55, 8), this.mats.goldGlow); handle.position.set(-side * (doorHW * 0.38), 1.35, 0.05); handle.userData.dynamic = true;
         leaf.add(pane, border, handle); leaf.position.x = side * (doorHW * 0.5); return leaf;
       };
       const leftDoor = makeDoorLeaf(-1), rightDoor = makeDoorLeaf(1);
@@ -1511,7 +1690,7 @@ export class LouvreParisWorld3D {
       beam.position.copy(p0).lerp(p1, 0.5); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p1.clone().sub(p0).normalize());
       pyrGroup.add(beam);
     });
-    this.scene.add(pyrGroup);
+    this.plazaBridgeGroup.add(pyrGroup);
 
     const facade = new THREE.Group(); facade.position.set(0, 0, -7);
     [-14.5, 14.5].forEach((x) => {
@@ -1536,18 +1715,19 @@ export class LouvreParisWorld3D {
       const sideRoof = new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.0, 28), this.mats.mansard); sideRoof.position.set(wx, 15.1, 14);
       facade.add(sideWing, sideRoof);
     });
-    this.scene.add(facade);
+    this.plazaBridgeGroup.add(facade);
     this.boxColliders.push({ minX: -24, maxX: -3.4, minZ: -9.0, maxZ: -4.8 }, { minX: 3.4, maxX: 24, minZ: -9.0, maxZ: -4.8 });
   }
 
   tossWishingCoin() {
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.035, 18), this.mats.goldGlow);
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.035, 16), this.mats.goldGlow);
     coin.position.set(5.6, 1.65, 11.2); this.scene.add(coin);
     this.flyingCoins.push({ mesh: coin, t: 0, p0: new THREE.Vector3(5.6, 1.65, 11.2), p1: new THREE.Vector3(9.8, 0.32, 9.4) });
   }
 
-  /* ==================== OBSTRUCTION-FREE LOUVRE GRANDE GALERIE ==================== */
+  /* ==================== OBSTRUCTION-FREE LOUVRE GRANDE GALERIE (ZONE-CULLED & INSTANCED!) ==================== */
   buildLouvreGrandGalleryInterior() {
+    const hall = this.louvreInteriorGroup;
     const hallLen = 74.4, hallMidZ = -43.2;
     const parquetMat = new THREE.MeshStandardMaterial({
       map: this.parquetScan.map, normalMap: this.parquetScan.normalMap, normalScale: new THREE.Vector2(0.55, 0.55),
@@ -1555,51 +1735,56 @@ export class LouvreParisWorld3D {
     });
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(18.0, hallLen), parquetMat);
     floor.rotation.x = -Math.PI / 2; floor.position.set(0, 0, hallMidZ); floor.receiveShadow = true;
-    this.scene.add(floor);
+    hall.add(floor);
 
     const carpet = new THREE.Mesh(new THREE.PlaneGeometry(3.4, hallLen - 0.6), this.mats.velvetRed);
-    carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, 0.045, hallMidZ); this.scene.add(carpet);
-    [-1.76, 1.76].forEach((x) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(0.08, hallLen - 0.6), this.mats.goldOverlay); b.rotation.x = -Math.PI / 2; b.position.set(x, 0.052, hallMidZ); this.scene.add(b); });
-    [-6.0, -80.4].forEach((tz) => { const bar = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.08, 0.36), this.mats.gold); bar.position.set(0, 0.04, tz); this.scene.add(bar); });
+    carpet.rotation.x = -Math.PI / 2; carpet.position.set(0, 0.045, hallMidZ); hall.add(carpet);
+    [-1.76, 1.76].forEach((x) => { const b = new THREE.Mesh(new THREE.PlaneGeometry(0.08, hallLen - 0.6), this.mats.goldOverlay); b.rotation.x = -Math.PI / 2; b.position.set(x, 0.052, hallMidZ); hall.add(b); });
+    [-6.0, -80.4].forEach((tz) => { const bar = new THREE.Mesh(new THREE.BoxGeometry(17.6, 0.08, 0.36), this.mats.gold); bar.position.set(0, 0.04, tz); hall.add(bar); });
 
     const galleryWallMat = new THREE.MeshStandardMaterial({ map: this.wallPanelTex, normalMap: this.stoneScan.normalMap, normalScale: new THREE.Vector2(0.22, 0.22), roughness: 0.62 });
     const wallGeo = new THREE.BoxGeometry(0.8, 9.8, hallLen + 1);
     [-8.8, 8.8].forEach((x) => {
       const wall = new THREE.Mesh(wallGeo, galleryWallMat); wall.position.set(x, 4.9, hallMidZ);
       const cornice = new THREE.Mesh(new THREE.BoxGeometry(1.15, 0.4, hallLen + 1), this.mats.gold); cornice.position.set(x, 9.45, hallMidZ);
-      this.scene.add(wall, cornice);
+      hall.add(wall, cornice);
     });
-    [-6.0, 6.0].forEach((x) => { const ceilSide = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.45, hallLen + 1), this.mats.marble); ceilSide.position.set(x, 9.7, hallMidZ); this.scene.add(ceilSide); });
+    [-6.0, 6.0].forEach((x) => { const ceilSide = new THREE.Mesh(new THREE.BoxGeometry(6.4, 0.45, hallLen + 1), this.mats.marble); ceilSide.position.set(x, 9.7, hallMidZ); hall.add(ceilSide); });
     const skylight = new THREE.Mesh(new THREE.PlaneGeometry(5.6, hallLen), new THREE.MeshBasicMaterial({ color: 0xffe8b8, transparent: true, opacity: 0.5, side: THREE.DoubleSide }));
-    skylight.rotation.x = Math.PI / 2; skylight.position.set(0, 9.85, hallMidZ); this.scene.add(skylight);
+    skylight.rotation.x = Math.PI / 2; skylight.position.set(0, 9.85, hallMidZ); hall.add(skylight);
 
     const colPositions = [];
     for (let z = -12; z >= -78; z -= 9.5) colPositions.push([-7.5, z], [7.5, z]);
-    const shaftMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.32, 0.38, 8.8, 14), this.mats.marble, colPositions.length);
+    const shaftMesh = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.32, 0.38, 8.8, 12), this.mats.marble, colPositions.length);
     const capMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.08, 0.46, 1.08), this.mats.gold, colPositions.length);
     const baseMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1.08, 0.46, 1.08), this.mats.marble, colPositions.length);
     const dummy = new THREE.Object3D();
     colPositions.forEach(([x, z], i) => {
+      dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
       dummy.position.set(x, 4.6, z); dummy.updateMatrix(); shaftMesh.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 9.15, z); dummy.updateMatrix(); capMesh.setMatrixAt(i, dummy.matrix);
       dummy.position.set(x, 0.23, z); dummy.updateMatrix(); baseMesh.setMatrixAt(i, dummy.matrix);
     });
-    this.scene.add(shaftMesh, capMesh, baseMesh);
+    hall.add(shaftMesh, capMesh, baseMesh);
 
-    [[-5.8, -41], [5.8, -55], [-5.8, -68]].forEach(([bx, bz]) => {
-      const bench = new THREE.Group(); bench.position.set(bx, 0, bz); bench.rotation.y = Math.PI / 2;
-      const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.14, 0.72), this.mats.velvetRed); seat.position.y = 0.52;
-      const trim = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.08, 0.78), this.mats.woodDark); trim.position.y = 0.44;
-      [-0.85, 0.85].forEach((lx) => { const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.42, 0.64), this.mats.woodDark); leg.position.set(lx, 0.21, 0); bench.add(leg); });
-      bench.add(seat, trim);
+    const benchCoords = [[-5.8, -41], [5.8, -55], [-5.8, -68]];
+    const bSeat = new THREE.InstancedMesh(new THREE.BoxGeometry(0.72, 0.14, 2.2), this.mats.velvetRed, benchCoords.length);
+    const bTrim = new THREE.InstancedMesh(new THREE.BoxGeometry(0.78, 0.08, 2.26), this.mats.woodDark, benchCoords.length);
+    const bLeg = new THREE.InstancedMesh(new THREE.BoxGeometry(0.64, 0.42, 0.14), this.mats.woodDark, benchCoords.length * 2);
+    benchCoords.forEach(([bx, bz], i) => {
+      dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
+      dummy.position.set(bx, 0.52, bz); dummy.updateMatrix(); bSeat.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(bx, 0.44, bz); dummy.updateMatrix(); bTrim.setMatrixAt(i, dummy.matrix);
+      dummy.position.set(bx, 0.21, bz - 0.85); dummy.updateMatrix(); bLeg.setMatrixAt(i * 2, dummy.matrix);
+      dummy.position.set(bx, 0.21, bz + 0.85); dummy.updateMatrix(); bLeg.setMatrixAt(i * 2 + 1, dummy.matrix);
       this.boxColliders.push({ minX: bx - 0.55, maxX: bx + 0.55, minZ: bz - 1.25, maxZ: bz + 1.25 });
-      this.scene.add(bench);
     });
+    hall.add(bSeat, bTrim, bLeg);
 
-    [-19, -34, -48, -62, -75].forEach((z) => {
-      const beam = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 10.8), new THREE.MeshBasicMaterial({ map: this.beamTex, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }));
-      beam.position.set(0, 5.0, z); beam.rotation.z = 0.14; this.scene.add(beam);
-    });
+    const beamZs = [-19, -34, -48, -62, -75];
+    const beamInst = new THREE.InstancedMesh(new THREE.PlaneGeometry(4.6, 10.8), new THREE.MeshBasicMaterial({ map: this.beamTex, transparent: true, opacity: 0.26, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false }), beamZs.length);
+    beamZs.forEach((z, i) => { dummy.position.set(0, 5.0, z); dummy.rotation.set(0, 0, 0.14); dummy.scale.set(1, 1, 1); dummy.updateMatrix(); beamInst.setMatrixAt(i, dummy.matrix); });
+    hall.add(beamInst);
   }
 
   buildFiveHiddenMuseumSeals() {
@@ -1677,7 +1862,7 @@ export class LouvreParisWorld3D {
       const frontRope = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 2.36, 8), this.mats.velvetRed);
       frontRope.rotation.z = Math.PI / 2; frontRope.position.set(0, 0.76, 1.18); grp.add(frontRope);
 
-      const artCenter = new THREE.Group(); artCenter.position.y = 2.08;
+      const artCenter = new THREE.Group(); artCenter.position.y = 2.08; artCenter.userData.dynamic = true;
       if (idx === 0) {
         artCenter.add(new THREE.Mesh(new THREE.OctahedronGeometry(0.32, 0), this.mats.goldGlow));
         [0xf0c05a, 0xd97854, 0x6f98bd, 0x86ad7e, 0xe095a4].forEach((hex, pi) => {
@@ -1688,33 +1873,36 @@ export class LouvreParisWorld3D {
         artCenter.add(new THREE.Mesh(new THREE.IcosahedronGeometry(0.54, 0), new THREE.MeshStandardMaterial({ color: 0xf5d076, emissive: 0x9e6f1e, emissiveIntensity: 0.4, metalness: 0.85, roughness: 0.2, wireframe: true })), new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), this.mats.marble));
       } else if (idx === 2) {
         const glassMat = new THREE.MeshPhysicalMaterial({ color: 0xffe6a8, transparent: true, opacity: 0.5, roughness: 0.1, metalness: 0.2, clearcoat: 1 });
-        const topC = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.48, 16), glassMat); topC.position.y = 0.26; topC.rotation.x = Math.PI;
-        const botC = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.48, 16), glassMat); botC.position.y = -0.26;
-        const cap1 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 18), this.mats.goldGlow); cap1.position.y = 0.52;
+        const topC = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.48, 14), glassMat); topC.position.y = 0.26; topC.rotation.x = Math.PI;
+        const botC = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.48, 14), glassMat); botC.position.y = -0.26;
+        const cap1 = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.06, 16), this.mats.goldGlow); cap1.position.y = 0.52;
         const cap2 = cap1.clone(); cap2.position.y = -0.52; artCenter.add(topC, botC, cap1, cap2);
       } else {
         const pts = [new THREE.Vector2(0.0, -0.48), new THREE.Vector2(0.24, -0.48), new THREE.Vector2(0.20, -0.40), new THREE.Vector2(0.09, -0.32), new THREE.Vector2(0.14, -0.16), new THREE.Vector2(0.28, 0.04), new THREE.Vector2(0.24, 0.22), new THREE.Vector2(0.11, 0.31), new THREE.Vector2(0.15, 0.44), new THREE.Vector2(0.12, 0.54), new THREE.Vector2(0.0, 0.56)];
-        artCenter.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 32), this.mats.marble), new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.022, 10, 44), this.mats.goldGlow));
+        artCenter.add(new THREE.Mesh(new THREE.LatheGeometry(pts, 24), this.mats.marble), new THREE.Mesh(new THREE.TorusGeometry(0.58, 0.022, 8, 32), this.mats.goldGlow));
       }
+      artCenter.traverse((c) => { c.userData.dynamic = true; });
       grp.add(artCenter); this.floatingProps.push({ mesh: artCenter, baseY: 2.08, speed: 1.2 + idx * 0.2 });
 
       const parchment = new THREE.Mesh(new THREE.PlaneGeometry(0.76, 1.0), new THREE.MeshBasicMaterial({ map: createParchmentTexture(`التحفة ${st.num}`, st.shortAr), side: THREE.DoubleSide }));
-      parchment.position.set(st.x < 0 ? 0.96 : -0.96, 1.58, 0.56); parchment.rotation.y = st.x < 0 ? 0.42 : -0.42;
+      parchment.position.set(st.x < 0 ? 0.96 : -0.96, 1.58, 0.56); parchment.rotation.y = st.x < 0 ? 0.42 : -0.42; parchment.userData.dynamic = true;
       grp.add(parchment); this.parchments.push({ mesh: parchment, baseY: 1.58, phase: idx * 1.4 });
 
       const wallArt = this.createFramedGalleryPainting(st.ch?.image || './assets/art/chapter1-childhood.jpg', uvSecrets[idx], `CH-0${idx + 1}`);
-      wallArt.position.set(st.wallX, 3.7, st.z); wallArt.rotation.y = st.rotY; this.scene.add(wallArt);
+      wallArt.position.set(st.wallX, 3.7, st.z); wallArt.rotation.y = st.rotY; this.louvreInteriorGroup.add(wallArt);
 
       if (!this.isMobile) {
         const spot = new THREE.SpotLight(0xffe7b8, 22, 16, Math.PI / 5, 0.5, 1.4);
         spot.position.set(st.wallX * 0.42, 8.6, st.z); spot.target.position.set(st.wallX, 3.7, st.z);
-        this.scene.add(spot, spot.target);
+        spot.visible = false; // Enabled automatically ONLY when inside the Louvre!
+        this.louvreInteriorGroup.add(spot, spot.target);
+        this.louvreSpotLights.push(spot);
       }
 
       const hitbox = new THREE.Mesh(new THREE.BoxGeometry(2.9, 3.5, 2.7), new THREE.MeshBasicMaterial({ visible: false }));
       hitbox.position.y = 1.7; hitbox.userData.interactId = st.id; grp.add(hitbox);
       this.interactables.push({ id: st.id, titleAr: st.ch?.titleAr || st.shortAr, badgeAr: `📜 اضغط لفتح التحفة ${st.num} — ${st.shortAr}`, mesh: hitbox, worldPos: new THREE.Vector3(st.x, 1.5, st.z), radius: 7.8 });
-      this.scene.add(grp);
+      this.louvreInteriorGroup.add(grp);
     });
   }
 
@@ -1726,7 +1914,7 @@ export class LouvreParisWorld3D {
     const wallGrp = new THREE.Group(); wallGrp.position.set(8.24, 3.75, -27); wallGrp.rotation.y = -Math.PI / 2;
     const outer = new THREE.Mesh(new THREE.BoxGeometry(4.2, 3.15, 0.2), this.mats.goldGlow);
     const canvasPlane = new THREE.Mesh(new THREE.PlaneGeometry(3.75, 2.75), new THREE.MeshStandardMaterial({ map: this.customPaintingTex, roughness: 0.35 }));
-    canvasPlane.position.z = 0.12; wallGrp.add(outer, canvasPlane); this.scene.add(wallGrp);
+    canvasPlane.position.z = 0.12; wallGrp.add(outer, canvasPlane); this.louvreInteriorGroup.add(wallGrp);
 
     const easel = new THREE.Group(); easel.position.set(4.8, 0, -27); easel.rotation.y = -0.55;
     [-0.38, 0.38].forEach((lx) => { const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.04, 2.35, 8), this.mats.woodDark); leg.position.set(lx, 1.12, 0); leg.rotation.z = -lx * 0.22; leg.rotation.x = -0.14; easel.add(leg); });
@@ -1736,7 +1924,7 @@ export class LouvreParisWorld3D {
     const miniArt = new THREE.Mesh(new THREE.PlaneGeometry(1.08, 0.78), new THREE.MeshBasicMaterial({ map: this.customPaintingTex })); miniArt.position.set(0, 1.46, 0.072); miniArt.rotation.x = -0.14;
     const eHit = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.8, 2.6), new THREE.MeshBasicMaterial({ visible: false })); eHit.position.y = 1.4; eHit.userData.interactId = 'easel';
     easel.add(backLeg, tray, miniBoard, miniArt, eHit);
-    this.circleColliders.push({ x: 4.8, z: -27, r: 0.95 }); this.scene.add(easel);
+    this.circleColliders.push({ x: 4.8, z: -27, r: 0.95 }); this.louvreInteriorGroup.add(easel);
     this.interactables.push({ id: 'easel', titleAr: 'مرسم اللوفر التفاعلي', badgeAr: '🎨 اضغط لرسم لوحة وتعليقها على جدار متحف اللوفر', mesh: eHit, worldPos: new THREE.Vector3(4.8, 1.5, -27), radius: 7.8 });
   }
 
@@ -1752,13 +1940,13 @@ export class LouvreParisWorld3D {
     const cloth = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.14, 1.48), this.mats.velvetRed); cloth.position.y = 1.06;
     const boxBody = new THREE.Mesh(new THREE.BoxGeometry(1.26, 0.62, 0.86), this.mats.woodDark); boxBody.position.y = 1.42;
     const boxRim = new THREE.Mesh(new THREE.BoxGeometry(1.32, 0.1, 0.92), this.mats.goldGlow); boxRim.position.y = 1.72;
-    const boxLid = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 1.26, 14, 1, false, 0, Math.PI), this.mats.gold); boxLid.rotation.z = Math.PI / 2; boxLid.position.y = 1.74;
-    const envOrbit = new THREE.Group(); envOrbit.position.y = 2.48;
-    for (let i = 0; i < 4; i++) { const env = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.04), this.mats.goldGlow); const a = (i / 4) * Math.PI * 2; env.position.set(Math.cos(a) * 0.64, Math.sin(i * 1.4) * 0.12, Math.sin(a) * 0.64); env.rotation.y = -a; envOrbit.add(env); }
+    const boxLid = new THREE.Mesh(new THREE.CylinderGeometry(0.43, 0.43, 1.26, 12, 1, false, 0, Math.PI), this.mats.gold); boxLid.rotation.z = Math.PI / 2; boxLid.position.y = 1.74;
+    const envOrbit = new THREE.Group(); envOrbit.position.y = 2.48; envOrbit.userData.dynamic = true;
+    for (let i = 0; i < 4; i++) { const env = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.04), this.mats.goldGlow); const a = (i / 4) * Math.PI * 2; env.position.set(Math.cos(a) * 0.64, Math.sin(i * 1.4) * 0.12, Math.sin(a) * 0.64); env.rotation.y = -a; env.userData.dynamic = true; envOrbit.add(env); }
     this.floatingProps.push({ mesh: envOrbit, baseY: 2.48, speed: 1.5 });
     const vHit = new THREE.Mesh(new THREE.BoxGeometry(2.7, 3.2, 2.5), new THREE.MeshBasicMaterial({ visible: false })); vHit.position.y = 1.6; vHit.userData.interactId = 'vault';
     vaultGrp.add(ped, cloth, boxBody, boxRim, boxLid, envOrbit, vHit);
-    this.circleColliders.push({ x: -4.6, z: -75, r: 1.3 }); this.scene.add(vaultGrp);
+    this.circleColliders.push({ x: -4.6, z: -75, r: 1.3 }); this.louvreInteriorGroup.add(vaultGrp);
     this.interactables.push({ id: 'vault', titleAr: 'صندوق رسائل العائلة ليمنى', badgeAr: '💌 اضغط لفتح صندوق رسائل العائلة السحابي', mesh: vHit, worldPos: new THREE.Vector3(-4.6, 1.6, -75), radius: 7.8 });
 
     const manGrp = new THREE.Group(); manGrp.position.set(4.6, 0, -75);
@@ -1770,7 +1958,7 @@ export class LouvreParisWorld3D {
     const manFaceBack = manFace.clone(); manFaceBack.position.z = -0.155; manFaceBack.rotation.y = Math.PI;
     const mHit = new THREE.Mesh(new THREE.BoxGeometry(2.7, 3.4, 2.3), new THREE.MeshBasicMaterial({ visible: false })); mHit.position.y = 1.7; mHit.userData.interactId = 'manifesto';
     manGrp.add(mPed, steleFrame, stele, manFace, manFaceBack, mHit);
-    this.circleColliders.push({ x: 4.6, z: -75, r: 1.3 }); this.scene.add(manGrp);
+    this.circleColliders.push({ x: 4.6, z: -75, r: 1.3 }); this.louvreInteriorGroup.add(manGrp);
     this.interactables.push({ id: 'manifesto', titleAr: 'الرسالة الأهم في ختام الرحلة', badgeAr: '★ اضغط لقراءة الرسالة الأهم وكبسولة الطمأنينة', mesh: mHit, worldPos: new THREE.Vector3(4.6, 1.7, -75), radius: 7.8 });
   }
 
@@ -1815,34 +2003,38 @@ export class LouvreParisWorld3D {
     const dome = new THREE.Mesh(new THREE.SphereGeometry(12.6, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.48), new THREE.MeshStandardMaterial({ color: 0xf4cf7c, metalness: 0.78, roughness: 0.22, wireframe: true, transparent: true, opacity: 0.48 })); dome.position.y = 9.6;
     rotunda.add(floor, goldInlay, rotWall, dome);
 
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2; if (Math.cos(a) > 0.72) continue;
-      const col = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.42, 9.6, 12), this.mats.marble); col.position.set(Math.sin(a) * 10.8, 4.8, Math.cos(a) * 10.8); rotunda.add(col);
-    }
+    const rotCols = [];
+    for (let i = 0; i < 10; i++) { const a = (i / 10) * Math.PI * 2; if (Math.cos(a) <= 0.72) rotCols.push(a); }
+    const rotColInst = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.36, 0.42, 9.6, 10), this.mats.marble, rotCols.length);
+    const rDummy = new THREE.Object3D();
+    rotCols.forEach((a, idx) => { rDummy.position.set(Math.sin(a) * 10.8, 4.8, Math.cos(a) * 10.8); rDummy.updateMatrix(); rotColInst.setMatrixAt(idx, rDummy.matrix); });
+    rotunda.add(rotColInst);
 
-    const dais1 = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 0.24, 36), this.mats.marble); dais1.position.y = 0.12;
-    const dais2 = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.5, 0.85, 36), this.mats.marble); dais2.position.y = 0.65;
-    const daisRim = new THREE.Mesh(new THREE.TorusGeometry(2.32, 0.045, 10, 42), this.mats.goldGlow); daisRim.rotation.x = Math.PI / 2; daisRim.position.y = 1.07;
+    const dais1 = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.5, 0.24, 30), this.mats.marble); dais1.position.y = 0.12;
+    const dais2 = new THREE.Mesh(new THREE.CylinderGeometry(2.3, 2.5, 0.85, 30), this.mats.marble); dais2.position.y = 0.65;
+    const daisRim = new THREE.Mesh(new THREE.TorusGeometry(2.32, 0.045, 8, 36), this.mats.goldGlow); daisRim.rotation.x = Math.PI / 2; daisRim.position.y = 1.07;
     rotunda.add(dais1, dais2, daisRim);
 
-    const cake = new THREE.Group(); cake.position.y = 2.48; cake.scale.setScalar(1.06);
-    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 0.16, 24), this.mats.gold); foot.position.y = -1.28;
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 0.48, 18), this.mats.marble); stem.position.y = -0.98;
-    const platter = new THREE.Mesh(new THREE.CylinderGeometry(1.88, 1.72, 0.12, 34), this.mats.marble); platter.position.y = -0.7;
-    const tier1 = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.5, 0.88, 34), this.mats.cakeCream); tier1.position.y = -0.2;
-    const tier1Glaze = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.07, 34), this.mats.cakeGanache); tier1Glaze.position.y = 0.23;
-    const tier2 = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 0.98, 0.74, 30), this.mats.cakeCream); tier2.position.y = 0.63;
-    const tier2Glaze = new THREE.Mesh(new THREE.CylinderGeometry(0.975, 0.975, 0.06, 30), this.mats.cakeGanache); tier2Glaze.position.y = 1.0;
+    const cake = new THREE.Group(); cake.position.y = 2.48; cake.scale.setScalar(1.06); cake.userData.dynamic = true;
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.85, 0.16, 20), this.mats.gold); foot.position.y = -1.28;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.28, 0.48, 16), this.mats.marble); stem.position.y = -0.98;
+    const platter = new THREE.Mesh(new THREE.CylinderGeometry(1.88, 1.72, 0.12, 28), this.mats.marble); platter.position.y = -0.7;
+    const tier1 = new THREE.Mesh(new THREE.CylinderGeometry(1.48, 1.5, 0.88, 28), this.mats.cakeCream); tier1.position.y = -0.2;
+    const tier1Glaze = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.07, 28), this.mats.cakeGanache); tier1Glaze.position.y = 0.23;
+    const tier2 = new THREE.Mesh(new THREE.CylinderGeometry(0.96, 0.98, 0.74, 24), this.mats.cakeCream); tier2.position.y = 0.63;
+    const tier2Glaze = new THREE.Mesh(new THREE.CylinderGeometry(0.975, 0.975, 0.06, 24), this.mats.cakeGanache); tier2Glaze.position.y = 1.0;
     cake.add(foot, stem, platter, tier1, tier1Glaze, tier2, tier2Glaze);
 
-    const dripGeo = new THREE.CapsuleGeometry(0.055, 0.26, 6, 8), pearlGeo = new THREE.SphereGeometry(0.085, 8, 8);
+    const dripInst = new THREE.InstancedMesh(new THREE.CapsuleGeometry(0.055, 0.26, 4, 6), this.mats.cakeGanache, 16);
+    const pearlInst = new THREE.InstancedMesh(new THREE.SphereGeometry(0.085, 6, 6), this.mats.cakeFrosting, 16);
     for (let i = 0; i < 16; i++) {
       const a = (i / 16) * Math.PI * 2, len = 0.72 + ((i * 7) % 5) * 0.2;
-      const d = new THREE.Mesh(dripGeo, this.mats.cakeGanache); d.scale.set(1, len, 1); d.position.set(Math.cos(a) * 1.485, 0.15 - len * 0.13, Math.sin(a) * 1.485);
-      const p = new THREE.Mesh(pearlGeo, this.mats.cakeFrosting); p.scale.set(1.15, 0.78, 1.15); p.position.set(Math.cos(a) * 1.54, -0.59, Math.sin(a) * 1.54);
-      cake.add(d, p);
+      rDummy.rotation.set(0, 0, 0);
+      rDummy.scale.set(1, len, 1); rDummy.position.set(Math.cos(a) * 1.485, 0.15 - len * 0.13, Math.sin(a) * 1.485); rDummy.updateMatrix(); dripInst.setMatrixAt(i, rDummy.matrix);
+      rDummy.scale.set(1.15, 0.78, 1.15); rDummy.position.set(Math.cos(a) * 1.54, -0.59, Math.sin(a) * 1.54); rDummy.updateMatrix(); pearlInst.setMatrixAt(i, rDummy.matrix);
     }
-    const berryGeo = new THREE.SphereGeometry(0.125, 10, 8), macGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.11, 14);
+    cake.add(dripInst, pearlInst);
+    const berryGeo = new THREE.SphereGeometry(0.125, 8, 6), macGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.11, 10);
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2 + 0.2;
       if (i % 2 === 0) { const fruit = new THREE.Mesh(berryGeo, this.mats.strawberry); fruit.scale.set(1, 1.25, 1); fruit.position.set(Math.cos(a) * 1.24, 0.36, Math.sin(a) * 1.24); cake.add(fruit); }
@@ -1858,7 +2050,8 @@ export class LouvreParisWorld3D {
     const d9 = new THREE.Mesh(this.createExtrudedDigit9(), this.mats.candleNumber);
     const d9Trim = new THREE.Mesh(this.createExtrudedDigit9(), this.mats.gold); d9Trim.scale.set(1.06, 1.04, 0.72); d9Trim.position.z = -0.02;
     c9.add(d9, d9Trim, this.createCandleFlame(-0.02, 0.95, 0));
-    cake.add(c1, c9); this.cakeGroup = cake; rotunda.add(cake);
+    cake.add(c1, c9); cake.traverse((c) => { c.userData.dynamic = true; });
+    this.cakeGroup = cake; rotunda.add(cake);
 
     const fCount = this.isMobile ? 160 : 280, fPos = new Float32Array(fCount * 3), fCol = new Float32Array(fCount * 3);
     this.fireworkVels = [];
@@ -1870,12 +2063,12 @@ export class LouvreParisWorld3D {
     }
     const fGeo = new THREE.BufferGeometry(); fGeo.setAttribute('position', new THREE.BufferAttribute(fPos, 3)); fGeo.setAttribute('color', new THREE.BufferAttribute(fCol, 3));
     this.fireworksPoints = new THREE.Points(fGeo, new THREE.PointsMaterial({ size: 0.45, map: this.glowTex, vertexColors: true, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false }));
-    this.fireworksPoints.position.set(0, 3.8, -93); this.scene.add(this.fireworksPoints);
+    this.fireworksPoints.position.set(0, 3.8, -93); this.fireworksPoints.userData.dynamic = true; this.louvreInteriorGroup.add(this.fireworksPoints);
 
-    const cakeHit = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 4.6, 14), new THREE.MeshBasicMaterial({ visible: false }));
+    const cakeHit = new THREE.Mesh(new THREE.CylinderGeometry(2.7, 2.7, 4.6, 12), new THREE.MeshBasicMaterial({ visible: false }));
     cakeHit.position.y = 2.3; cakeHit.userData.interactId = 'cake'; rotunda.add(cakeHit);
     this.interactables.push({ id: 'cake', titleAr: 'تورتة العام التاسع عشر', badgeAr: '🎂 اضغط على التورتة للاحتفال وإطفاء شمعتي 1 و 9', mesh: cakeHit, worldPos: new THREE.Vector3(0, 2.2, -93), radius: 12.5 });
-    this.scene.add(rotunda);
+    this.louvreInteriorGroup.add(rotunda);
   }
 
   /* ==================== RIGGED MOCAP HUMANS & CUSTOM ANAS HABIB 3D GUIDE ==================== */
@@ -1897,8 +2090,8 @@ export class LouvreParisWorld3D {
         });
       }
 
-      const shadowMat = new THREE.MeshBasicMaterial({ color: 0x050302, transparent: true, opacity: 0.42, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
-      const shadowGeo = new THREE.CircleGeometry(0.44, 14);
+      const shadowMat = new THREE.MeshBasicMaterial({ map: this.contactShadowTex, transparent: true, opacity: 0.78, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+      const shadowGeo = new THREE.PlaneGeometry(1.1, 1.1);
 
       const anas = SkeletonUtils.clone(avatarGltf.scene);
       const jerseyTex = createAnasJerseyTexture();
@@ -2332,11 +2525,11 @@ export class LouvreParisWorld3D {
   }
 
   renderFrame() {
-    if (this.qualityMode === 'ultra' && this.composer) this.composer.render();
+    if (this.qualityMode === 'ultra' && this.composer && !this.isMobile) this.composer.render();
     else this.renderer.render(this.scene, this.camera);
   }
 
-  /* ==================== SILKY 60FPS SIMULATION LOOP ==================== */
+  /* ==================== SILKY 60FPS SIMULATION LOOP + FPS WATCHDOG + ZONE CULLING ==================== */
   animate() {
     if (this.disposed) return;
     requestAnimationFrame(() => this.animate());
@@ -2344,7 +2537,38 @@ export class LouvreParisWorld3D {
 
     const dt = Math.min(this.clock.getDelta(), 0.05);
     if (this.portalPaused) {
-      this.portalTickAccum += dt; if (this.portalTickAccum < 0.066) return; this.portalTickAccum = 0;
+      // Keep 3D idle behind private «الرحلة» gate so the animated gate runs at locked 60FPS!
+      this.portalTickAccum += dt; if (this.portalTickAccum < 0.25) return; this.portalTickAccum = 0;
+      this.renderFrame();
+      return;
+    }
+
+    // 3-Second Rolling FPS Watchdog (auto-scales DPR down to 0.9 & drops heavy post-processing if FPS < 32)
+    this.fpsFrames++;
+    this.fpsAccum += dt;
+    if (this.fpsAccum >= 1.0) {
+      const secFps = this.fpsFrames / this.fpsAccum;
+      this.fpsFrames = 0; this.fpsAccum = 0;
+      this.fpsHistory.push(secFps);
+      if (this.fpsHistory.length > 3) this.fpsHistory.shift();
+      let sum = 0;
+      for (let i = 0; i < this.fpsHistory.length; i++) sum += this.fpsHistory[i];
+      this.avgFps = sum / this.fpsHistory.length;
+      if (this.fpsHistory.length === 3 && this.avgFps < 32) {
+        if (this.watchdogLevel === 0) {
+          this.watchdogLevel = 1;
+          this.qualityMode = 'smooth60';
+          this.watchdogDpr = Math.max(0.9, this.watchdogDpr - 0.2);
+          this.applyQualitySettings();
+          this.fpsHistory.length = 0;
+        } else if (this.watchdogLevel === 1) {
+          this.watchdogLevel = 2;
+          this.watchdogDpr = 0.9;
+          this.applyQualitySettings();
+          if (this.leafInst) this.leafInst.visible = false;
+          this.fpsHistory.length = 0;
+        }
+      }
     }
 
     const t = this.clock.getElapsedTime();
@@ -2357,50 +2581,59 @@ export class LouvreParisWorld3D {
       this.camera.updateProjectionMatrix();
     }
 
-    // ---- 1. TRAFFIC LIGHTS & REALISTIC METALLIC TRAFFIC ----
-    for (const inter of this.intersections) {
-      inter.timer = (inter.timer + dt) % 19.2;
-      const nextState = inter.timer < 9.5 ? 'green' : inter.timer < 11.7 ? 'yellow' : 'red';
-      if (nextState !== inter.state) {
-        inter.state = nextState;
-        const { rMat, yMat, gMat, redOff, yelOff, grnOff } = inter.mats;
-        for (const l of inter.lights) {
-          l.r[0].material = l.r[1].material = nextState === 'red' ? rMat : redOff;
-          l.y[0].material = l.y[1].material = nextState === 'yellow' ? yMat : yelOff;
-          l.g[0].material = l.g[1].material = nextState === 'green' ? gMat : grnOff;
+    this.updateZoneCulling(false);
+    const isOutdoor = this.activeZone === 'outdoor';
+
+    // ---- 1. TRAFFIC LIGHTS & REALISTIC METALLIC TRAFFIC (PAUSED AUTOMATICALLY WHEN INSIDE LOUVRE!) ----
+    if (isOutdoor) {
+      for (let i = 0; i < this.intersections.length; i++) {
+        const inter = this.intersections[i];
+        inter.timer = (inter.timer + dt) % 19.2;
+        const nextState = inter.timer < 9.5 ? 'green' : inter.timer < 11.7 ? 'yellow' : 'red';
+        if (nextState !== inter.state) {
+          inter.state = nextState;
+          const { rMat, yMat, gMat, redOff, yelOff, grnOff } = inter.mats;
+          for (let j = 0; j < inter.lights.length; j++) {
+            const l = inter.lights[j];
+            l.r[0].material = l.r[1].material = nextState === 'red' ? rMat : redOff;
+            l.y[0].material = l.y[1].material = nextState === 'yellow' ? yMat : yelOff;
+            l.g[0].material = l.g[1].material = nextState === 'green' ? gMat : grnOff;
+          }
         }
       }
-    }
 
-    for (const pb of this.policeLightBars) {
-      const flash = Math.sin(t * 14 + pb.phase) > 0;
-      pb.redGlow.material.opacity = flash ? 0.96 : 0.08;
-      pb.blueGlow.material.opacity = flash ? 0.08 : 0.96;
-    }
+      for (let i = 0; i < this.policeLightBars.length; i++) {
+        const pb = this.policeLightBars[i];
+        const flash = Math.sin(t * 14 + pb.phase) > 0;
+        pb.redGlow.material.opacity = flash ? 0.96 : 0.08;
+        pb.blueGlow.material.opacity = flash ? 0.08 : 0.96;
+      }
 
-    for (let i = 0; i < this.trafficVehicles.length; i++) {
-      const v = this.trafficVehicles[i];
-      let targetSpd = v.maxSpeed;
-      for (const inter of this.intersections) {
-        if (inter.state === 'green') continue;
-        const distAhead = (inter.z - v.z) * v.dirZ;
-        if (distAhead > 3.5 && distAhead < 19) targetSpd = distAhead < 7.5 ? 0 : Math.min(targetSpd, v.maxSpeed * ((distAhead - 6.5) / 12.5));
-      }
-      for (let j = 0; j < this.trafficVehicles.length; j++) {
-        if (i === j) continue;
-        const other = this.trafficVehicles[j];
-        if (Math.abs(other.laneX - v.laneX) > 1.5 || other.dirZ !== v.dirZ) continue;
-        const gap = (other.z - v.z) * v.dirZ;
-        if (gap > 0 && gap < 15) targetSpd = gap < 9.5 ? 0 : Math.min(targetSpd, other.speed);
-      }
-      v.speed += (targetSpd - v.speed) * Math.min(1, (targetSpd < v.speed ? 14 : 6.5) * dt);
-      v.z += v.dirZ * v.speed * dt;
-      if (v.dirZ < 0 && v.z < 38) v.z = 444;
-      if (v.dirZ > 0 && v.z > 444) v.z = 38;
-      v.root.position.z = v.z;
-      if (v.speed > 0.1 && Math.abs(v.z - this.camera.position.z) < 130) {
-        const spin = v.speed * dt * 2.1;
-        for (const w of v.wheels) w.rotation.x += spin;
+      for (let i = 0; i < this.trafficVehicles.length; i++) {
+        const v = this.trafficVehicles[i];
+        let targetSpd = v.maxSpeed;
+        for (let k = 0; k < this.intersections.length; k++) {
+          const inter = this.intersections[k];
+          if (inter.state === 'green') continue;
+          const distAhead = (inter.z - v.z) * v.dirZ;
+          if (distAhead > 3.5 && distAhead < 19) targetSpd = distAhead < 7.5 ? 0 : Math.min(targetSpd, v.maxSpeed * ((distAhead - 6.5) / 12.5));
+        }
+        for (let j = 0; j < this.trafficVehicles.length; j++) {
+          if (i === j) continue;
+          const other = this.trafficVehicles[j];
+          if (Math.abs(other.laneX - v.laneX) > 1.5 || other.dirZ !== v.dirZ) continue;
+          const gap = (other.z - v.z) * v.dirZ;
+          if (gap > 0 && gap < 15) targetSpd = gap < 9.5 ? 0 : Math.min(targetSpd, other.speed);
+        }
+        v.speed += (targetSpd - v.speed) * Math.min(1, (targetSpd < v.speed ? 14 : 6.5) * dt);
+        v.z += v.dirZ * v.speed * dt;
+        if (v.dirZ < 0 && v.z < 38) v.z = 444;
+        if (v.dirZ > 0 && v.z > 444) v.z = 38;
+        v.root.position.z = v.z;
+        if (v.wheels.length && v.speed > 0.1 && Math.abs(v.z - this.camera.position.z) < 90) {
+          const spin = v.speed * dt * 2.1;
+          for (let w = 0; w < v.wheels.length; w++) v.wheels[w].rotation.x += spin;
+        }
       }
     }
 
@@ -2635,24 +2868,26 @@ export class LouvreParisWorld3D {
         this.applyWorldBoneRot('Wolf_Neck_02SHJnt_15', -0.04, -0.14 + Math.sin(t * 1.2) * 0.06, 0);
         if (this.catTongue) this.catTongue.scale.setScalar(0.001);
       }
-      ['Wolf_Tail_01_02SHJnt_37', 'Wolf_Tail_01_03SHJnt_36', 'Wolf_Tail_01_04SHJnt_35', 'Wolf_Tail_01_05SHJnt_34'].forEach((bn, i) => {
-        this.applyWorldBoneRot(bn, i === 0 ? -0.1 : -0.04, Math.sin(t * (guideMoving ? 4.8 : 2.0) - i * 0.55) * (guideMoving ? 0.16 : 0.1), 0);
-      });
+      for (let i = 0; i < CAT_TAIL_BONES.length; i++) {
+        this.applyWorldBoneRot(CAT_TAIL_BONES[i], i === 0 ? -0.1 : -0.04, Math.sin(t * (guideMoving ? 4.8 : 2.0) - i * 0.55) * (guideMoving ? 0.16 : 0.1), 0);
+      }
     }
 
-    for (const p of this.pawPrints) {
+    for (let i = 0; i < this.pawPrints.length; i++) {
+      const p = this.pawPrints[i];
       if (p.life > 0) { p.life -= dt * 0.35; p.mesh.material.opacity = Math.max(0, p.life * 0.65); if (p.life <= 0) p.mesh.visible = false; }
     }
 
-    // Subtle organic wind sway on Plane Tree canopies
-    for (const tc of this.treeCanopyGroups) {
-      tc.grp.rotation.z = Math.sin(t * 1.1 + tc.phase) * 0.018;
-    }
+    // Tight camera-following 45m×45m texel-snapped directional shadow frustum update!
+    this.updateFollowingShadowFrustum(false);
 
-    for (const v of this.humanVisitors) {
-      const nearCam = Math.abs(this.camera.position.z - v.root.position.z) < 62;
-      if (nearCam) v.mixer.update(dt);
-      if (v.walking) {
+    // 45-Meter NPC AnimationMixer Culling (skips skeletal skinning CPU beyond 45m!)
+    const camX = this.camera.position.x, camZ = this.camera.position.z;
+    for (let i = 0; i < this.humanVisitors.length; i++) {
+      const v = this.humanVisitors[i];
+      const dx = camX - v.root.position.x, dz = camZ - v.root.position.z;
+      if (dx * dx + dz * dz < 2025) v.mixer.update(dt);
+      if (v.walking && (isOutdoor || v.z0 < 0)) {
         const span = Math.max(1, Math.abs(v.z1 - v.z0));
         v.progress += (v.speed * dt * v.dir) / span;
         if (v.progress >= 1) { v.progress = 1; v.dir = -1; }
@@ -2662,7 +2897,8 @@ export class LouvreParisWorld3D {
       }
     }
 
-    for (const s of this.hiddenSeals) {
+    for (let i = 0; i < this.hiddenSeals.length; i++) {
+      const s = this.hiddenSeals[i];
       if (!s.collected) { s.mesh.rotation.y += dt * 1.4; s.mesh.position.y = s.baseY + Math.sin(t * 2.2 + s.phase) * 0.12; }
     }
 
@@ -2679,64 +2915,74 @@ export class LouvreParisWorld3D {
       if (fc.t >= 1) { this.scene.remove(fc.mesh); this.flyingCoins.splice(i, 1); }
     }
 
-    if (this.sparkleShowTimer > 0) this.sparkleShowTimer = Math.max(0, this.sparkleShowTimer - dt);
-    const sparkleBoost = this.sparkleShowTimer > 0;
-    if (this.eiffelBeacon) this.eiffelBeacon.scale.setScalar((sparkleBoost ? 12 : 8.5) + Math.sin(t * (sparkleBoost ? 7 : 3.5)) * 1.5);
-    if (this.eiffelSearchlightRig) this.eiffelSearchlightRig.rotation.y = t * (sparkleBoost ? 1.1 : 0.55);
-    for (const sp of this.eiffelSparkles) {
-      const spd = sparkleBoost ? sp.speed * 2.6 : sp.speed;
-      const baseOp = sparkleBoost ? 0.35 : (this.timeOfDay === 'day' ? 0.04 : 0.2);
-      sp.sprite.material.opacity = baseOp + Math.max(0, Math.sin(t * spd + sp.phase)) * (sparkleBoost ? 0.65 : 0.55);
-      sp.sprite.scale.setScalar(sparkleBoost ? 2.1 : 1.15);
-    }
-
-    for (const fr of this.fountainRings) { const f = (t * 0.55 + fr.phase) % 1; fr.mesh.scale.setScalar(0.6 + f * 3.6); fr.mesh.material.opacity = (1 - f) * 0.48; }
-    for (const fp of this.floatingProps) { fp.mesh.position.y = fp.baseY + Math.sin(t * fp.speed) * 0.09; fp.mesh.rotation.y += dt * 0.4; }
-    for (const pc of this.parchments) pc.mesh.position.y = pc.baseY + Math.sin(t * 1.8 + pc.phase) * 0.07;
-
-    if (this.rainDrops && this.rainDrops.visible) {
-      this.rainDrops.position.set(this.camera.position.x, 0, this.camera.position.z);
-      const rPos = this.rainPositions, dropDy = 24 * dt;
-      for (let i = 0; i < rPos.length; i += 6) {
-        rPos[i + 1] -= dropDy; rPos[i + 4] -= dropDy;
-        if (rPos[i + 1] < 0.2) { rPos[i + 1] = 22; rPos[i + 4] = 21.45; }
+    // Outdoor-only Eiffel Tower, Fountain & Weather updates
+    if (isOutdoor) {
+      if (this.sparkleShowTimer > 0) this.sparkleShowTimer = Math.max(0, this.sparkleShowTimer - dt);
+      const sparkleBoost = this.sparkleShowTimer > 0;
+      if (this.eiffelBeacon) this.eiffelBeacon.scale.setScalar((sparkleBoost ? 12 : 8.5) + Math.sin(t * (sparkleBoost ? 7 : 3.5)) * 1.5);
+      if (this.eiffelSearchlightRig) this.eiffelSearchlightRig.rotation.y = t * (sparkleBoost ? 1.1 : 0.55);
+      if (this.eiffelSparkleMat) {
+        const baseOp = sparkleBoost ? 0.5 : (this.timeOfDay === 'day' ? 0.08 : 0.28);
+        this.eiffelSparkleMat.opacity = baseOp + Math.abs(Math.sin(t * (sparkleBoost ? 7.5 : 3.2))) * 0.48;
+        this.eiffelSparkleMat.size = sparkleBoost ? 3.2 : 2.1;
       }
-      this.rainDrops.geometry.attributes.position.needsUpdate = true;
-    }
 
-    if (this.leafInst && this.leafInst.visible) {
-      const camZ = this.camera.position.z;
-      for (let i = 0; i < this.fallingLeaves.length; i++) {
-        const lf = this.fallingLeaves[i]; lf.y -= lf.spd * dt; if (lf.y < 0.2) lf.y = 14;
-        this.leafDummy.position.set(lf.x + Math.sin(t + lf.ph) * 0.45, lf.y, camZ + lf.z);
-        this.leafDummy.rotation.set(t + lf.ph, t * 0.7, lf.ph);
-        this.leafDummy.updateMatrix(); this.leafInst.setMatrixAt(i, this.leafDummy.matrix);
+      for (let i = 0; i < this.fountainRings.length; i++) {
+        const fr = this.fountainRings[i];
+        const f = (t * 0.55 + fr.phase) % 1;
+        fr.mesh.scale.setScalar(0.6 + f * 3.6); fr.mesh.material.opacity = (1 - f) * 0.48;
       }
-      this.leafInst.instanceMatrix.needsUpdate = true;
-    }
 
-    if (this.cakeGroup) this.cakeGroup.rotation.y = Math.sin(t * 0.52) * 0.24;
-    for (const f of this.cakeFlames) {
-      f.group.visible = this.candlesLit;
-      if (this.candlesLit) {
-        const fl = Math.sin(t * 13 + f.phase) * 0.1 + Math.sin(t * 21 + f.phase) * 0.06;
-        f.group.scale.set(1 + fl * 0.45, Math.max(0.45, 1 + fl - this.candleWind * 0.35), 1 + fl * 0.45);
-        f.group.rotation.z = Math.sin(t * 9 + f.phase) * 0.08 + this.candleWind * 0.55;
-        f.glow.material.opacity = 0.85 + fl * 0.5;
+      if (this.rainDrops && this.rainDrops.visible) {
+        this.rainDrops.position.set(camX, 0, camZ);
+        const rPos = this.rainPositions, dropDy = 24 * dt;
+        for (let i = 0; i < rPos.length; i += 6) {
+          rPos[i + 1] -= dropDy; rPos[i + 4] -= dropDy;
+          if (rPos[i + 1] < 0.2) { rPos[i + 1] = 22; rPos[i + 4] = 21.45; }
+        }
+        this.rainDrops.geometry.attributes.position.needsUpdate = true;
+      }
+
+      if (this.leafInst && this.leafInst.visible) {
+        for (let i = 0; i < this.fallingLeaves.length; i++) {
+          const lf = this.fallingLeaves[i]; lf.y -= lf.spd * dt; if (lf.y < 0.2) lf.y = 14;
+          this.leafDummy.position.set(lf.x + Math.sin(t + lf.ph) * 0.45, lf.y, camZ + lf.z);
+          this.leafDummy.rotation.set(t + lf.ph, t * 0.7, lf.ph);
+          this.leafDummy.updateMatrix(); this.leafInst.setMatrixAt(i, this.leafDummy.matrix);
+        }
+        this.leafInst.instanceMatrix.needsUpdate = true;
       }
     }
-    if (this.smokeTime >= 0) {
-      this.smokeTime += dt;
-      for (const sm of this.smokePuffs) { const p = Math.min(1, this.smokeTime / 3.0); sm.sprite.position.y = sm.baseY + p * 1.4; sm.sprite.scale.setScalar(0.35 + p * 1.1); sm.sprite.material.opacity = Math.sin(p * Math.PI) * 0.45; }
-      if (this.smokeTime >= 3.0) this.smokeTime = -1;
-    }
-    if (this.fireworksTime >= 0) {
-      this.fireworksTime += dt;
-      const arr = this.fireworksPoints.geometry.attributes.position.array;
-      for (let i = 0; i < this.fireworkVels.length; i++) { const v = this.fireworkVels[i]; arr[i * 3] += v.x * dt; arr[i * 3 + 1] += (v.y - 3.6 * this.fireworksTime) * dt; arr[i * 3 + 2] += v.z * dt; }
-      this.fireworksPoints.geometry.attributes.position.needsUpdate = true;
-      this.fireworksPoints.material.opacity = Math.max(0, 1 - this.fireworksTime / 3.6);
-      if (this.fireworksTime > 3.6) this.fireworksTime = -1;
+
+    // Indoor-only Louvre Gallery & Birthday Cake updates (skipped completely while outside on Champs-Élysées!)
+    if (this.louvreInteriorGroup.visible && camZ < 28) {
+      for (let i = 0; i < this.floatingProps.length; i++) { const fp = this.floatingProps[i]; fp.mesh.position.y = fp.baseY + Math.sin(t * fp.speed) * 0.09; fp.mesh.rotation.y += dt * 0.4; }
+      for (let i = 0; i < this.parchments.length; i++) { const pc = this.parchments[i]; pc.mesh.position.y = pc.baseY + Math.sin(t * 1.8 + pc.phase) * 0.07; }
+
+      if (this.cakeGroup) this.cakeGroup.rotation.y = Math.sin(t * 0.52) * 0.24;
+      for (let i = 0; i < this.cakeFlames.length; i++) {
+        const f = this.cakeFlames[i];
+        f.group.visible = this.candlesLit;
+        if (this.candlesLit) {
+          const fl = Math.sin(t * 13 + f.phase) * 0.1 + Math.sin(t * 21 + f.phase) * 0.06;
+          f.group.scale.set(1 + fl * 0.45, Math.max(0.45, 1 + fl - this.candleWind * 0.35), 1 + fl * 0.45);
+          f.group.rotation.z = Math.sin(t * 9 + f.phase) * 0.08 + this.candleWind * 0.55;
+          f.glow.material.opacity = 0.85 + fl * 0.5;
+        }
+      }
+      if (this.smokeTime >= 0) {
+        this.smokeTime += dt;
+        for (let i = 0; i < this.smokePuffs.length; i++) { const sm = this.smokePuffs[i]; const p = Math.min(1, this.smokeTime / 3.0); sm.sprite.position.y = sm.baseY + p * 1.4; sm.sprite.scale.setScalar(0.35 + p * 1.1); sm.sprite.material.opacity = Math.sin(p * Math.PI) * 0.45; }
+        if (this.smokeTime >= 3.0) this.smokeTime = -1;
+      }
+      if (this.fireworksTime >= 0) {
+        this.fireworksTime += dt;
+        const arr = this.fireworksPoints.geometry.attributes.position.array;
+        for (let i = 0; i < this.fireworkVels.length; i++) { const v = this.fireworkVels[i]; arr[i * 3] += v.x * dt; arr[i * 3 + 1] += (v.y - 3.6 * this.fireworksTime) * dt; arr[i * 3 + 2] += v.z * dt; }
+        this.fireworksPoints.geometry.attributes.position.needsUpdate = true;
+        this.fireworksPoints.material.opacity = Math.max(0, 1 - this.fireworksTime / 3.6);
+        if (this.fireworksTime > 3.6) this.fireworksTime = -1;
+      }
     }
 
     this.renderFrame();
